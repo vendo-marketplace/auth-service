@@ -1,0 +1,94 @@
+package com.vendo.auth_service.security.filter;
+
+import com.vendo.auth_service.http.user.dto.UserInfo;
+import com.vendo.auth_service.security.common.helper.JwtHelper;
+import com.vendo.domain.user.service.UserActivityPolicy;
+import com.vendo.security.common.exception.InvalidTokenException;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import java.io.IOException;
+
+import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HEADER;
+import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private final JwtHelper jwtHelper;
+
+    private final AuthAntPathResolver authAntPathResolver;
+
+    @Qualifier("handlerExceptionResolver")
+    private final HandlerExceptionResolver handlerExceptionResolver;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        if (securityContext.getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            String jwtToken = getTokenFromRequest(request);
+            Claims claims = jwtHelper.extractAllClaims(jwtToken);
+
+            UserInfo userInfo = validateUserAccessibility(claims);
+            addAuthenticationToContext(userInfo);
+        } catch (Exception e) {
+            handlerExceptionResolver.resolveException(request, response, null, e);
+            return;
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        return authAntPathResolver.isPermittedPath(requestURI);
+    }
+
+    private String getTokenFromRequest(HttpServletRequest request) {
+        String authorization = request.getHeader(AUTHORIZATION_HEADER);
+
+        if (authorization == null) {
+            throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
+        } else if (!authorization.startsWith(BEARER_PREFIX)) {
+            throw new InvalidTokenException("Invalid token.");
+        }
+
+        return authorization.substring(BEARER_PREFIX.length());
+    }
+
+    private UserInfo validateUserAccessibility(Claims claims) {
+        UserInfo userInfo = userInfoProvider.findByEmail(claims.getSubject());
+        UserActivityPolicy.validateActivity(userInfo);
+        return userInfo;
+    }
+
+    private void addAuthenticationToContext(UserInfo userInfo) {
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                userInfo,
+                null,
+                userInfo.getAuthorities());
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+}
