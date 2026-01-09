@@ -1,0 +1,15 @@
+package com.vendo.auth_service.port.otp;
+
+import java.util.Optional;
+
+public interface OtpStorage {
+
+    Optional<String> getValue(String key);
+
+    boolean hasActiveKey(String key);
+
+    void saveValue(String key, String value, long ttl);
+
+    void deleteValues(String... keys);
+
+}
