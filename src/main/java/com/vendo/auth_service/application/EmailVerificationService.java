@@ -1,7 +1,10 @@
 package com.vendo.auth_service.application;
 
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.application.otp.EmailOtpService;
+import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.system.redis.common.dto.ValidateRequest;
 import com.vendo.auth_service.system.redis.common.namespace.otp.EmailVerificationOtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
@@ -18,10 +21,12 @@ public class EmailVerificationService {
 
     private final EmailVerificationOtpNamespace emailVerificationOtpNamespace;
 
-    private final UserInfoProvider userInfoProvider;
+    private final UserQueryPort userQueryPort;
+
+    private final UserCommandPort userCommandPort;
 
     public void sendOtp(String email) {
-        userInfoProvider.findByEmail(email);
+        userQueryPort.findByEmail(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)
@@ -31,7 +36,7 @@ public class EmailVerificationService {
     }
 
     public void resendOtp(String email) {
-        userInfoProvider.ensureExists(email);
+        userCommandPort.ensureExists(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)
@@ -41,13 +46,11 @@ public class EmailVerificationService {
     }
 
     public void validate(String otp, ValidateRequest validateRequest) {
-        UserInfo userInfo = userInfoProvider.findByEmail(validateRequest.email());
+        User user = userQueryPort.getByEmail(validateRequest.email());
 
         emailOtpService.verifyOtpAndConsume(otp, validateRequest.email(), emailVerificationOtpNamespace);
 
-
-        userInfoProvider.
-        userCommandService.update(user.getId(), UserUpdateRequest.builder()
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .emailVerified(true)
                 .build());
     }

@@ -53,7 +53,7 @@ public class EmailOtpService {
         emailOtpEventProducer.sendEmailOtpEvent(event);
     }
 
-    public String verifyOtpAndConsume(String otp, @Nullable String expectedEmail, OtpNamespace namespace) {
+    public String verifyOtpAndConsume(String otp, String expectedEmail, OtpNamespace namespace) {
         String actualEmail = otpStorage.getValue(namespace.getOtp().buildPrefix(otp))
                 .orElseThrow(() -> new OtpExpiredException("Otp session expired."));
 

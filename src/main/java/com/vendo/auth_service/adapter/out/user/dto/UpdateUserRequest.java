@@ -7,9 +7,10 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Builder
-public record UpdateUserInfoRequest (
+public record UpdateUserRequest(
         String fullName,
         LocalDate birthDate,
+        Boolean emailVerified,
         UserStatus status,
         ProviderType providerType) {
 }

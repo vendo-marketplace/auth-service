@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Collections;
 
-public record UserInfo(
+public record User(
         String id,
         String email,
         Boolean emailVerified,

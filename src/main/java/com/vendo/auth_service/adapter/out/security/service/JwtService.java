@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.out.security.service;
 
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.common.config.JwtProperties;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
@@ -43,13 +43,13 @@ public class JwtService implements TokenGenerationService, BearerTokenExtractor,
     }
 
     @Override
-    public TokenPayload generateTokensPair(UserInfo userInfo) {
-        if (userInfo == null) {
+    public TokenPayload generateTokensPair(User user) {
+        if (user == null) {
             throw new IllegalArgumentException("User info is required.");
         }
 
-        String accessToken = generateAccessToken(userInfo);
-        String refreshToken = generateRefreshToken(userInfo);
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
 
         return TokenPayload.builder()
                 .accessToken(accessToken)
@@ -57,33 +57,33 @@ public class JwtService implements TokenGenerationService, BearerTokenExtractor,
                 .build();
     }
 
-    private String generateAccessToken(UserInfo userInfo) {
-        List<String> authorities = jwtHelper.getAuthorities(userInfo);
+    private String generateAccessToken(User user) {
+        List<String> authorities = jwtHelper.getAuthorities(user);
 
-        return generateAccessToken(userInfo, Map.of(
-                USER_ID_CLAIM.getClaim(), userInfo.id(),
-                EMAIL_VERIFIED_CLAIM.getClaim(), userInfo.emailVerified(),
+        return generateAccessToken(user, Map.of(
+                USER_ID_CLAIM.getClaim(), user.id(),
+                EMAIL_VERIFIED_CLAIM.getClaim(), user.emailVerified(),
                 ROLES_CLAIM.getClaim(), authorities,
-                STATUS_CLAIM.getClaim(), userInfo.getStatus()
+                STATUS_CLAIM.getClaim(), user.getStatus()
         ));
     }
 
-    private String generateAccessToken(UserInfo userInfo, Map<String, Object> claims) {
-        return buildToken(userInfo, claims, jwtProperties.getAccessExpirationTime());
+    private String generateAccessToken(User user, Map<String, Object> claims) {
+        return buildToken(user, claims, jwtProperties.getAccessExpirationTime());
     }
 
-    private String generateRefreshToken(UserInfo userInfo) {
-        return buildToken(userInfo, Map.of(), jwtProperties.getRefreshExpirationTime());
+    private String generateRefreshToken(User user) {
+        return buildToken(user, Map.of(), jwtProperties.getRefreshExpirationTime());
     }
 
-    private String buildToken(UserInfo userInfo, Map<String, Object> claims, int expiration) {
-        if (userInfo == null) {
+    private String buildToken(User user, Map<String, Object> claims, int expiration) {
+        if (user == null) {
             throw new IllegalArgumentException("User info is required.");
         }
 
         return Jwts.builder()
                 .claims(claims)
-                .subject(userInfo.email())
+                .subject(user.email())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(jwtHelper.getSignInKey(), SignatureAlgorithm.HS256)

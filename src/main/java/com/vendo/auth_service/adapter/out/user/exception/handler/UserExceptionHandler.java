@@ -1,7 +1,8 @@
 package com.vendo.auth_service.adapter.out.user.exception.handler;
 
-import com.vendo.auth_service.adapter.out.user.exception.UserInfoAlreadyActivatedException;
-import com.vendo.auth_service.adapter.out.user.exception.UserInfoAlreadyExistsException;
+import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyActivatedException;
+import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyExistsException;
+import com.vendo.auth_service.adapter.out.user.exception.UserNotFoundException;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.security.common.exception.UserBlockedException;
 import com.vendo.security.common.exception.UserEmailNotVerifiedException;
@@ -9,15 +10,14 @@ import com.vendo.security.common.exception.UserIsUnactiveException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class UserInfoExceptionHandler {
+public class UserExceptionHandler {
 
-    @ExceptionHandler(UserInfoAlreadyExistsException.class)
-    public ResponseEntity<ExceptionResponse> handleUserAlreadyExistsException(UserInfoAlreadyExistsException e, HttpServletRequest request) {
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ExceptionResponse> handleUserAlreadyExistsException(UserAlreadyExistsException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
                 .code(HttpStatus.CONFLICT.value())
@@ -36,8 +36,8 @@ public class UserInfoExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
     }
 
-    @ExceptionHandler(UserInfoAlreadyActivatedException.class)
-    public ResponseEntity<ExceptionResponse> handleUserAlreadyActivatedException(UserInfoAlreadyActivatedException e, HttpServletRequest request) {
+    @ExceptionHandler(UserAlreadyActivatedException.class)
+    public ResponseEntity<ExceptionResponse> handleUserAlreadyActivatedException(UserAlreadyActivatedException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
                 .code(HttpStatus.CONFLICT.value())
@@ -46,8 +46,8 @@ public class UserInfoExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
     }
 
-    @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handleUsernameNotFoundException(UsernameNotFoundException e, HttpServletRequest request) {
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleUserInfoNotFoundException(UserNotFoundException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
                 .code(HttpStatus.NOT_FOUND.value())

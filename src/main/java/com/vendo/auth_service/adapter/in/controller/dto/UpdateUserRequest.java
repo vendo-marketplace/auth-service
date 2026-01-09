@@ -7,7 +7,7 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Builder(toBuilder = true)
-public record UserUpdateRequest(
+public record UpdateUserRequest(
         Boolean emailVerified,
         UserStatus status,
         ProviderType providerType,

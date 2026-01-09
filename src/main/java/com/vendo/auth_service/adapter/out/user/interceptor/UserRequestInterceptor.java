@@ -9,7 +9,7 @@ import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HE
 import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
 
 @Configuration
-public class UserInfoRequestInterceptor {
+public class UserRequestInterceptor {
 
     // TODO rename
     @Value("${user-internal-token}")

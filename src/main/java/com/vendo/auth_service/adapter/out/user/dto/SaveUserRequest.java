@@ -6,7 +6,7 @@ import com.vendo.domain.user.common.type.UserStatus;
 import lombok.Builder;
 
 @Builder
-public record SaveUserInfoRequest(
+public record SaveUserRequest(
         String email,
         UserRole role,
         UserStatus status,

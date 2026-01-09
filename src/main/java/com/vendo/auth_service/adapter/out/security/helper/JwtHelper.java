@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.out.security.helper;
 
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.common.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -23,8 +23,8 @@ public class JwtHelper {
 
     private final JwtProperties jwtProperties;
 
-    public List<String> getAuthorities(UserInfo userInfo) {
-        return Stream.of(userInfo.role())
+    public List<String> getAuthorities(User user) {
+        return Stream.of(user.role())
                 .map(GrantedAuthority::getAuthority)
                 .toList();
     }

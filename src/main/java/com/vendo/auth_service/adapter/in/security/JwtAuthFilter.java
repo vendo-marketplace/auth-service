@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.in.security;
 
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import com.vendo.security.common.exception.InvalidTokenException;
@@ -49,8 +49,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String jwtToken = getTokenFromRequest(request);
             Claims claims = jwtHelper.extractAllClaims(jwtToken);
 
-            UserInfo userInfo = validateUserAccessibility(claims);
-            addAuthenticationToContext(userInfo);
+            User user = validateUserAccessibility(claims);
+            addAuthenticationToContext(user);
         } catch (Exception e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
             return;
@@ -77,17 +77,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return authorization.substring(BEARER_PREFIX.length());
     }
 
-    private UserInfo validateUserAccessibility(Claims claims) {
-        UserInfo userInfo = userInfoProvider.findByEmail(claims.getSubject());
-        UserActivityPolicy.validateActivity(userInfo);
-        return userInfo;
+    private User validateUserAccessibility(Claims claims) {
+        User user = userInfoProvider.findByEmail(claims.getSubject());
+        UserActivityPolicy.validateActivity(user);
+        return user;
     }
 
-    private void addAuthenticationToContext(UserInfo userInfo) {
+    private void addAuthenticationToContext(User user) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                userInfo,
+                user,
                 null,
-                userInfo.getAuthorities());
+                user.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }

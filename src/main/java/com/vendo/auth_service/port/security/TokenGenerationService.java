@@ -1,10 +1,10 @@
 package com.vendo.auth_service.port.security;
 
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 
 public interface TokenGenerationService {
 
-    TokenPayload generateTokensPair(UserInfo userInfo);
+    TokenPayload generateTokensPair(User user);
 
 }

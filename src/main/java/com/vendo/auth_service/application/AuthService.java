@@ -4,12 +4,11 @@ import com.vendo.auth_service.adapter.in.controller.dto.AuthRequest;
 import com.vendo.auth_service.adapter.in.controller.dto.AuthResponse;
 import com.vendo.auth_service.adapter.in.controller.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.in.controller.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.out.user.exception.UserInfoAlreadyExistsException;
-import com.vendo.auth_service.port.user.UserInfoCommandPort;
-import com.vendo.auth_service.port.user.UserInfoQueryPort;
-import com.vendo.auth_service.adapter.out.user.dto.SaveUserInfoRequest;
-import com.vendo.auth_service.adapter.out.user.dto.UpdateUserInfoRequest;
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.domain.user.UserService;
+import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.adapter.out.user.dto.SaveUserRequest;
+import com.vendo.auth_service.adapter.out.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.JwtClaimsParser;
@@ -19,11 +18,8 @@ import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,15 +35,15 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final UserInfoQueryPort userInfoQueryPort;
+    private final UserService userService;
 
-    private final UserInfoCommandPort userInfoCommandPort;
+    private final UserCommandPort userCommandPort;
 
     public AuthResponse signIn(AuthRequest authRequest) {
-        UserInfo userInfo = getUserInfoOrThrowIfNotFound(authRequest.email());
-        UserActivityPolicy.validateActivity(userInfo);
-        matchPasswordsOrThrow(authRequest.password(), userInfo.password());
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(userInfo);
+        User user = userService.getUserInfoOrThrow(authRequest.email());
+        UserActivityPolicy.validateActivity(user);
+        matchPasswordsOrThrow(authRequest.password(), user.password());
+        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
 
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
@@ -56,11 +52,11 @@ public class AuthService {
     }
 
     public void signUp(AuthRequest authRequest) {
-        throwIfUserInfoAlreadyExists(authRequest.email());
+        userService.throwIfUserInfoExists(authRequest.email());
 
         String encodedPassword = passwordEncoder.encode(authRequest.password());
 
-        userInfoCommandPort.save(SaveUserInfoRequest.builder()
+        userCommandPort.save(SaveUserRequest.builder()
                 .email(authRequest.email())
                 .status(UserStatus.INCOMPLETE)
                 .providerType(ProviderType.LOCAL)
@@ -70,11 +66,11 @@ public class AuthService {
     }
 
     public void completeAuth(String email, CompleteAuthRequest completeAuthRequest) {
-        UserInfo userInfo = getUserInfoOrThrowIfNotFound(email);
+        User user = userService.getUserInfoOrThrow(email);
 
 //        userActivityValidationService.validateBeforeActivation(user);
 
-        userInfoCommandPort.update(userInfo.id(), UpdateUserInfoRequest.builder()
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
                 .fullName(completeAuthRequest.fullName())
                 .birthDate(completeAuthRequest.birthDate()).build());
@@ -84,8 +80,8 @@ public class AuthService {
         String token = bearerTokenExtractor.parseBearerToken(refreshRequest.refreshToken());
         String email = jwtClaimsParser.parseEmailFromToken(token);
 
-        UserInfo userInfo = getUserInfoOrThrowIfNotFound(email);
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(userInfo);
+        User user = userService.getUserInfoOrThrow(email);
+        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
 
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
@@ -97,24 +93,6 @@ public class AuthService {
         boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
         if (!matches) {
             throw new BadCredentialsException("Wrong credentials");
-        }
-    }
-
-    private UserInfo getUserInfoOrThrowIfNotFound(String email) {
-        Optional<UserInfo> optionalUserInfo = userInfoQueryPort.findByEmail(email);
-
-        if (optionalUserInfo.isEmpty()) {
-            throw new UsernameNotFoundException("User info not found.");
-        }
-
-        return optionalUserInfo.get();
-    }
-
-    private void throwIfUserInfoAlreadyExists(String email) {
-        Optional<UserInfo> optionalUserInfo = userInfoQueryPort.findByEmail(email);
-
-        if (optionalUserInfo.isPresent()) {
-            throw new UserInfoAlreadyExistsException("User info already exists.");
         }
     }
 

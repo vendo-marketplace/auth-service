@@ -1,12 +1,13 @@
 package com.vendo.auth_service.application.google;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.vendo.auth_service.adapter.out.user.dto.UpdateUserInfoRequest;
-import com.vendo.auth_service.adapter.out.user.dto.UserInfo;
+import com.vendo.auth_service.adapter.out.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.adapter.out.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.adapter.in.controller.dto.AuthResponse;
 import com.vendo.auth_service.adapter.in.controller.dto.GoogleAuthRequest;
+import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +21,21 @@ public class GoogleOAuthService {
 
     private final GoogleTokenVerifier googleTokenVerifier;
 
+    private final UserCommandPort userCommandPort;
+
     public AuthResponse googleAuth(GoogleAuthRequest googleAuthRequest) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(googleAuthRequest.idToken());
 
-        UserInfo userInfo = userInfoProvider.ensureExists(payload.getEmail());
+        User user = userCommandPort.ensureExists(payload.getEmail());
 
-        if (userInfo.getStatus() == UserStatus.INCOMPLETE) {
-            userInfoProvider.update(userInfo.email(), UpdateUserInfoRequest.builder()
+        if (user.getStatus() == UserStatus.INCOMPLETE) {
+            userCommandPort.update(user.email(), UpdateUserRequest.builder()
                     .status(UserStatus.ACTIVE)
                     .providerType(ProviderType.GOOGLE).build()
             );
         }
 
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(userInfo);
+        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())
