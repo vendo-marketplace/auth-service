@@ -6,13 +6,14 @@ import com.vendo.auth_service.adapter.in.controller.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.in.controller.dto.RefreshRequest;
 import com.vendo.auth_service.domain.user.UserService;
 import com.vendo.auth_service.port.user.UserCommandPort;
-import com.vendo.auth_service.adapter.out.user.dto.SaveUserRequest;
-import com.vendo.auth_service.adapter.out.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.adapter.out.user.dto.User;
+import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
+import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.JwtClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
+import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityPolicy;
@@ -25,8 +26,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserActivityValidationService userActivityValidationService;
-
     private final TokenGenerationService tokenGenerationService;
 
     private final BearerTokenExtractor bearerTokenExtractor;
@@ -35,12 +34,14 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final UserService userService;
+    private final UserQueryPort userQueryPort;
 
     private final UserCommandPort userCommandPort;
 
+    private final UserService userService;
+
     public AuthResponse signIn(AuthRequest authRequest) {
-        User user = userService.getUserInfoOrThrow(authRequest.email());
+        User user = userQueryPort.getByEmail(authRequest.email());
         UserActivityPolicy.validateActivity(user);
         matchPasswordsOrThrow(authRequest.password(), user.password());
         TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
@@ -52,7 +53,7 @@ public class AuthService {
     }
 
     public void signUp(AuthRequest authRequest) {
-        userService.throwIfUserInfoExists(authRequest.email());
+        userQueryPort.getByEmail(authRequest.email());
 
         String encodedPassword = passwordEncoder.encode(authRequest.password());
 
@@ -66,9 +67,9 @@ public class AuthService {
     }
 
     public void completeAuth(String email, CompleteAuthRequest completeAuthRequest) {
-        User user = userService.getUserInfoOrThrow(email);
+        User user = userQueryPort.getByEmail(email);
 
-//        userActivityValidationService.validateBeforeActivation(user);
+        userService.validateBeforeActivation(user);
 
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
@@ -80,7 +81,7 @@ public class AuthService {
         String token = bearerTokenExtractor.parseBearerToken(refreshRequest.refreshToken());
         String email = jwtClaimsParser.parseEmailFromToken(token);
 
-        User user = userService.getUserInfoOrThrow(email);
+        User user = userQueryPort.getByEmail(email);
         TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
 
         return AuthResponse.builder()
@@ -95,5 +96,4 @@ public class AuthService {
             throw new BadCredentialsException("Wrong credentials");
         }
     }
-
 }

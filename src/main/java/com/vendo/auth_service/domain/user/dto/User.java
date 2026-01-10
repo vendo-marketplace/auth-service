@@ -1,14 +1,12 @@
-package com.vendo.auth_service.adapter.out.user.dto;
+package com.vendo.auth_service.domain.user.dto;
 
 import com.vendo.auth_service.adapter.out.security.common.type.UserAuthority;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityView;
-import org.springframework.security.core.GrantedAuthority;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
 
 public record User(
         String id,
@@ -19,7 +17,9 @@ public record User(
         ProviderType providerType,
         String password,
         LocalDate birthDate,
-        String fullName
+        String fullName,
+        Instant createdAt,
+        Instant updatedAt
 ) implements UserActivityView {
 
     @Override
@@ -31,9 +31,4 @@ public record User(
     public Boolean getEmailVerified() {
         return emailVerified;
     }
-
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(role);
-    }
-
 }

@@ -1,35 +1,29 @@
 package com.vendo.auth_service.domain.user;
 
-import com.vendo.auth_service.adapter.out.user.dto.User;
-import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyExistsException;
-import com.vendo.auth_service.adapter.out.user.exception.UserNotFoundException;
-import com.vendo.auth_service.port.user.UserQueryPort;
-import lombok.RequiredArgsConstructor;
+import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyActivatedException;
+import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.domain.user.common.type.UserStatus;
+import com.vendo.security.common.exception.UserBlockedException;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
-    private final UserQueryPort userQueryPort;
-
-    public User getUserInfoOrThrow(String email) {
-        Optional<User> optionalUserInfo = userQueryPort.findByEmail(email);
-
-        if (optionalUserInfo.isEmpty()) {
-            throw new UserNotFoundException("User not found.");
-        }
-
-        return optionalUserInfo.get();
+    public void validateBeforeActivation(User user) {
+        UserStatus status = user.getStatus();
+        throwIfBlocked(status);
+        throwIfActive(status);
     }
 
-    public void throwIfUserInfoExists(String email) {
-        Optional<User> optionalUserInfo = userQueryPort.findByEmail(email);
+    private void throwIfBlocked(UserStatus userStatus) {
+        if (userStatus == UserStatus.BLOCKED) {
+            throw new UserBlockedException("User is blocked.");
+        }
+    }
 
-        if (optionalUserInfo.isPresent()) {
-            throw new UserAlreadyExistsException("User already exists.");
+    private void throwIfActive(UserStatus userStatus) {
+        if (userStatus == UserStatus.ACTIVE) {
+            throw new UserAlreadyActivatedException("User account is already activated.");
         }
     }
 }

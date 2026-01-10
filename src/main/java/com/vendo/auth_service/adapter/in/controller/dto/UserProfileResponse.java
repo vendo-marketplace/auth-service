@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.in.controller.dto;
 
+import com.vendo.auth_service.adapter.out.security.common.type.UserAuthority;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;
-import com.vendo.user_service.security.common.type.UserAuthority;
 import lombok.Builder;
 
 import java.time.Instant;

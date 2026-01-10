@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.out.user;
 
-import com.vendo.auth_service.adapter.out.user.dto.SaveUserRequest;
-import com.vendo.auth_service.adapter.out.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.adapter.out.user.dto.User;
+import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
+import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.dto.User;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;

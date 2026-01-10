@@ -1,7 +1,8 @@
 package com.vendo.auth_service.adapter.in.security;
 
-import com.vendo.auth_service.adapter.out.user.dto.User;
+import com.vendo.auth_service.domain.user.dto.User;
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
+import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import com.vendo.security.common.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
@@ -21,6 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HEADER;
 import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
@@ -33,6 +35,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtHelper jwtHelper;
 
     private final AuthAntPathResolver authAntPathResolver;
+
+    private final UserQueryPort userQueryPort;
 
     @Qualifier("handlerExceptionResolver")
     private final HandlerExceptionResolver handlerExceptionResolver;
@@ -78,7 +82,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private User validateUserAccessibility(Claims claims) {
-        User user = userInfoProvider.findByEmail(claims.getSubject());
+        User user = userQueryPort.getByEmail(claims.getSubject());
         UserActivityPolicy.validateActivity(user);
         return user;
     }
@@ -87,7 +91,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 user,
                 null,
-                user.getAuthorities());
+                Collections.singleton(user.role()));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }

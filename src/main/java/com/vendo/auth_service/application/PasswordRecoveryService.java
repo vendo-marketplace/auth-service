@@ -1,12 +1,12 @@
 package com.vendo.auth_service.application;
 
-import com.vendo.auth_service.adapter.out.user.dto.User;
+import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.dto.User;
 import com.vendo.auth_service.application.otp.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.system.redis.common.dto.ResetPasswordRequest;
 import com.vendo.auth_service.system.redis.common.namespace.otp.PasswordRecoveryOtpNamespace;
-import com.vendo.auth_service.adapter.in.controller.dto.UpdateUserRequest;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class PasswordRecoveryService {
     private final EmailOtpService emailOtpService;
 
     public void forgotPassword(String email) {
-        userQueryPort.findByEmail(email);
+        userQueryPort.getByEmail(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)
@@ -50,7 +50,7 @@ public class PasswordRecoveryService {
     }
 
     public void resendOtp(String email) {
-        userQueryService.loadUserByUsername(email);
+        userQueryPort.getByEmail(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)
