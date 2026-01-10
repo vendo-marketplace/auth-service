@@ -1,11 +1,11 @@
 package com.vendo.auth_service.application.otp;
 
+import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
-import com.vendo.auth_service.system.kafka.producer.EmailOtpEventProducer;
 import com.vendo.auth_service.system.redis.common.namespace.otp.OtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
@@ -24,7 +24,7 @@ public class EmailOtpService {
 
     private final OtpStorage otpStorage;
 
-    private final EmailOtpEventProducer emailOtpEventProducer;
+    private final OtpEmailNotificationPort otpEmailNotificationPort;
 
     public void sendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
         if (otpStorage.hasActiveKey(otpNamespace.getEmail().buildPrefix(event.getEmail()))) {
@@ -37,7 +37,7 @@ public class EmailOtpService {
         otpStorage.saveValue(otpNamespace.getOtp().buildPrefix(otp), event.getEmail(), otpNamespace.getOtp().getTtl());
         otpStorage.saveValue(otpNamespace.getEmail().buildPrefix(event.getEmail()), otp, otpNamespace.getEmail().getTtl());
 
-        emailOtpEventProducer.sendEmailOtpEvent(event);
+        otpEmailNotificationPort.sendOtpEmailNotification(event);
     }
 
     public void resendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
@@ -49,7 +49,7 @@ public class EmailOtpService {
         String otp = getOtpOrGenerate(event.getEmail(), otpNamespace);
         event.setOtp(otp);
 
-        emailOtpEventProducer.sendEmailOtpEvent(event);
+        otpEmailNotificationPort.sendOtpEmailNotification(event);
     }
 
     public String verifyOtpAndConsume(String otp, String expectedEmail, OtpNamespace namespace) {

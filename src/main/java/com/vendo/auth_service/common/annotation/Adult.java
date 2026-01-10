@@ -1,6 +1,6 @@
 package com.vendo.auth_service.common.annotation;
 
-import com.vendo.user_service.common.annotation.validator.AdultValidator;
+import com.vendo.auth_service.common.annotation.validator.AdultValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

@@ -1,6 +1,7 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.vendo.auth_service.adapter.in.controller.dto.*;
+import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.application.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    ResponseEntity<UserProfileResponse> getAuthenticatedUserProfile() {
+    ResponseEntity<AuthUser> getAuthenticatedUserProfile() {
         return ResponseEntity.ok(authService.getAuthenticatedUserProfile());
     }
 }

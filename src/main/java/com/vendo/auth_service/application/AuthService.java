@@ -4,7 +4,9 @@ import com.vendo.auth_service.adapter.in.controller.dto.AuthRequest;
 import com.vendo.auth_service.adapter.in.controller.dto.AuthResponse;
 import com.vendo.auth_service.adapter.in.controller.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.in.controller.dto.RefreshRequest;
+import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.UserService;
+import com.vendo.auth_service.port.security.UserAuthenticationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
 import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
@@ -26,19 +28,21 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final TokenGenerationService tokenGenerationService;
-
-    private final BearerTokenExtractor bearerTokenExtractor;
-
-    private final JwtClaimsParser jwtClaimsParser;
-
-    private final PasswordEncoder passwordEncoder;
-
     private final UserQueryPort userQueryPort;
 
     private final UserCommandPort userCommandPort;
 
     private final UserService userService;
+
+    private final UserAuthenticationService userAuthenticationService;
+
+    private final TokenGenerationService tokenGenerationService;
+
+    private final BearerTokenExtractor bearerTokenExtractor;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final JwtClaimsParser jwtClaimsParser;
 
     public AuthResponse signIn(AuthRequest authRequest) {
         User user = userQueryPort.getByEmail(authRequest.email());
@@ -88,6 +92,10 @@ public class AuthService {
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())
                 .build();
+    }
+
+    public AuthUser getAuthenticatedUserProfile() {
+        return userAuthenticationService.getAuthenticatedUser();
     }
 
     private void matchPasswordsOrThrow(String rawPassword, String encodedPassword) {

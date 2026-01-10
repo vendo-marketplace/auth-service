@@ -26,7 +26,7 @@ public class EmailVerificationService {
     private final UserCommandPort userCommandPort;
 
     public void sendOtp(String email) {
-        userQueryPort.findByEmail(email);
+        userQueryPort.getByEmail(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)

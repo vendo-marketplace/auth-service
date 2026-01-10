@@ -1,10 +1,10 @@
 package com.vendo.auth_service.application.otp.common.exception.handler;
 
+import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
+import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
+import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
-import com.vendo.user_service.service.otp.common.exception.InvalidOtpException;
-import com.vendo.user_service.service.otp.common.exception.OtpAlreadySentException;
-import com.vendo.user_service.service.otp.common.exception.TooManyOtpRequestsException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

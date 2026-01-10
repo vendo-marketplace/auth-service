@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +20,6 @@ public class RedisService {
 
     public Optional<String> getValue(String key) {
         return Optional.ofNullable(redisTemplate.opsForValue().get(key));
-    }
-
-    public Long getExpire(String key) {
-        return redisTemplate.getExpire(key, TimeUnit.SECONDS);
     }
 
     public void deleteValues(String... keys) {
