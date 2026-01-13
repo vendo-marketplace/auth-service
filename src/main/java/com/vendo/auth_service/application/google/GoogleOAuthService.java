@@ -1,12 +1,12 @@
 package com.vendo.auth_service.application.google;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
-import com.vendo.auth_service.adapter.in.controller.dto.AuthResponse;
-import com.vendo.auth_service.adapter.in.controller.dto.GoogleAuthRequest;
+import com.vendo.auth_service.adapter.in.web.dto.AuthResponse;
+import com.vendo.auth_service.adapter.in.web.dto.GoogleAuthRequest;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;

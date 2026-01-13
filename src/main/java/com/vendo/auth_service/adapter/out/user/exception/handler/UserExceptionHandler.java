@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.out.user.exception.handler;
 
-import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyActivatedException;
-import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyExistsException;
-import com.vendo.auth_service.adapter.out.user.exception.UserNotFoundException;
+import com.vendo.auth_service.domain.user.common.exception.UserAlreadyActivatedException;
+import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
+import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.security.common.exception.UserBlockedException;
 import com.vendo.security.common.exception.UserEmailNotVerifiedException;

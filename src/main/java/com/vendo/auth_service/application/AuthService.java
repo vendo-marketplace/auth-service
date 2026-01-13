@@ -1,16 +1,16 @@
 package com.vendo.auth_service.application;
 
-import com.vendo.auth_service.adapter.in.controller.dto.AuthRequest;
-import com.vendo.auth_service.adapter.in.controller.dto.AuthResponse;
-import com.vendo.auth_service.adapter.in.controller.dto.CompleteAuthRequest;
-import com.vendo.auth_service.adapter.in.controller.dto.RefreshRequest;
+import com.vendo.auth_service.adapter.in.web.dto.AuthRequest;
+import com.vendo.auth_service.adapter.in.web.dto.AuthResponse;
+import com.vendo.auth_service.adapter.in.web.dto.CompleteAuthRequest;
+import com.vendo.auth_service.adapter.in.web.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.UserService;
 import com.vendo.auth_service.port.security.UserAuthenticationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
-import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
+import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.JwtClaimsParser;

@@ -1,7 +1,7 @@
 package com.vendo.auth_service.application;
 
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.application.otp.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;

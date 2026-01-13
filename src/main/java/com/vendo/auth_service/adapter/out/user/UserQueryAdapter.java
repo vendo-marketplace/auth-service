@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.out.user;
 
-import com.vendo.auth_service.domain.user.dto.User;
-import com.vendo.auth_service.adapter.out.user.exception.UserNotFoundException;
+import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;

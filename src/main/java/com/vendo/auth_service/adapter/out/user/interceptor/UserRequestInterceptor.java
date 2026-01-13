@@ -11,12 +11,11 @@ import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
 @Configuration
 public class UserRequestInterceptor {
 
-    // TODO rename
-    @Value("${user-internal-token}")
-    private String USER_INTERNAL_TOKEN;
+    @Value("${security.jwt.internal-key}")
+    private String JWT_INTERNAL_TOKEN;
 
     @Bean
     RequestInterceptor internalUserInfoInterceptor() {
-        return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + USER_INTERNAL_TOKEN);
+        return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + JWT_INTERNAL_TOKEN);
     }
 }

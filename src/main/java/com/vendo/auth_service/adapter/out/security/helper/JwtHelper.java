@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.out.security.helper;
 
-import com.vendo.auth_service.domain.user.dto.User;
-import com.vendo.auth_service.common.config.JwtProperties;
+import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.adapter.common.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;

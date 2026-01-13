@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.in.security;
 
-import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.service.UserActivityPolicy;

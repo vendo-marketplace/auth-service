@@ -1,7 +1,7 @@
 package com.vendo.auth_service.domain.user;
 
-import com.vendo.auth_service.adapter.out.user.exception.UserAlreadyActivatedException;
-import com.vendo.auth_service.domain.user.dto.User;
+import com.vendo.auth_service.domain.user.common.exception.UserAlreadyActivatedException;
+import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.security.common.exception.UserBlockedException;
 import org.springframework.stereotype.Service;

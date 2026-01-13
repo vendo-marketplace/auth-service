@@ -1,0 +1,27 @@
+package com.vendo.auth_service.domain.user.dto;
+
+import com.vendo.auth_service.adapter.out.security.common.type.UserAuthority;
+import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.domain.user.common.type.ProviderType;
+import com.vendo.domain.user.common.type.UserStatus;
+
+import java.time.Instant;
+import java.time.LocalDate;
+
+public class UserDataBuilder {
+
+    public static User.UserBuilder buildUserAllFields() {
+        return User.builder()
+                .id("1")
+                .email("test@gmail.com")
+                .password("Qwerty1234@")
+                .role(UserAuthority.USER)
+                .fullName("Test Name")
+                .birthDate(LocalDate.of(2000, 1, 1))
+                .providerType(ProviderType.LOCAL)
+                .status(UserStatus.INCOMPLETE)
+                .emailVerified(false)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now());
+    }
+}
