@@ -1,5 +1,7 @@
 package com.vendo.auth_service.adapter.in.security;
 
+import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.adapter.out.user.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -38,6 +40,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final UserQueryPort userQueryPort;
 
+    private final UserMapper userMapper;
+
     @Qualifier("handlerExceptionResolver")
     private final HandlerExceptionResolver handlerExceptionResolver;
 
@@ -53,8 +57,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String jwtToken = getTokenFromRequest(request);
             Claims claims = jwtHelper.extractAllClaims(jwtToken);
 
-            User user = validateUserAccessibility(claims);
-            addAuthenticationToContext(user);
+            AuthUser authUser = validateUserAccessibility(claims);
+            addAuthenticationToContext(authUser);
         } catch (Exception e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
             return;
@@ -81,17 +85,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return authorization.substring(BEARER_PREFIX.length());
     }
 
-    private User validateUserAccessibility(Claims claims) {
+    private AuthUser validateUserAccessibility(Claims claims) {
         User user = userQueryPort.getByEmail(claims.getSubject());
         UserActivityPolicy.validateActivity(user);
-        return user;
+        return userMapper.toAuthUserFromUser(user);
     }
 
-    private void addAuthenticationToContext(User user) {
+    private void addAuthenticationToContext(AuthUser authUser) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                user,
+                authUser,
                 null,
-                Collections.singleton(user.role()));
+                Collections.singleton(authUser.role()));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }

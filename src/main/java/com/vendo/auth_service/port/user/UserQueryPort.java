@@ -6,4 +6,6 @@ public interface UserQueryPort {
 
     User getByEmail(String email);
 
+    boolean existsByEmail(String email);
+
 }

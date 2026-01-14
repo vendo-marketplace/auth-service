@@ -1,6 +1,11 @@
-package com.vendo.auth_service.adapter.out.security;
+package com.vendo.auth_service.adapter.in.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vendo.auth_service.adapter.common.SecurityContextService;
+import com.vendo.auth_service.adapter.common.TestJwtService;
+import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
+import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
 import com.vendo.auth_service.domain.user.dto.SaveUserRequestDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
@@ -12,6 +17,7 @@ import com.vendo.domain.user.common.type.UserStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -62,8 +68,8 @@ public class JwtAuthFilterIntegrationTest {
 
     @Test
     void doFilterInternal_shouldPassAuthorization_whenUserAlreadyAuthorized() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields().build();
-        SecurityContext securityContext = SecurityContextService.initializeSecurityContext(user);
+        AuthUser authUser = AuthUserDataBuilder.buildAuthUserWithAllFields().build();
+        SecurityContext securityContext = SecurityContextService.initializeSecurityContext(authUser);
 
         String content = mockMvc.perform(get("/test/ping")
                         .with(securityContext(securityContext)))
@@ -85,7 +91,6 @@ public class JwtAuthFilterIntegrationTest {
                 .getContentAsString();
 
         assertThat(content).isNotBlank();
-
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
@@ -97,10 +102,9 @@ public class JwtAuthFilterIntegrationTest {
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)
                 .build();
-        SaveUserRequest saveUserRequest = SaveUserRequest.builder().build();
 
-        userCommandPort.save(saveUserRequest);
         String accessToken = testJwtService.generateAccessToken(user);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isOk());
@@ -130,6 +134,8 @@ public class JwtAuthFilterIntegrationTest {
         User user = UserDataBuilder.buildUserAllFields().build();
         String accessToken = testJwtService.generateAccessToken(user);
 
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
+
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isNotFound())
                 .andReturn()
@@ -137,7 +143,6 @@ public class JwtAuthFilterIntegrationTest {
                 .getContentAsString();
 
         assertThat(content).isNotBlank();
-
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
@@ -151,8 +156,8 @@ public class JwtAuthFilterIntegrationTest {
                 .email(saveUserRequest.email())
                 .build();
 
-        userCommandPort.save(saveUserRequest);
         String expiredToken = testJwtService.generateTokenWithExpiration(user, 0);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + expiredToken))
                 .andExpect(status().isUnauthorized())
@@ -160,9 +165,7 @@ public class JwtAuthFilterIntegrationTest {
                 .getResponse()
                 .getContentAsString();
 
-
         assertThat(content).isNotBlank();
-
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("Token has expired.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
@@ -180,8 +183,8 @@ public class JwtAuthFilterIntegrationTest {
                 .emailVerified(true)
                 .build();
 
-        userCommandPort.save(saveUserRequest);
         String accessToken = testJwtService.generateAccessToken(user);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -190,7 +193,6 @@ public class JwtAuthFilterIntegrationTest {
                 .getContentAsString();
 
         assertThat(response).isNotBlank();
-
         ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
@@ -208,8 +210,8 @@ public class JwtAuthFilterIntegrationTest {
                 .emailVerified(true)
                 .build();
 
-        userCommandPort.save(saveUserRequest);
         String accessToken = testJwtService.generateAccessToken(user);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -232,11 +234,10 @@ public class JwtAuthFilterIntegrationTest {
         User user = UserDataBuilder.buildUserAllFields()
                 .email(saveUserRequest.email())
                 .status(UserStatus.ACTIVE)
-                .emailVerified(true)
                 .build();
 
-        userCommandPort.save(saveUserRequest);
         String accessToken = testJwtService.generateAccessToken(user);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -257,8 +258,8 @@ public class JwtAuthFilterIntegrationTest {
                 .build();
         User user = UserDataBuilder.buildUserAllFields().email(saveUserRequest.email()).build();
 
-        userCommandPort.save(saveUserRequest);
         String accessToken = testJwtService.generateAccessToken(user);
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())

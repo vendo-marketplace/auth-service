@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.out.security;
+package com.vendo.auth_service.adapter.common;
 
 import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
 import com.vendo.auth_service.adapter.common.config.JwtProperties;

@@ -19,6 +19,9 @@ public interface UserClient {
     @GetMapping
     User getByEmail(@RequestParam String email);
 
+    @GetMapping
+    boolean existsByEmail(String email);
+
     @PutMapping
     void update(@RequestParam String email, @RequestBody UpdateUserRequest updateUserRequest);
 

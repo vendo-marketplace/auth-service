@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.in;
+package com.vendo.auth_service.adapter.in.controller;
 
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;

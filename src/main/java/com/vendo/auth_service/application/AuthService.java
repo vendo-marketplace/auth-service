@@ -6,6 +6,7 @@ import com.vendo.auth_service.adapter.in.web.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.in.web.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.UserService;
+import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
 import com.vendo.auth_service.port.security.UserAuthenticationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
@@ -17,6 +18,7 @@ import com.vendo.auth_service.port.security.JwtClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.common.type.ProviderType;
+import com.vendo.domain.user.common.type.UserRole;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import lombok.RequiredArgsConstructor;
@@ -57,13 +59,14 @@ public class AuthService {
     }
 
     public void signUp(AuthRequest authRequest) {
-        userQueryPort.getByEmail(authRequest.email());
+        throwIfExits(authRequest.email());
 
         String encodedPassword = passwordEncoder.encode(authRequest.password());
 
         userCommandPort.save(SaveUserRequest.builder()
                 .email(authRequest.email())
                 .status(UserStatus.INCOMPLETE)
+                .role(UserRole.USER)
                 .providerType(ProviderType.LOCAL)
                 .password(encodedPassword)
                 .emailVerified(false)
@@ -96,6 +99,12 @@ public class AuthService {
 
     public AuthUser getAuthenticatedUserProfile() {
         return userAuthenticationService.getAuthenticatedUser();
+    }
+
+    private void throwIfExits(String email) {
+        if (userQueryPort.existsByEmail(email)) {
+            throw new UserAlreadyExistsException("User already exists.");
+        }
     }
 
     private void matchPasswordsOrThrow(String rawPassword, String encodedPassword) {

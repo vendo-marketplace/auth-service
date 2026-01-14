@@ -1,5 +1,6 @@
-package com.vendo.auth_service.adapter.out.security;
+package com.vendo.auth_service.adapter.common;
 
+import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.common.dto.User;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -10,12 +11,12 @@ import java.util.Collections;
 
 public class SecurityContextService {
 
-    public static SecurityContext initializeSecurityContext(User user) {
+    public static SecurityContext initializeSecurityContext(AuthUser authUser) {
         SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
         securityContext.setAuthentication(new UsernamePasswordAuthenticationToken(
-                user,
+                authUser,
                 null,
-                Collections.singletonList(user.role())
+                Collections.singletonList(authUser.role())
         ));
 
         return securityContext;
