@@ -35,7 +35,7 @@ public class ConsumerConfig {
 
         JacksonJsonDeserializer<Object> deserializer = new JacksonJsonDeserializer<>();
         deserializer.addTrustedPackages(TRUSTED_PACKAGES);
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+        return new DefaultKafkaConsumerFactory<>(props, new JacksonJsonDeserializer<>(), deserializer);
     }
 
     @Bean

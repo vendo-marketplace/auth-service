@@ -1,98 +1,68 @@
-//package com.vendo.auth_service.adapter.in;
-//
-//import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.vendo.common.exception.ExceptionResponse;
-//import org.assertj.core.data.Percentage;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.data.redis.core.RedisTemplate;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.MediaType;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.test.context.ActiveProfiles;
-//import org.springframework.test.context.event.annotation.AfterTestClass;
-//import org.springframework.test.web.servlet.MockMvc;
-//
-//import java.util.Optional;
-//import java.util.concurrent.TimeUnit;
-//
-//import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-//import static org.awaitility.Awaitility.await;
-//import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-//import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-//
-//@SpringBootTest
-//@AutoConfigureMockMvc
-//@ActiveProfiles("test")
-//public class PasswordControllerIntegrationTest {
-//
-//    @Autowired
-//    private RedisTemplate<String, String> redisTemplate;
-//
-//    @Autowired
-//    private TestConsumer testConsumer;
-//
-//    @Autowired
-//    private RedisService redisService;
-//
-//    @Autowired
-//    private ObjectMapper objectMapper;
-//
-//    @Autowired
-//    private UserRepository userRepository;
-//
-//    @Autowired
-//    private MockMvc mockMvc;
-//
-//    @Autowired
-//    private PasswordEncoder passwordEncoder;
-//
-//    @Autowired
-//    private PasswordRecoveryOtpNamespace passwordRecoveryOtpNamespace;
-//
-//    @BeforeEach
-//    void setUp() {
-//        redisTemplate.getConnectionFactory()
-//                .getConnection()
-//                .serverCommands()
-//                .flushAll();
-//        userRepository.deleteAll();
-//    }
-//
-//    @AfterTestClass
-//    void tearDown() {
-//        redisTemplate.getConnectionFactory()
-//                .getConnection()
-//                .serverCommands()
-//                .flushAll();
-//        userRepository.deleteAll();
-//    }
-//
-//    @Test
-//    void forgotPassword_shouldSendForgotPasswordEventSuccessfully() throws Exception {
-//        User user = UserDataBuilder.buildUserAllFields().build();
-//        userRepository.save(user);
-//
-//        mockMvc.perform(post("/password/forgot").param("email", user.getEmail())
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isOk());
-//
-//        Optional<String> otp = redisService.getValue(passwordRecoveryOtpNamespace.getEmail().buildPrefix(user.getEmail()));
-//        assertThat(otp).isPresent();
-//        assertThat(otp.get().length()).isEqualTo(6);
-//
-//        Optional<String> email = redisService.getValue(passwordRecoveryOtpNamespace.getOtp().buildPrefix(otp.get()));
-//        assertThat(email).isPresent();
-//        assertThat(email.get()).isEqualTo(user.getEmail());
-//
-//        await().atMost(10, TimeUnit.SECONDS)
-//                .untilAsserted(() -> assertThat(testConsumer.removeIfReceived(user.getEmail())).isTrue());
-//    }
-//
+package com.vendo.auth_service.adapter.in.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vendo.auth_service.adapter.out.user.UserClient;
+import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserQueryPort;
+import com.vendo.auth_service.system.redis.common.namespace.otp.PasswordRecoveryOtpNamespace;
+import com.vendo.common.exception.ExceptionResponse;
+import org.assertj.core.data.Percentage;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+//@EmbeddedKafka
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+public class PasswordControllerIntegrationTest {
+
+    @Autowired
+    private TestConsumer testConsumer;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private UserQueryPort userQueryPort;
+
+    @MockitoBean
+    private UserCommandPort userCommandPort;
+
+    @Test
+    void forgotPassword_shouldSendForgotPasswordEventSuccessfully() throws Exception {
+        User user = UserDataBuilder.buildUserAllFields().build();
+
+        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+        mockMvc.perform(post("/password/forgot").param("email", user.email())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        await().atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(testConsumer.removeIfReceived(user.email())).isTrue());
+    }
+
 //    @Test
 //    void forgotPassword_shouldReturnConflict_whenForgotPasswordEventHasAlreadySent() throws Exception {
 //        User user = UserDataBuilder.buildUserAllFields().build();
@@ -433,4 +403,4 @@
 //        Optional<String> otp = redisService.getValue(passwordRecoveryOtpNamespace.getEmail().buildPrefix(user.getEmail()));
 //        assertThat(otp).isNotPresent();
 //    }
-//}
+}
