@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+// TODO move business logic to domain
 public class AuthService {
 
     private final UserQueryPort userQueryPort;
@@ -49,9 +50,10 @@ public class AuthService {
     public AuthResponse signIn(AuthRequest authRequest) {
         User user = userQueryPort.getByEmail(authRequest.email());
         UserActivityPolicy.validateActivity(user);
-        matchPasswordsOrThrow(authRequest.password(), user.password());
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
 
+        matchPasswordsOrThrow(authRequest.password(), user.password());
+
+        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())

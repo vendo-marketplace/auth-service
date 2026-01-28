@@ -15,7 +15,7 @@ public class SaveUserRequestDataBuilder {
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVE)
                 .providerType(ProviderType.LOCAL)
-                .password(String.valueOf(UUID.randomUUID()))
+                .password("Qwerty1234@")
                 .emailVerified(true);
     }
 

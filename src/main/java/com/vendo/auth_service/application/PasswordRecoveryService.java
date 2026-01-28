@@ -44,6 +44,7 @@ public class PasswordRecoveryService {
         String email = emailOtpService.verifyOtpAndConsume(otp, null, passwordRecoveryOtpNamespace);
 
         User user = userQueryPort.getByEmail(email);
+
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .password(passwordEncoder.encode(resetPasswordRequest.password()))
                 .build());

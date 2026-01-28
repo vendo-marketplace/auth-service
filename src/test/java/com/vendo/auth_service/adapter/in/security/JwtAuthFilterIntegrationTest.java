@@ -2,7 +2,7 @@ package com.vendo.auth_service.adapter.in.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.common.SecurityContextService;
-import com.vendo.auth_service.adapter.common.TestJwtService;
+import com.vendo.auth_service.adapter.common.JwtGenerator;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
 import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
@@ -44,7 +44,7 @@ public class JwtAuthFilterIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private TestJwtService testJwtService;
+    private JwtGenerator jwtGenerator;
 
     @MockitoBean
     private UserCommandPort userCommandPort;
@@ -103,7 +103,7 @@ public class JwtAuthFilterIntegrationTest {
                 .emailVerified(true)
                 .build();
 
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
@@ -113,7 +113,7 @@ public class JwtAuthFilterIntegrationTest {
     @Test
     void doFilterInternal_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
         User user = UserDataBuilder.buildUserAllFields().build();
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, accessToken))
                 .andExpect(status().isUnauthorized())
@@ -132,7 +132,7 @@ public class JwtAuthFilterIntegrationTest {
     @Test
     void doFilterInternal_shouldReturnNotFound_whenUserNotFound() throws Exception {
         User user = UserDataBuilder.buildUserAllFields().build();
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
 
         Mockito.when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -156,7 +156,7 @@ public class JwtAuthFilterIntegrationTest {
                 .email(saveUserRequest.email())
                 .build();
 
-        String expiredToken = testJwtService.generateTokenWithExpiration(user, 0);
+        String expiredToken = jwtGenerator.generateTokenWithExpiration(user, 0);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + expiredToken))
@@ -183,7 +183,7 @@ public class JwtAuthFilterIntegrationTest {
                 .emailVerified(true)
                 .build();
 
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
@@ -210,7 +210,7 @@ public class JwtAuthFilterIntegrationTest {
                 .emailVerified(true)
                 .build();
 
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
@@ -236,7 +236,7 @@ public class JwtAuthFilterIntegrationTest {
                 .status(UserStatus.ACTIVE)
                 .build();
 
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
@@ -258,7 +258,7 @@ public class JwtAuthFilterIntegrationTest {
                 .build();
         User user = UserDataBuilder.buildUserAllFields().email(saveUserRequest.email()).build();
 
-        String accessToken = testJwtService.generateAccessToken(user);
+        String accessToken = jwtGenerator.generateAccessToken(user);
         Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))

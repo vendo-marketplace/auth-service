@@ -5,8 +5,6 @@ client:
   url: client_test_url
 
 spring:
-  kafka:
-    bootstrap-servers: localhost:9092
   data:
     redis:
       host: localhost
@@ -56,6 +54,5 @@ kafka:
     email-otp-notification-event:
       topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
       groupId: "email_otp_notification_test_group"
-      container-factory: "consumerContainerFactory"
       properties:
         auto-offset-reset: "earliest"

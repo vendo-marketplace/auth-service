@@ -16,7 +16,7 @@ import static com.vendo.security.common.type.TokenClaim.*;
 
 @Service
 @RequiredArgsConstructor
-public class TestJwtService {
+public class JwtGenerator {
 
     private final JwtHelper jwtHelper;
 

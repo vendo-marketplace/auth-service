@@ -7,6 +7,7 @@ import com.vendo.domain.user.common.type.UserStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class UserDataBuilder {
 
@@ -19,8 +20,8 @@ public class UserDataBuilder {
                 .fullName("Test Name")
                 .birthDate(LocalDate.of(2000, 1, 1))
                 .providerType(ProviderType.LOCAL)
-                .status(UserStatus.INCOMPLETE)
-                .emailVerified(false)
+                .status(UserStatus.ACTIVE)
+                .emailVerified(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
     }

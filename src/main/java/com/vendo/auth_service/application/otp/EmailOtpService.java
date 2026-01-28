@@ -18,6 +18,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+// TODO move business logic to domain layer and write mocking tests
 public class EmailOtpService {
 
     private final OtpGenerator otpGenerator;
