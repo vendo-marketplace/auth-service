@@ -36,7 +36,7 @@ public class EmailVerificationService {
     }
 
     public void resendOtp(String email) {
-        userCommandPort.ensureExists(email);
+        userQueryPort.getByEmail(email);
 
         EmailOtpEvent event = EmailOtpEvent.builder()
                 .email(email)
