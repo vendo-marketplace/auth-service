@@ -5,8 +5,6 @@ import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserRole;
 import com.vendo.domain.user.common.type.UserStatus;
 
-import java.util.UUID;
-
 public class SaveUserRequestDataBuilder {
 
     public static SaveUserRequest.SaveUserRequestBuilder buildWithAllFields() {
@@ -18,5 +16,4 @@ public class SaveUserRequestDataBuilder {
                 .password("Qwerty1234@")
                 .emailVerified(true);
     }
-
 }

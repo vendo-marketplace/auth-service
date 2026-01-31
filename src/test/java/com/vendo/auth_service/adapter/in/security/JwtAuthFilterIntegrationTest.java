@@ -2,8 +2,8 @@ package com.vendo.auth_service.adapter.in.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.common.SecurityContextService;
-import com.vendo.auth_service.adapter.common.JwtGenerator;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
 import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
 import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
 import com.vendo.auth_service.domain.user.dto.SaveUserRequestDataBuilder;
@@ -14,14 +14,15 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.domain.user.common.type.UserStatus;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
@@ -30,11 +31,13 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.securityContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@EmbeddedKafka
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -43,8 +46,8 @@ public class JwtAuthFilterIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private JwtGenerator jwtGenerator;
+    @MockitoBean
+    private JwtHelper jwtHelper;
 
     @MockitoBean
     private UserCommandPort userCommandPort;
@@ -55,15 +58,9 @@ public class JwtAuthFilterIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        userCommandPort.deleteAll();
-    }
-
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
-        userCommandPort.deleteAll();
     }
 
     @Test
@@ -102,18 +99,24 @@ public class JwtAuthFilterIntegrationTest {
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)
                 .build();
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        String accessToken = jwtGenerator.generateAccessToken(user);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isOk());
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
     void doFilterInternal_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields().build();
-        String accessToken = jwtGenerator.generateAccessToken(user);
+        String accessToken = "access_token";
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, accessToken))
                 .andExpect(status().isUnauthorized())
@@ -132,9 +135,12 @@ public class JwtAuthFilterIntegrationTest {
     @Test
     void doFilterInternal_shouldReturnNotFound_whenUserNotFound() throws Exception {
         User user = UserDataBuilder.buildUserAllFields().build();
-        String accessToken = jwtGenerator.generateAccessToken(user);
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isNotFound())
@@ -147,17 +153,17 @@ public class JwtAuthFilterIntegrationTest {
         assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
     void doFilterInternal_shouldReturnUnauthorized_whenTokenIsNotValid() throws Exception {
-        SaveUserRequest saveUserRequest = SaveUserRequestDataBuilder.buildWithAllFields().build();
-        User user = UserDataBuilder.buildUserAllFields()
-                .email(saveUserRequest.email())
-                .build();
+        String expiredToken = "access_token";
 
-        String expiredToken = jwtGenerator.generateTokenWithExpiration(user, 0);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(expiredToken)).thenThrow(ExpiredJwtException.class);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + expiredToken))
                 .andExpect(status().isUnauthorized())
@@ -170,6 +176,9 @@ public class JwtAuthFilterIntegrationTest {
         assertThat(exceptionResponse.getMessage()).isEqualTo("Token has expired.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+
+        verify(jwtHelper).extractAllClaims(expiredToken);
+        verify(userQueryPort, never()).getByEmail(anyString());
     }
 
     @Test
@@ -182,9 +191,12 @@ public class JwtAuthFilterIntegrationTest {
                 .status(UserStatus.BLOCKED)
                 .emailVerified(true)
                 .build();
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        String accessToken = jwtGenerator.generateAccessToken(user);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -197,6 +209,10 @@ public class JwtAuthFilterIntegrationTest {
         assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
@@ -209,9 +225,12 @@ public class JwtAuthFilterIntegrationTest {
                 .status(UserStatus.INCOMPLETE)
                 .emailVerified(true)
                 .build();
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        String accessToken = jwtGenerator.generateAccessToken(user);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -225,6 +244,10 @@ public class JwtAuthFilterIntegrationTest {
         assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
@@ -233,11 +256,14 @@ public class JwtAuthFilterIntegrationTest {
                 .build();
         User user = UserDataBuilder.buildUserAllFields()
                 .email(saveUserRequest.email())
-                .status(UserStatus.ACTIVE)
+                .emailVerified(false)
                 .build();
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        String accessToken = jwtGenerator.generateAccessToken(user);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -250,16 +276,27 @@ public class JwtAuthFilterIntegrationTest {
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
     void doFilterInternal_shouldReturnForbiddenForEmailNotVerifiedFirst_whenUserEmailIsNotVerifiedAndStatusIsIncomplete() throws Exception {
         SaveUserRequest saveUserRequest = SaveUserRequestDataBuilder.buildWithAllFields()
                 .build();
-        User user = UserDataBuilder.buildUserAllFields().email(saveUserRequest.email()).build();
+        User user = UserDataBuilder.buildUserAllFields()
+                .email(saveUserRequest.email())
+                .status(UserStatus.INCOMPLETE)
+                .emailVerified(false)
+                .build();
+        String accessToken = "access_token";
+        Claims mockedClaims = mock(Claims.class);
 
-        String accessToken = jwtGenerator.generateAccessToken(user);
-        Mockito.when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
+        when(mockedClaims.getSubject()).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
                 .andExpect(status().isForbidden())
@@ -272,5 +309,9 @@ public class JwtAuthFilterIntegrationTest {
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+
+        verify(jwtHelper).extractAllClaims(accessToken);
+        verify(mockedClaims).getSubject();
+        verify(userQueryPort).getByEmail(user.email());
     }
 }
