@@ -23,7 +23,6 @@ public class UserCommandAdapter implements UserCommandPort {
         try {
             return getByEmail(email);
         } catch (FeignException.NotFound e) {
-
             SaveUserRequest saveUserRequest = SaveUserRequest.builder()
                     .email(email)
                     .role(UserRole.USER)
@@ -47,11 +46,6 @@ public class UserCommandAdapter implements UserCommandPort {
 
     @Override
     public void update(String id, UpdateUserRequest updateUserRequest) {
-    }
-
-    @Override
-    public void deleteAll() {
-        userClient.deleteAll();
     }
 
     private User getByEmail(String email) {

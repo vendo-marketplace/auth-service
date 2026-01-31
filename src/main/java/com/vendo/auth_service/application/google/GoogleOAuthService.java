@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-// TODO move business logic to domain
 public class GoogleOAuthService {
 
     private final TokenGenerationService tokenGenerationService;
@@ -24,9 +23,9 @@ public class GoogleOAuthService {
 
     private final UserCommandPort userCommandPort;
 
+    // TODO write interface
     public AuthResponse googleAuth(GoogleAuthRequest googleAuthRequest) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(googleAuthRequest.idToken());
-
         User user = userCommandPort.ensureExists(payload.getEmail());
 
         if (user.getStatus() == UserStatus.INCOMPLETE) {
@@ -36,7 +35,7 @@ public class GoogleOAuthService {
             );
         }
 
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
+        TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())

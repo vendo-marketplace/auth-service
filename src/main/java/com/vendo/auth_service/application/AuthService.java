@@ -7,15 +7,12 @@ import com.vendo.auth_service.adapter.in.web.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.UserService;
 import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
-import com.vendo.auth_service.port.security.UserAuthenticationService;
+import com.vendo.auth_service.port.security.*;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
-import com.vendo.auth_service.port.security.JwtClaimsParser;
-import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserRole;
@@ -23,12 +20,10 @@ import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-// TODO move business logic to domain
 public class AuthService {
 
     private final UserQueryPort userQueryPort;
@@ -43,17 +38,16 @@ public class AuthService {
 
     private final BearerTokenExtractor bearerTokenExtractor;
 
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordHashingPort passwordHashingPort;
 
     private final JwtClaimsParser jwtClaimsParser;
 
     public AuthResponse signIn(AuthRequest authRequest) {
         User user = userQueryPort.getByEmail(authRequest.email());
         UserActivityPolicy.validateActivity(user);
-
         matchPasswordsOrThrow(authRequest.password(), user.password());
+        TokenPayload tokenPayload = tokenGenerationService.generate(user);
 
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())
@@ -62,22 +56,20 @@ public class AuthService {
 
     public void signUp(AuthRequest authRequest) {
         throwIfExits(authRequest.email());
-
-        String encodedPassword = passwordEncoder.encode(authRequest.password());
+        String hashedPassword = passwordHashingPort.hash(authRequest.password());
 
         userCommandPort.save(SaveUserRequest.builder()
                 .email(authRequest.email())
                 .status(UserStatus.INCOMPLETE)
                 .role(UserRole.USER)
                 .providerType(ProviderType.LOCAL)
-                .password(encodedPassword)
+                .password(hashedPassword)
                 .emailVerified(false)
                 .build());
     }
 
     public void completeAuth(String email, CompleteAuthRequest completeAuthRequest) {
         User user = userQueryPort.getByEmail(email);
-
         userService.validateBeforeActivation(user);
 
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
@@ -87,11 +79,10 @@ public class AuthService {
     }
 
     public AuthResponse refresh(RefreshRequest refreshRequest) {
-        String token = bearerTokenExtractor.parseBearerToken(refreshRequest.refreshToken());
-        String email = jwtClaimsParser.parseEmailFromToken(token);
-
+        String token = bearerTokenExtractor.parse(refreshRequest.refreshToken());
+        String email = jwtClaimsParser.extractEmail(token);
         User user = userQueryPort.getByEmail(email);
-        TokenPayload tokenPayload = tokenGenerationService.generateTokensPair(user);
+        TokenPayload tokenPayload = tokenGenerationService.generate(user);
 
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
@@ -100,7 +91,7 @@ public class AuthService {
     }
 
     public AuthUser getAuthenticatedUserProfile() {
-        return userAuthenticationService.getAuthenticatedUser();
+        return userAuthenticationService.getAuthUser();
     }
 
     private void throwIfExits(String email) {
@@ -110,7 +101,7 @@ public class AuthService {
     }
 
     private void matchPasswordsOrThrow(String rawPassword, String encodedPassword) {
-        boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
+        boolean matches = passwordHashingPort.matches(rawPassword, encodedPassword);
         if (!matches) {
             throw new BadCredentialsException("Wrong credentials");
         }

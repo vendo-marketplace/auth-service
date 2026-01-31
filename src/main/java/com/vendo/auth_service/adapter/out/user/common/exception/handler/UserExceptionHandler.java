@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.out.user.exception.handler;
+package com.vendo.auth_service.adapter.out.user.common.exception.handler;
 
 import com.vendo.auth_service.domain.user.common.exception.UserAlreadyActivatedException;
 import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;

@@ -29,21 +29,21 @@ public class JwtService implements TokenGenerationService, BearerTokenExtractor,
     private final JwtProperties jwtProperties;
 
     @Override
-    public String parseBearerToken(String jwtToken) {
-        if (!jwtToken.startsWith(BEARER_PREFIX)) {
+    public String parse(String token) {
+        if (!token.startsWith(BEARER_PREFIX)) {
             throw new InvalidTokenException("Invalid token.");
         }
 
-        return jwtToken.substring(BEARER_PREFIX.length());
+        return token.substring(BEARER_PREFIX.length());
     }
 
     @Override
-    public String parseEmailFromToken(String jwtToken) {
-        return jwtHelper.extractAllClaims(jwtToken).getSubject();
+    public String extractEmail(String token) {
+        return jwtHelper.extractAllClaims(token).getSubject();
     }
 
     @Override
-    public TokenPayload generateTokensPair(User user) {
+    public TokenPayload generate(User user) {
         if (user == null) {
             throw new IllegalArgumentException("User info is required.");
         }

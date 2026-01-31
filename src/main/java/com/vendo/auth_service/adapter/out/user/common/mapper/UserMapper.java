@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.out.user.mapper;
+package com.vendo.auth_service.adapter.out.user.common.mapper;
 
 import com.vendo.auth_service.adapter.common.config.MapStructConfig;
 import com.vendo.auth_service.adapter.in.security.dto.AuthUser;

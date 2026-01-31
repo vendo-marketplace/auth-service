@@ -31,5 +31,4 @@ public class GoogleTokenVerifier {
             throw new AccessDeniedException("Invalid Id token.");
         }
     }
-
 }

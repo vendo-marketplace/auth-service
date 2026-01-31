@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class SecurityContextHelper implements UserAuthenticationService {
 
     @Override
-    public AuthUser getAuthenticatedUser() {
+    public AuthUser getAuthUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthUser authUser)) {

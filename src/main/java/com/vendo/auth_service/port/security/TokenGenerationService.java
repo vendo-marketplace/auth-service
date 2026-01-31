@@ -5,6 +5,6 @@ import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
 
 public interface TokenGenerationService {
 
-    TokenPayload generateTokensPair(User user);
+    TokenPayload generate(User user);
 
 }

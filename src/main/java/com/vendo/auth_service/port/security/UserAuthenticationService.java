@@ -4,6 +4,6 @@ import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
 
 public interface UserAuthenticationService {
 
-    AuthUser getAuthenticatedUser();
+    AuthUser getAuthUser();
 
 }
