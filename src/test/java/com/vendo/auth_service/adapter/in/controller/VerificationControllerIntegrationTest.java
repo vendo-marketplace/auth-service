@@ -11,8 +11,8 @@ import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.system.redis.common.dto.ValidateRequest;
-import com.vendo.auth_service.system.redis.common.namespace.otp.EmailVerificationOtpNamespace;
+import com.vendo.auth_service.adapter.out.db.redis.common.dto.ValidateRequest;
+import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.EmailVerificationOtpNamespace;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;

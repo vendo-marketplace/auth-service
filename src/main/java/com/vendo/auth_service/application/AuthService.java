@@ -1,10 +1,10 @@
 package com.vendo.auth_service.application;
 
 import com.vendo.auth_service.adapter.in.web.dto.AuthRequest;
-import com.vendo.auth_service.adapter.in.web.dto.AuthResponse;
-import com.vendo.auth_service.adapter.in.web.dto.CompleteAuthRequest;
-import com.vendo.auth_service.adapter.in.web.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.domain.security.AuthResponse;
+import com.vendo.auth_service.domain.security.CompleteAuthRequest;
+import com.vendo.auth_service.domain.security.RefreshRequest;
+import com.vendo.auth_service.domain.security.AuthUser;
 import com.vendo.auth_service.domain.user.UserService;
 import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
 import com.vendo.auth_service.port.security.*;
@@ -12,7 +12,7 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
+import com.vendo.auth_service.domain.security.TokenPayload;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserRole;

@@ -1,10 +1,10 @@
 package com.vendo.auth_service.adapter.in.web.controller;
 
-import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.domain.security.AuthUser;
 import com.vendo.auth_service.adapter.in.web.dto.AuthRequest;
-import com.vendo.auth_service.adapter.in.web.dto.AuthResponse;
-import com.vendo.auth_service.adapter.in.web.dto.CompleteAuthRequest;
-import com.vendo.auth_service.adapter.in.web.dto.RefreshRequest;
+import com.vendo.auth_service.domain.security.AuthResponse;
+import com.vendo.auth_service.domain.security.CompleteAuthRequest;
+import com.vendo.auth_service.domain.security.RefreshRequest;
 import com.vendo.auth_service.application.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -6,7 +6,7 @@ import com.vendo.auth_service.port.otp.OtpStorage;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
-import com.vendo.auth_service.system.redis.common.namespace.otp.OtpNamespace;
+import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.OtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
 import lombok.RequiredArgsConstructor;

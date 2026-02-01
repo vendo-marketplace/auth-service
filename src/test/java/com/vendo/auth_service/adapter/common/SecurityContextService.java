@@ -1,7 +1,6 @@
 package com.vendo.auth_service.adapter.common;
 
-import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
-import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.domain.security.AuthUser;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;

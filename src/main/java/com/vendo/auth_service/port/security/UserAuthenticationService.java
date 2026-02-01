@@ -1,6 +1,6 @@
 package com.vendo.auth_service.port.security;
 
-import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.domain.security.AuthUser;
 
 public interface UserAuthenticationService {
 

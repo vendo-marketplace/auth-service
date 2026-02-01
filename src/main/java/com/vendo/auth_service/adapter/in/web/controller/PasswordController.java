@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.in.web.controller;
 
 import com.vendo.auth_service.application.PasswordRecoveryService;
-import com.vendo.auth_service.system.redis.common.dto.ResetPasswordRequest;
+import com.vendo.auth_service.adapter.out.db.redis.common.dto.ResetPasswordRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

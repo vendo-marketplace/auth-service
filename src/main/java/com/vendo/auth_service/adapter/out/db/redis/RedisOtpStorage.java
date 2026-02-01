@@ -1,7 +1,6 @@
 package com.vendo.auth_service.adapter.out.db.redis;
 
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.auth_service.system.redis.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

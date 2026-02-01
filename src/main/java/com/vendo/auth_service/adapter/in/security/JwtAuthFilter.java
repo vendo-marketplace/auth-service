@@ -1,9 +1,9 @@
 package com.vendo.auth_service.adapter.in.security;
 
-import com.vendo.auth_service.adapter.in.security.dto.AuthUser;
+import com.vendo.auth_service.domain.security.AuthUser;
 import com.vendo.auth_service.adapter.out.user.common.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.adapter.out.security.helper.JwtHelper;
+import com.vendo.auth_service.adapter.out.security.service.JwtHelper;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import com.vendo.security.common.exception.InvalidTokenException;

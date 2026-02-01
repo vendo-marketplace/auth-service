@@ -1,13 +1,14 @@
 package com.vendo.auth_service.application.google;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.vendo.auth_service.adapter.in.web.dto.AuthResponse;
-import com.vendo.auth_service.adapter.in.web.dto.GoogleAuthRequest;
-import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
+import com.vendo.auth_service.domain.google.GoogleTokenPayload;
+import com.vendo.auth_service.domain.security.AuthResponse;
+import com.vendo.auth_service.domain.google.GoogleAuthRequest;
+import com.vendo.auth_service.domain.security.TokenPayload;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.port.google.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.domain.user.common.type.ProviderType;
@@ -40,7 +41,7 @@ public class GoogleOAuthServiceTest {
     private TokenGenerationService tokenGenerationService;
 
     @Mock
-    private GoogleTokenVerifier googleTokenVerifier;
+    private GoogleTokenVerifierPort googleTokenVerifierPort;
 
     @Test
     void googleAuth_shouldReturnTokenPayload() {
@@ -49,10 +50,10 @@ public class GoogleOAuthServiceTest {
         User user = UserDataBuilder.buildUserAllFields().build();
         String idToken = "test_id_token";
         String email = "test_email";
-        GoogleIdToken.Payload mockPayload = mock(GoogleIdToken.Payload.class);
+        GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
 
-        when(googleTokenVerifier.verify(idToken)).thenReturn(mockPayload);
-        when(mockPayload.getEmail()).thenReturn(email);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
+        when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
         when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
@@ -61,7 +62,7 @@ public class GoogleOAuthServiceTest {
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
 
-        verify(googleTokenVerifier).verify(idToken);
+        verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         verify(tokenGenerationService).generate(user);
@@ -74,10 +75,10 @@ public class GoogleOAuthServiceTest {
         User user = UserDataBuilder.buildUserAllFields().status(UserStatus.INCOMPLETE).build();
         String idToken = "test_id_token";
         String email = "test_email";
-        GoogleIdToken.Payload mockPayload = mock(GoogleIdToken.Payload.class);
+        GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
 
-        when(googleTokenVerifier.verify(idToken)).thenReturn(mockPayload);
-        when(mockPayload.getEmail()).thenReturn(email);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
+        when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
         when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
@@ -88,7 +89,7 @@ public class GoogleOAuthServiceTest {
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
 
         ArgumentCaptor<UpdateUserRequest> updateUserRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
-        verify(googleTokenVerifier).verify(idToken);
+        verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(userCommandPort).update(eq(user.id()), updateUserRequestArgumentCaptor.capture());
         verify(tokenGenerationService).generate(user);
@@ -105,10 +106,10 @@ public class GoogleOAuthServiceTest {
         User user = UserDataBuilder.buildUserAllFields().status(UserStatus.ACTIVE).build();
         String idToken = "test_id_token";
         String email = "test_email";
-        GoogleIdToken.Payload mockPayload = mock(GoogleIdToken.Payload.class);
+        GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
 
-        when(googleTokenVerifier.verify(idToken)).thenReturn(mockPayload);
-        when(mockPayload.getEmail()).thenReturn(email);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
+        when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
         when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
@@ -118,7 +119,7 @@ public class GoogleOAuthServiceTest {
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
 
-        verify(googleTokenVerifier).verify(idToken);
+        verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(tokenGenerationService).generate(user);
         verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
@@ -131,12 +132,12 @@ public class GoogleOAuthServiceTest {
         String idToken = "test_id_token";
         String email = "test_email";
 
-        when(googleTokenVerifier.verify(idToken)).thenThrow(AccessDeniedException.class);
+        when(googleTokenVerifierPort.verify(idToken)).thenThrow(AccessDeniedException.class);
 
         assertThatThrownBy(() -> googleOAuthService.googleAuth(googleAuthRequest))
                 .isInstanceOf(AccessDeniedException.class);
 
-        verify(googleTokenVerifier).verify(idToken);
+        verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort, never()).ensureExists(email);
         verify(tokenGenerationService, never()).generate(user);
     }

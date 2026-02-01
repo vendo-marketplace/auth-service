@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.adapter.out.security.common.dto.TokenPayload;
+import com.vendo.auth_service.domain.security.TokenPayload;
 
 public class TokenPayloadDataBuilder {
 
