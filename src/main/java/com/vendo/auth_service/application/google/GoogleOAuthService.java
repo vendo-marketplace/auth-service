@@ -24,7 +24,6 @@ public class GoogleOAuthService {
 
     private final UserCommandPort userCommandPort;
 
-    // TODO write interface
     public AuthResponse googleAuth(GoogleAuthRequest googleAuthRequest) {
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
         User user = userCommandPort.ensureExists(payload.email());

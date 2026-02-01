@@ -23,11 +23,8 @@ public interface UserClient {
     boolean existsByEmail(String email);
 
     @PutMapping
-    void update(@RequestParam String email, @RequestBody UpdateUserRequest updateUserRequest);
+    void update(@RequestParam String id, @RequestBody UpdateUserRequest updateUserRequest);
 
     @PostMapping
     User save(@Valid @RequestBody SaveUserRequest saveUserRequest);
-
-    @DeleteMapping
-    void deleteAll();
 }

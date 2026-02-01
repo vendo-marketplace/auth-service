@@ -46,6 +46,7 @@ public class UserCommandAdapter implements UserCommandPort {
 
     @Override
     public void update(String id, UpdateUserRequest updateUserRequest) {
+        userClient.update(id, updateUserRequest);
     }
 
     private User getByEmail(String email) {
