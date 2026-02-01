@@ -14,13 +14,10 @@ import org.springframework.web.bind.annotation.*;
 public interface UserClient {
 
     @GetMapping
-    User getById(@RequestParam String id);
-
-    @GetMapping
     User getByEmail(@RequestParam String email);
 
-    @GetMapping
-    boolean existsByEmail(String email);
+    @GetMapping("/exists")
+    boolean existsByEmail(@RequestParam String email);
 
     @PutMapping
     void update(@RequestParam String id, @RequestBody UpdateUserRequest updateUserRequest);
