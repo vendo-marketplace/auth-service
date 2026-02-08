@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.application.otp.EmailOtpService;
+import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;

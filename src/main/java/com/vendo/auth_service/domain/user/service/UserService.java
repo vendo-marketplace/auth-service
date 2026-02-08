@@ -1,4 +1,4 @@
-package com.vendo.auth_service.domain.user;
+package com.vendo.auth_service.domain.user.service;
 
 import com.vendo.auth_service.domain.user.common.exception.UserAlreadyActivatedException;
 import com.vendo.auth_service.domain.user.common.dto.User;

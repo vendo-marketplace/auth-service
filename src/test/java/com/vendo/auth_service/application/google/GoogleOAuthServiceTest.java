@@ -1,9 +1,9 @@
 package com.vendo.auth_service.application.google;
 
 import com.vendo.auth_service.domain.google.GoogleTokenPayload;
-import com.vendo.auth_service.domain.security.AuthResponse;
+import com.vendo.auth_service.domain.security.dto.AuthResponse;
 import com.vendo.auth_service.domain.google.GoogleAuthRequest;
-import com.vendo.auth_service.domain.security.TokenPayload;
+import com.vendo.auth_service.domain.security.dto.TokenPayload;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;

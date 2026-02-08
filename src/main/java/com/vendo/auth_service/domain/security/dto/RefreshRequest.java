@@ -1,4 +1,4 @@
-package com.vendo.auth_service.domain.security;
+package com.vendo.auth_service.domain.security.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;

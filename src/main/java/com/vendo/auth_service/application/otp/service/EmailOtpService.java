@@ -1,11 +1,9 @@
-package com.vendo.auth_service.application.otp;
+package com.vendo.auth_service.application.otp.service;
 
+import com.vendo.auth_service.domain.otp.OtpPolicyService;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
 import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.OtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
@@ -18,19 +16,17 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-// TODO move business logic to domain layer and write mocking tests
+// TODO write mocking tests
 public class EmailOtpService {
-
     private final OtpGenerator otpGenerator;
 
     private final OtpStorage otpStorage;
 
     private final OtpEmailNotificationPort otpEmailNotificationPort;
 
+    private final OtpPolicyService otpPolicyService;
     public void sendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
-        if (otpStorage.hasActiveKey(otpNamespace.getEmail().buildPrefix(event.getEmail()))) {
-            throw new OtpAlreadySentException("Otp has already sent.");
-        }
+        otpPolicyService.checkIfInactive(otpStorage.hasActiveKey(otpNamespace.getEmail().buildPrefix(event.getEmail())));
 
         String otp = otpGenerator.generate();
         event.setOtp(otp);
@@ -57,9 +53,7 @@ public class EmailOtpService {
         String actualEmail = otpStorage.getValue(namespace.getOtp().buildPrefix(otp))
                 .orElseThrow(() -> new OtpExpiredException("Otp session expired."));
 
-        if (expectedEmail != null && !actualEmail.equals(expectedEmail)) {
-            throw new InvalidOtpException("Invalid otp.");
-        }
+        otpPolicyService.checkIfEmailMatches(expectedEmail, actualEmail);
 
         otpStorage.deleteValues(
                 namespace.getOtp().buildPrefix(otp),
@@ -72,15 +66,10 @@ public class EmailOtpService {
 
     private void increaseResendAttemptsOrThrow(String email, OtpNamespace otpNamespace) {
         Optional<String> attempts = otpStorage.getValue(otpNamespace.getAttempts().buildPrefix(email));
-        int attempt = attempts.map(Integer::parseInt).orElse(0);
-
-        if (attempt >= 3) {
-            throw new TooManyOtpRequestsException("Reached maximum attempts.");
-        }
-
+        int attempt = otpPolicyService.checkAndIncreaseAttempts(attempts.map(Integer::parseInt).orElse(0));
         otpStorage.saveValue(
                 otpNamespace.getAttempts().buildPrefix(email),
-                String.valueOf(attempt + 1),
+                String.valueOf(attempt),
                 otpNamespace.getAttempts().getTtl());
     }
 

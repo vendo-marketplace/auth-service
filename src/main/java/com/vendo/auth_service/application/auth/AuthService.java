@@ -1,25 +1,24 @@
-package com.vendo.auth_service.application;
+package com.vendo.auth_service.application.auth;
 
-import com.vendo.auth_service.adapter.in.web.dto.AuthRequest;
-import com.vendo.auth_service.domain.security.AuthResponse;
-import com.vendo.auth_service.domain.security.CompleteAuthRequest;
-import com.vendo.auth_service.domain.security.RefreshRequest;
-import com.vendo.auth_service.domain.security.AuthUser;
-import com.vendo.auth_service.domain.user.UserService;
-import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
+import com.vendo.auth_service.domain.security.dto.AuthRequest;
+import com.vendo.auth_service.domain.security.dto.AuthResponse;
+import com.vendo.auth_service.domain.security.dto.CompleteAuthRequest;
+import com.vendo.auth_service.domain.security.dto.RefreshRequest;
+import com.vendo.auth_service.domain.security.dto.AuthUser;
+import com.vendo.auth_service.domain.security.service.VerifierService;
+import com.vendo.auth_service.domain.user.service.UserService;
 import com.vendo.auth_service.port.security.*;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.domain.security.TokenPayload;
+import com.vendo.auth_service.domain.security.dto.TokenPayload;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserRole;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityPolicy;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -42,10 +41,12 @@ public class AuthService {
 
     private final JwtClaimsParser jwtClaimsParser;
 
+    private final VerifierService verifierService;
+
     public AuthResponse signIn(AuthRequest authRequest) {
         User user = userQueryPort.getByEmail(authRequest.email());
         UserActivityPolicy.validateActivity(user);
-        matchPasswordsOrThrow(authRequest.password(), user.password());
+        verifierService.matchPasswordsOrThrow(passwordHashingPort.matches(authRequest.password(), user.password()));
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
 
         return AuthResponse.builder()
@@ -55,7 +56,7 @@ public class AuthService {
     }
 
     public void signUp(AuthRequest authRequest) {
-        throwIfExits(authRequest.email());
+        verifierService.throwIfExists(userQueryPort.existsByEmail(authRequest.email()));
         String hashedPassword = passwordHashingPort.hash(authRequest.password());
 
         userCommandPort.save(SaveUserRequest.builder()
@@ -94,16 +95,4 @@ public class AuthService {
         return userAuthenticationService.getAuthUser();
     }
 
-    private void throwIfExits(String email) {
-        if (userQueryPort.existsByEmail(email)) {
-            throw new UserAlreadyExistsException("User already exists.");
-        }
-    }
-
-    private void matchPasswordsOrThrow(String rawPassword, String encodedPassword) {
-        boolean matches = passwordHashingPort.matches(rawPassword, encodedPassword);
-        if (!matches) {
-            throw new BadCredentialsException("Wrong credentials");
-        }
-    }
 }

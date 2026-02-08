@@ -1,8 +1,8 @@
-package com.vendo.auth_service.application;
+package com.vendo.auth_service.application.email;
 
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.application.otp.EmailOtpService;
+import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.adapter.out.db.redis.common.dto.ValidateRequest;
@@ -26,23 +26,20 @@ public class EmailVerificationService {
     private final UserCommandPort userCommandPort;
 
     public void sendOtp(String email) {
-        userQueryPort.getByEmail(email);
-
-        EmailOtpEvent event = EmailOtpEvent.builder()
-                .email(email)
-                .otpEventType(EMAIL_VERIFICATION)
-                .build();
-        emailOtpService.sendOtp(event, emailVerificationOtpNamespace);
+        emailOtpService.sendOtp(createVerificationEvent(email), emailVerificationOtpNamespace);
     }
 
     public void resendOtp(String email) {
+        emailOtpService.resendOtp(createVerificationEvent(email), emailVerificationOtpNamespace);
+    }
+
+    private EmailOtpEvent createVerificationEvent(String email){
         userQueryPort.getByEmail(email);
 
-        EmailOtpEvent event = EmailOtpEvent.builder()
+        return EmailOtpEvent.builder()
                 .email(email)
                 .otpEventType(EMAIL_VERIFICATION)
                 .build();
-        emailOtpService.resendOtp(event, emailVerificationOtpNamespace);
     }
 
     public void validate(String otp, ValidateRequest validateRequest) {

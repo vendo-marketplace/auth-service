@@ -3,10 +3,10 @@ package com.vendo.auth_service.application.google;
 import com.vendo.auth_service.domain.google.GoogleTokenPayload;
 import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.domain.security.TokenPayload;
+import com.vendo.auth_service.domain.security.dto.TokenPayload;
 import com.vendo.auth_service.port.google.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.security.TokenGenerationService;
-import com.vendo.auth_service.domain.security.AuthResponse;
+import com.vendo.auth_service.domain.security.dto.AuthResponse;
 import com.vendo.auth_service.domain.google.GoogleAuthRequest;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.domain.user.common.type.ProviderType;
@@ -28,7 +28,7 @@ public class GoogleOAuthService {
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
         User user = userCommandPort.ensureExists(payload.email());
 
-        if (user.getStatus() == UserStatus.INCOMPLETE) {
+        if (!user.active()) {
             userCommandPort.update(user.id(), UpdateUserRequest.builder()
                     .status(UserStatus.ACTIVE)
                     .fullName(payload.fullName())

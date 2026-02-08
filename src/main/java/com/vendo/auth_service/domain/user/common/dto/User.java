@@ -33,4 +33,8 @@ public record User(
     public Boolean getEmailVerified() {
         return emailVerified;
     }
+
+    public Boolean active() {
+        return status == UserStatus.ACTIVE;
+    }
 }

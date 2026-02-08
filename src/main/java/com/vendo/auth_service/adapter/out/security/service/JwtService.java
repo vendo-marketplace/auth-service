@@ -2,7 +2,7 @@ package com.vendo.auth_service.adapter.out.security.service;
 
 import com.vendo.auth_service.domain.user.common.dto.User;
 import com.vendo.auth_service.adapter.out.security.common.config.JwtProperties;
-import com.vendo.auth_service.domain.security.TokenPayload;
+import com.vendo.auth_service.domain.security.dto.TokenPayload;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.JwtClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;

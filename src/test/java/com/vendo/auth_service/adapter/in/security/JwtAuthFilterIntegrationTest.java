@@ -2,7 +2,7 @@ package com.vendo.auth_service.adapter.in.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.common.SecurityContextService;
-import com.vendo.auth_service.domain.security.AuthUser;
+import com.vendo.auth_service.domain.security.dto.AuthUser;
 import com.vendo.auth_service.adapter.out.security.service.JwtHelper;
 import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
 import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;

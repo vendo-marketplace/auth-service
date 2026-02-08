@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.adapter.in.web.dto.AuthRequest;
+import com.vendo.auth_service.domain.security.dto.AuthRequest;
 
 public class AuthRequestDataBuilder {
 

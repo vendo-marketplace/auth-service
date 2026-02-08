@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.in.web.dto;
+package com.vendo.auth_service.domain.security.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
