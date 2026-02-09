@@ -1,12 +1,12 @@
 package com.vendo.auth_service.application.password;
 
-import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.adapter.out.db.redis.common.dto.ResetPasswordRequest;
-import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.PasswordRecoveryOtpNamespace;
+import com.vendo.auth_service.domain.otp.dto.ResetPasswordRequest;
+import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

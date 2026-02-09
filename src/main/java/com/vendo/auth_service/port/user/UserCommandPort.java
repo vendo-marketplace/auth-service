@@ -1,9 +1,8 @@
 package com.vendo.auth_service.port.user;
 
-import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.domain.user.common.type.ProviderType;
+import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
+import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.domain.user.model.User;
 
 public interface UserCommandPort {
 

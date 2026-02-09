@@ -1,13 +1,12 @@
 package com.vendo.auth_service.domain.user.dto;
 
-import com.vendo.auth_service.adapter.out.security.common.type.UserAuthority;
-import com.vendo.auth_service.domain.user.common.dto.User;
+import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.domain.user.type.UserAuthority;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
 
 public class UserDataBuilder {
 

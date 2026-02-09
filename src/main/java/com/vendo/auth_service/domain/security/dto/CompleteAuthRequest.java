@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.security.dto;
 
-import com.vendo.auth_service.adapter.in.web.annotation.Adult;
+import com.vendo.auth_service.domain.annotation.Adult;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Builder;

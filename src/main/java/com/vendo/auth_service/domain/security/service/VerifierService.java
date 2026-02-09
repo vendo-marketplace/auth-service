@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.security.service;
 
-import com.vendo.auth_service.domain.user.common.exception.UserAlreadyExistsException;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyExistsException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 

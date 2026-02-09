@@ -4,7 +4,7 @@ import com.vendo.auth_service.domain.otp.OtpPolicyService;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.OtpNamespace;
+import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +18,15 @@ import java.util.Optional;
 @RequiredArgsConstructor
 // TODO write mocking tests
 public class EmailOtpService {
-    private final OtpGenerator otpGenerator;
 
     private final OtpStorage otpStorage;
 
-    private final OtpEmailNotificationPort otpEmailNotificationPort;
+    private final OtpGenerator otpGenerator;
 
     private final OtpPolicyService otpPolicyService;
+
+    private final OtpEmailNotificationPort otpEmailNotificationPort;
+
     public void sendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
         otpPolicyService.checkIfInactive(otpStorage.hasActiveKey(otpNamespace.getEmail().buildPrefix(event.getEmail())));
 
