@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.in.security.jwt;
 
 import com.vendo.auth_service.adapter.in.security.AuthAntPathResolver;
-import com.vendo.auth_service.domain.security.dto.AuthUser;
+import com.vendo.auth_service.domain.auth.dto.AuthUser;
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -88,7 +88,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private AuthUser validateUserAccessibility(Claims claims) {
         User user = userQueryPort.getByEmail(claims.getSubject());
         UserActivityPolicy.validateActivity(user);
-        return userMapper.toAuthUserFromUser(user);
+        return userMapper.toAuthUser(user);
     }
 
     private void addAuthenticationToContext(AuthUser authUser) {

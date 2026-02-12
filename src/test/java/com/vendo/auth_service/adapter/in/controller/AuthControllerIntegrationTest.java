@@ -3,7 +3,7 @@ package com.vendo.auth_service.adapter.in.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.common.JwtGenerator;
 import com.vendo.auth_service.adapter.in.security.SecurityContextHelper;
-import com.vendo.auth_service.domain.security.dto.*;
+import com.vendo.auth_service.domain.auth.dto.*;
 import com.vendo.auth_service.adapter.in.security.jwt.JwtHelper;
 import com.vendo.auth_service.adapter.in.security.jwt.JwtService;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;

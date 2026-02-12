@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.auth.in;
 
-import com.vendo.auth_service.application.email.EmailVerificationService;
+import com.vendo.auth_service.application.auth.EmailVerificationService;
 import com.vendo.auth_service.domain.otp.dto.ValidateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

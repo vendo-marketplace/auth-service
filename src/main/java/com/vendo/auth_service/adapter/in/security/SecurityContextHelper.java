@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.in.security;
 
-import com.vendo.auth_service.domain.security.dto.AuthUser;
+import com.vendo.auth_service.domain.auth.dto.AuthUser;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;

@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.auth.in;
 
-import com.vendo.auth_service.application.password.PasswordRecoveryService;
+import com.vendo.auth_service.application.auth.PasswordRecoveryService;
 import com.vendo.auth_service.domain.otp.dto.ResetPasswordRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

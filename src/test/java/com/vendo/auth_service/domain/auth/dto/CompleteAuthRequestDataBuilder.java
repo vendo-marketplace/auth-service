@@ -1,7 +1,5 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.domain.security.dto.CompleteAuthRequest;
-
 import java.time.LocalDate;
 
 public class CompleteAuthRequestDataBuilder {

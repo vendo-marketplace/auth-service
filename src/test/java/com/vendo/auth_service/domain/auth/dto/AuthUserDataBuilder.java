@@ -1,6 +1,5 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.domain.security.dto.AuthUser;
 import com.vendo.auth_service.domain.user.type.UserAuthority;
 import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserStatus;

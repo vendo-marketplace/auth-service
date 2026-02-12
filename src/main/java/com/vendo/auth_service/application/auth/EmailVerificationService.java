@@ -1,4 +1,4 @@
-package com.vendo.auth_service.application.email;
+package com.vendo.auth_service.application.auth;
 
 import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
