@@ -18,10 +18,13 @@ google:
 
 security:
   jwt:
-    internal-key: internalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkey
-    secret-key: secretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkey
-    access-expiration-time: 60000
-    refresh-expiration-time: 120000
+    secret:
+      key: XX51bA7q4qd5lO90br73ApaLkvQgkxzBgUByCY83CVc
+      access-expiration: 60000
+      refresh-expiration: 120000
+    internal:
+      key: internalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkey
+      expiration: 60000
 
 eureka:
   client:

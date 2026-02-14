@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public enum UserAuthority implements GrantedAuthority {
 
+    INTERNAL(UserRole.INTERNAL),
     USER(UserRole.USER),
     ADMIN(UserRole.ADMIN);
 

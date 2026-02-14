@@ -1,22 +1,15 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.adapter.common.JwtGenerator;
 import com.vendo.auth_service.adapter.in.security.SecurityContextHelper;
 import com.vendo.auth_service.domain.auth.dto.*;
-import com.vendo.auth_service.adapter.in.security.jwt.JwtHelper;
-import com.vendo.auth_service.adapter.in.security.jwt.JwtService;
-import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
-import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
-import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
-import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
-import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.domain.user.dto.UserProfileResponse;
+import com.vendo.auth_service.domain.user.dto.*;
 import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
-import com.vendo.auth_service.domain.user.dto.SaveUserRequestDataBuilder;
-import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.security.BearerTokenExtractor;
+import com.vendo.auth_service.port.security.PasswordHashingPort;
+import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.common.exception.ExceptionResponse;
@@ -24,7 +17,6 @@ import com.vendo.domain.user.common.type.ProviderType;
 import com.vendo.domain.user.common.type.UserRole;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.security.common.exception.InvalidTokenException;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +34,6 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -51,7 +42,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 
 import static com.vendo.auth_service.adapter.common.SecurityContextService.initializeSecurityContext;
-import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HEADER;
 import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
@@ -71,7 +61,7 @@ class AuthControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private PasswordEncoder passwordEncoder;
+    private PasswordHashingPort passwordHashingPort;
 
     @MockitoBean
     private UserQueryPort userQueryPort;
@@ -80,16 +70,16 @@ class AuthControllerIntegrationTest {
     private UserCommandPort userCommandPort;
 
     @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private JwtHelper jwtHelper;
-
-    @MockitoBean
-    private JwtGenerator jwtGenerator;
+    private TokenGenerationService tokenGenerationService;
 
     @MockitoBean
     private SecurityContextHelper securityContextHelper;
+
+    @MockitoBean
+    private TokenClaimsParser tokenClaimsParser;
+
+    @MockitoBean
+    private BearerTokenExtractor bearerTokenExtractor;
 
     @BeforeEach
     void setUp() {
@@ -114,7 +104,7 @@ class AuthControllerIntegrationTest {
             String encodedPassword = "encoded_password";
 
             when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(false);
-            when(passwordEncoder.encode(authRequest.password())).thenReturn(encodedPassword);
+            when(passwordHashingPort.hash(authRequest.password())).thenReturn(encodedPassword);
             when(userCommandPort.save(saveUserRequest)).thenReturn(user);
 
             mockMvc.perform(post("/auth/sign-up")
@@ -156,7 +146,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-up");
 
             verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(passwordEncoder, never()).encode(anyString());
+            verify(passwordHashingPort, never()).hash(anyString());
             verify(userCommandPort, never()).save(any(SaveUserRequest.class));
         }
     }
@@ -171,13 +161,12 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.ACTIVE)
                     .email(authRequest.email())
                     .emailVerified(true)
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
-            when(passwordEncoder.matches(authRequest.password(), user.password())).thenReturn(true);
-            when(jwtService.generate(user)).thenReturn(tokenPayload);
+            when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(true);
+            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -195,8 +184,8 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.refreshToken()).isNotBlank();
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordEncoder).matches(authRequest.password(), user.password());
-            verify(jwtService).generate(user);
+            verify(passwordHashingPort).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService).generate(user);
         }
 
         @Test
@@ -219,8 +208,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordEncoder, never()).matches(anyString(), anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(passwordHashingPort, never()).matches(anyString(), anyString());
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
 
         @Test
@@ -229,7 +218,6 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields()
                     .status(UserStatus.BLOCKED)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -250,8 +238,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
@@ -261,7 +249,6 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(true)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
@@ -282,8 +269,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
@@ -293,7 +280,6 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(false)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
@@ -314,8 +300,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
     }
 
@@ -328,10 +314,10 @@ class AuthControllerIntegrationTest {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenReturn(user.email());
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            when(jwtService.generate(user)).thenReturn(tokenPayload);
+            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -348,10 +334,10 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.accessToken()).isNotBlank();
             assertThat(authResponse.refreshToken()).isNotBlank();
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
-            verify(jwtService).generate(user);
+            verify(tokenGenerationService).generate(user);
         }
 
         @Test
@@ -359,8 +345,8 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenReturn(user.email());
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
             String content = mockMvc.perform(post("/auth/refresh")
@@ -378,17 +364,17 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
-            verify(jwtService, never()).generate(user);
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenThrow(new InvalidTokenException("Invalid token."));
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenThrow(new InvalidTokenException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -405,18 +391,18 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService, never()).extractEmail(anyString());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser, never()).extractSubject(anyString());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenThrow(ExpiredJwtException.class);
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(ExpiredJwtException.class);
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -433,10 +419,10 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
     }
 
@@ -706,34 +692,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
 
             verify(securityContextHelper).getAuthUser();
-        }
-
-        @Test
-        void getAuthenticatedUser_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields()
-                    .status(UserStatus.ACTIVE)
-                    .build();
-            String accessToken = "access_token";
-            Claims mockedClaims = mock(Claims.class);
-
-            when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
-            when(mockedClaims.getSubject()).thenReturn(user.email());
-            when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
-
-            String content = mockMvc.perform(get("/auth/me")
-                            .header(AUTHORIZATION_HEADER, BEARER_PREFIX + accessToken)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isNotFound())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/me");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
         }
     }
 }

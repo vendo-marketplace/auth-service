@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.in.security.config;
 
-import com.vendo.auth_service.adapter.in.security.jwt.JwtAuthFilter;
+import com.vendo.auth_service.adapter.in.security.jwt.filter.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

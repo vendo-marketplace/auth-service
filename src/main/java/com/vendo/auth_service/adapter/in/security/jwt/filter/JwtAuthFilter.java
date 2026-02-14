@@ -1,8 +1,10 @@
-package com.vendo.auth_service.adapter.in.security.jwt;
+package com.vendo.auth_service.adapter.in.security.jwt.filter;
 
 import com.vendo.auth_service.adapter.in.security.AuthAntPathResolver;
-import com.vendo.auth_service.domain.auth.dto.AuthUser;
+import com.vendo.auth_service.adapter.in.security.jwt.JwtTokenService;
+import com.vendo.auth_service.adapter.in.security.jwt.props.JwtProperties;
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
+import com.vendo.auth_service.domain.auth.dto.AuthUser;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.domain.user.service.UserActivityPolicy;
@@ -34,9 +36,9 @@ import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtHelper jwtHelper;
-
     private final AuthAntPathResolver authAntPathResolver;
+
+    private final JwtProperties jwtProperties;
 
     private final UserQueryPort userQueryPort;
 
@@ -55,7 +57,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             String jwtToken = getTokenFromRequest(request);
-            Claims claims = jwtHelper.extractAllClaims(jwtToken);
+            Claims claims = JwtTokenService.extractAllClaims(jwtToken, jwtProperties.getKey());
 
             AuthUser authUser = validateUserAccessibility(claims);
             addAuthenticationToContext(authUser);

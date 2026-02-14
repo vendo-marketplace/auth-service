@@ -40,7 +40,7 @@ public class AuthService {
 
     private final PasswordHashingPort passwordHashingPort;
 
-    private final JwtClaimsParser jwtClaimsParser;
+    private final TokenClaimsParser tokenClaimsParser;
 
     public AuthResponse signIn(AuthRequest authRequest) {
         User user = userQueryPort.getByEmail(authRequest.email());
@@ -79,8 +79,8 @@ public class AuthService {
     }
 
     public AuthResponse refresh(RefreshRequest refreshRequest) {
-        String token = bearerTokenExtractor.parse(refreshRequest.refreshToken());
-        String email = jwtClaimsParser.extractEmail(token);
+        String token = bearerTokenExtractor.extract(refreshRequest.refreshToken());
+        String email = tokenClaimsParser.extractSubject(token);
         User user = userQueryPort.getByEmail(email);
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
 

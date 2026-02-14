@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.in.security.jwt;
+package com.vendo.auth_service.adapter.in.security.jwt.props;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 @Setter
 @Getter
 @Component
-@ConfigurationProperties(prefix = "security.jwt")
+@ConfigurationProperties(prefix = "security.jwt.secret")
 public class JwtProperties {
 
-    private String secretKey;
+    private String key;
 
-    private int accessExpirationTime;
+    private int accessExpiration;
 
-    private int refreshExpirationTime;
+    private int refreshExpiration;
 }
