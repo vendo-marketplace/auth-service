@@ -4,24 +4,23 @@ import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
 import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.domain.user.dto.UserExistsResponse;
-import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 @Component
-@FeignClient(name = "USER-SERVICE", path = "/internal/users")
+@FeignClient(name = "user-service", path = "/internal/users")
 public interface UserClient {
 
     @GetMapping
-    User getByEmail(@RequestParam String email);
+    User getByEmail(@RequestParam("email") String email);
 
     @GetMapping("/exists")
-    UserExistsResponse existsByEmail(@RequestParam String email);
+    UserExistsResponse existsByEmail(@RequestParam("email") String email);
 
     @PutMapping
-    void update(@RequestParam String id, @RequestBody UpdateUserRequest updateUserRequest);
+    void update(@RequestParam("id") String id, @RequestBody UpdateUserRequest body);
 
     @PostMapping
-    User save(@Valid @RequestBody SaveUserRequest saveUserRequest);
+    User save(@RequestBody SaveUserRequest body);
 }
