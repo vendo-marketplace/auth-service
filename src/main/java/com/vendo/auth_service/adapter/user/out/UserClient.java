@@ -10,8 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 @Component
-@FeignClient(name = "user-service")
-@RequestMapping("/internal/users")
+@FeignClient(name = "USER-SERVICE", path = "/internal/users")
 public interface UserClient {
 
     @GetMapping
