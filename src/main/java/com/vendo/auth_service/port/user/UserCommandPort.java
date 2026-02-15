@@ -1,14 +1,12 @@
 package com.vendo.auth_service.port.user;
 
-import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 
 public interface UserCommandPort {
 
-    User save(SaveUserRequest saveUserRequest);
+    User save(User user);
 
-    void update(String id, UpdateUserRequest updateUserRequest);
+    void update(String id, User user);
 
     User ensureExists(String email);
 

@@ -10,16 +10,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    public void throwIfExists(boolean b){
-        if(b){
-            throw new UserAlreadyExistsException("User already exists.");
-        }
-    }
-
     public void validateBeforeActivation(User user) {
         UserStatus status = user.getStatus();
         throwIfBlocked(status);
         throwIfActive(status);
+    }
+
+    public void throwIfExists(boolean b) {
+        if (b) {
+            throw new UserAlreadyExistsException("User already exists.");
+        }
     }
 
     private void throwIfBlocked(UserStatus userStatus) {

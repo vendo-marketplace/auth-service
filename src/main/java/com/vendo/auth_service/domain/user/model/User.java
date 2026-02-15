@@ -1,7 +1,7 @@
 package com.vendo.auth_service.domain.user.model;
 
-import com.vendo.auth_service.domain.user.type.UserAuthority;
 import com.vendo.domain.user.common.type.ProviderType;
+import com.vendo.domain.user.common.type.UserRole;
 import com.vendo.domain.user.common.type.UserStatus;
 import com.vendo.domain.user.service.UserActivityView;
 import lombok.Builder;
@@ -15,7 +15,7 @@ public record User(
         String email,
         Boolean emailVerified,
         UserStatus status,
-        UserAuthority role,
+        UserRole role,
         ProviderType providerType,
         String password,
         LocalDate birthDate,

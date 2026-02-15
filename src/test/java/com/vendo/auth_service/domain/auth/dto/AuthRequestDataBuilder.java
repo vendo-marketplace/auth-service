@@ -1,5 +1,7 @@
 package com.vendo.auth_service.domain.auth.dto;
 
+import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
+
 public class AuthRequestDataBuilder {
 
     public static AuthRequest.AuthRequestBuilder buildUserWithAllFields() {

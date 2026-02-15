@@ -1,14 +1,14 @@
 package com.vendo.auth_service.application.google;
 
-import com.vendo.auth_service.domain.google.GoogleTokenPayload;
-import com.vendo.auth_service.domain.auth.dto.AuthResponse;
-import com.vendo.auth_service.domain.google.GoogleAuthRequest;
-import com.vendo.auth_service.domain.auth.dto.TokenPayload;
+import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
+import com.vendo.auth_service.application.auth.GoogleOAuthService;
+import com.vendo.auth_service.application.auth.dto.AuthResponse;
+import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
+import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
-import com.vendo.auth_service.port.google.GoogleTokenVerifierPort;
+import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.domain.user.common.type.ProviderType;
@@ -64,7 +64,7 @@ public class GoogleOAuthServiceTest {
 
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
-        verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        verify(userCommandPort, never()).update(anyString(), any(User.class));
         verify(tokenGenerationService).generate(user);
     }
 
@@ -88,15 +88,15 @@ public class GoogleOAuthServiceTest {
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
 
-        ArgumentCaptor<UpdateUserRequest> updateUserRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+        ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
-        verify(userCommandPort).update(eq(user.id()), updateUserRequestArgumentCaptor.capture());
+        verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
         verify(tokenGenerationService).generate(user);
 
-        UpdateUserRequest updateUserRequest = updateUserRequestArgumentCaptor.getValue();
-        assertThat(updateUserRequest.status()).isEqualTo(UserStatus.ACTIVE);
-        assertThat(updateUserRequest.providerType()).isEqualTo(ProviderType.GOOGLE);
+        User updateUser = updateUserArgumentCaptor.getValue();
+        assertThat(updateUser.status()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(updateUser.providerType()).isEqualTo(ProviderType.GOOGLE);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class GoogleOAuthServiceTest {
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(tokenGenerationService).generate(user);
-        verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
+        verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
     }
 
     @Test

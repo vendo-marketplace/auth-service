@@ -4,13 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.application.auth.AuthService;
 import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.domain.otp.dto.ResetPasswordRequest;
+import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
 import com.vendo.common.exception.ExceptionResponse;
@@ -24,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,7 +34,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EmbeddedKafka
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -152,26 +149,27 @@ public class PasswordControllerIntegrationTest {
         void resetPassword_shouldResetPassword() throws Exception {
             String otp = "123456";
             String newPassword = "newTestPassword1234@";
-            User user = UserDataBuilder.buildUserAllFields().build();
-            UpdateUserRequest updateUserRequest = UpdateUserRequest.builder().password(newPassword).build();
+            User user = UserDataBuilder.buildUserAllFields()
+                    .password(newPassword)
+                    .build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder()
                     .password(newPassword).build();
 
             when(emailOtpService.verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doNothing().when(userCommandPort).update(user.id(), updateUserRequest);
+            doNothing().when(userCommandPort).update(user.id(), user);
 
             mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<UpdateUserRequest> userRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+            ArgumentCaptor<User> usertArgumentCaptor = ArgumentCaptor.forClass(User.class);
             verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort).update(eq(user.id()), userRequestArgumentCaptor.capture());
+            verify(userCommandPort).update(eq(user.id()), usertArgumentCaptor.capture());
 
-            UpdateUserRequest updateUserRequestCaptured = userRequestArgumentCaptor.getValue();
+            User updateUserRequestCaptured = usertArgumentCaptor.getValue();
             assertThat(updateUserRequestCaptured).isNotNull();
             assertThat(updateUserRequestCaptured.password()).isNotBlank();
             assertThat(updateUserRequestCaptured.birthDate()).isNull();
@@ -206,7 +204,7 @@ public class PasswordControllerIntegrationTest {
 
             verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(email);
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
 
         @Test
@@ -236,7 +234,7 @@ public class PasswordControllerIntegrationTest {
 
             verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
     }
 

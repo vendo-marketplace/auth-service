@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.auth.in;
 
-import com.vendo.auth_service.application.google.GoogleOAuthService;
-import com.vendo.auth_service.domain.auth.dto.AuthResponse;
-import com.vendo.auth_service.domain.google.GoogleAuthRequest;
+import com.vendo.auth_service.application.auth.GoogleOAuthService;
+import com.vendo.auth_service.application.auth.dto.AuthResponse;
+import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

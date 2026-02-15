@@ -1,7 +1,5 @@
 package com.vendo.auth_service.adapter.user.out;
 
-import com.vendo.auth_service.domain.user.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.auth_service.port.user.UserCommandPort;
@@ -23,30 +21,25 @@ public class UserCommandAdapter implements UserCommandPort {
         try {
             return getByEmail(email);
         } catch (FeignException.NotFound e) {
-            SaveUserRequest saveUserRequest = SaveUserRequest.builder()
+            User user = User.builder()
                     .email(email)
                     .role(UserRole.USER)
                     .status(UserStatus.ACTIVE)
                     .providerType(ProviderType.LOCAL)
                     .build();
 
-            return save(saveUserRequest);
+            return save(user);
         }
     }
 
     @Override
-    public User save(SaveUserRequest saveUserRequest) {
-        return userClient.save(SaveUserRequest.builder()
-                .email(saveUserRequest.email())
-                .role(saveUserRequest.role())
-                .status(saveUserRequest.status())
-                .providerType(saveUserRequest.providerType())
-                .build());
+    public User save(User user) {
+        return userClient.save(user);
     }
 
     @Override
-    public void update(String id, UpdateUserRequest updateUserRequest) {
-        userClient.update(id, updateUserRequest);
+    public void update(String id, User user) {
+        userClient.update(id, user);
     }
 
     private User getByEmail(String email) {

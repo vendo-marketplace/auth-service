@@ -1,9 +1,19 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.adapter.in.security.SecurityContextHelper;
-import com.vendo.auth_service.domain.auth.dto.*;
-import com.vendo.auth_service.domain.user.dto.*;
+import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
+import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
+import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
+import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
+import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
+import com.vendo.auth_service.application.auth.dto.AuthResponse;
+import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
+import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
+import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
+import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
+import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
@@ -28,7 +38,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,7 +57,6 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EmbeddedKafka
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -70,9 +78,6 @@ class AuthControllerIntegrationTest {
     private UserCommandPort userCommandPort;
 
     @MockitoBean
-    private TokenGenerationService tokenGenerationService;
-
-    @MockitoBean
     private SecurityContextHelper securityContextHelper;
 
     @MockitoBean
@@ -80,6 +85,9 @@ class AuthControllerIntegrationTest {
 
     @MockitoBean
     private BearerTokenExtractor bearerTokenExtractor;
+
+    @MockitoBean
+    private TokenGenerationService tokenGenerationService;
 
     @BeforeEach
     void setUp() {
@@ -97,7 +105,6 @@ class AuthControllerIntegrationTest {
         @Test
         void signUp_shouldSuccessfullyRegisterUser() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            SaveUserRequest saveUserRequest = SaveUserRequestDataBuilder.buildWithAllFields().build();
             User user = UserDataBuilder.buildUserAllFields()
                     .email(authRequest.email())
                     .build();
@@ -105,23 +112,23 @@ class AuthControllerIntegrationTest {
 
             when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(false);
             when(passwordHashingPort.hash(authRequest.password())).thenReturn(encodedPassword);
-            when(userCommandPort.save(saveUserRequest)).thenReturn(user);
+            when(userCommandPort.save(user)).thenReturn(user);
 
             mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
+            ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
             verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
+            verify(userCommandPort).save(userArgumentCaptor.capture());
 
-            SaveUserRequest userRequestArgumentCaptorValue = saveUserRequestArgumentCaptor.getValue();
-            assertThat(userRequestArgumentCaptorValue.email()).isEqualTo(authRequest.email());
-            assertThat(userRequestArgumentCaptorValue.password()).isEqualTo(encodedPassword);
-            assertThat(userRequestArgumentCaptorValue.role()).isEqualTo(UserRole.USER);
-            assertThat(userRequestArgumentCaptorValue.status()).isEqualTo(UserStatus.INCOMPLETE);
-            assertThat(userRequestArgumentCaptorValue.providerType()).isEqualTo(ProviderType.LOCAL);
+            User userArgumentCaptorValue = userArgumentCaptor.getValue();
+            assertThat(userArgumentCaptorValue.email()).isEqualTo(authRequest.email());
+            assertThat(userArgumentCaptorValue.password()).isEqualTo(encodedPassword);
+            assertThat(userArgumentCaptorValue.role()).isEqualTo(UserRole.USER);
+            assertThat(userArgumentCaptorValue.status()).isEqualTo(UserStatus.INCOMPLETE);
+            assertThat(userArgumentCaptorValue.providerType()).isEqualTo(ProviderType.LOCAL);
         }
 
         @Test
@@ -147,7 +154,7 @@ class AuthControllerIntegrationTest {
 
             verify(userQueryPort).existsByEmail(authRequest.email());
             verify(passwordHashingPort, never()).hash(anyString());
-            verify(userCommandPort, never()).save(any(SaveUserRequest.class));
+            verify(userCommandPort, never()).save(any(User.class));
         }
     }
 
@@ -436,10 +443,10 @@ class AuthControllerIntegrationTest {
                     .emailVerified(false)
                     .build();
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
-            ArgumentCaptor<UpdateUserRequest> updateUserRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+            ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doNothing().when(userCommandPort).update(eq(user.id()), updateUserRequestArgumentCaptor.capture());
+            doNothing().when(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
             mockMvc.perform(patch("/auth/complete-auth")
                             .param("email", user.email())
@@ -447,15 +454,14 @@ class AuthControllerIntegrationTest {
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
                     .andExpect(status().isOk());
 
-            UpdateUserRequest updateUserRequest = updateUserRequestArgumentCaptor.getValue();
+            User updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort).update(user.id(), updateUserRequest);
+            verify(userCommandPort).update(user.id(), updateUserArgumentCaptorValue);
 
-            UpdateUserRequest userRequestArgumentCaptorValue = updateUserRequestArgumentCaptor.getValue();
-            assertThat(userRequestArgumentCaptorValue).isNotNull();
-            assertThat(userRequestArgumentCaptorValue.status()).isEqualTo(updateUserRequest.status());
-            assertThat(userRequestArgumentCaptorValue.fullName()).isEqualTo(updateUserRequest.fullName());
-            assertThat(userRequestArgumentCaptorValue.birthDate()).isEqualTo(updateUserRequest.birthDate());
+            assertThat(updateUserArgumentCaptorValue).isNotNull();
+            assertThat(updateUserArgumentCaptorValue.status()).isEqualTo(UserStatus.ACTIVE);
+            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
+            assertThat(updateUserArgumentCaptorValue.birthDate()).isEqualTo(completeAuthRequest.birthDate());
         }
 
         @Test
@@ -566,7 +572,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
 
         @Test
@@ -595,7 +601,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
 
         @Test
@@ -625,7 +631,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already activated.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
     }
 
@@ -634,12 +640,12 @@ class AuthControllerIntegrationTest {
 
         @Test
         void getAuthenticatedUser_shouldReturnUserProfile() throws Exception {
-            AuthUser authUser = AuthUserDataBuilder.buildAuthUserWithAllFields()
+            AuthUserResponse authUserResponse = AuthUserDataBuilder.buildAuthUserWithAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(authUser);
+            SecurityContext securityContext = initializeSecurityContext(authUserResponse);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(securityContextHelper.getAuthUser()).thenReturn(authUserResponse);
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -654,12 +660,12 @@ class AuthControllerIntegrationTest {
 
             assertThat(content).doesNotContain("password");
             assertThat(responseDto).isNotNull();
-            assertThat(responseDto.id()).isEqualTo(authUser.id());
-            assertThat(responseDto.email()).isEqualTo(authUser.email());
-            assertThat(responseDto.fullName()).isEqualTo(authUser.fullName());
-            assertThat(responseDto.role()).isEqualTo(authUser.role());
-            assertThat(responseDto.status()).isEqualTo(authUser.status());
-            assertThat(responseDto.providerType()).isEqualTo(authUser.providerType());
+            assertThat(responseDto.id()).isEqualTo(authUserResponse.id());
+            assertThat(responseDto.email()).isEqualTo(authUserResponse.email());
+            assertThat(responseDto.fullName()).isEqualTo(authUserResponse.fullName());
+            assertThat(responseDto.role()).isEqualTo(authUserResponse.role());
+            assertThat(responseDto.status()).isEqualTo(authUserResponse.status());
+            assertThat(responseDto.providerType()).isEqualTo(authUserResponse.providerType());
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 

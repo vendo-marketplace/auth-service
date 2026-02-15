@@ -1,11 +1,10 @@
 package com.vendo.auth_service.application.auth;
 
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
+import com.vendo.auth_service.application.auth.command.ValidateCommand;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.domain.otp.dto.ValidateRequest;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
@@ -42,12 +41,12 @@ public class EmailVerificationService {
                 .build();
     }
 
-    public void validate(String otp, ValidateRequest validateRequest) {
-        User user = userQueryPort.getByEmail(validateRequest.email());
+    public void validate(String otp, ValidateCommand command) {
+        User user = userQueryPort.getByEmail(command.email());
 
-        emailOtpService.verifyOtpAndConsume(otp, validateRequest.email(), emailVerificationOtpNamespace);
+        emailOtpService.verifyOtpAndConsume(otp, command.email(), emailVerificationOtpNamespace);
 
-        userCommandPort.update(user.id(), UpdateUserRequest.builder()
+        userCommandPort.update(user.id(), User.builder()
                 .emailVerified(true)
                 .build());
     }

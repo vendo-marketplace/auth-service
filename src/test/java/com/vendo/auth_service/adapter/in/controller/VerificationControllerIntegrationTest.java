@@ -1,18 +1,17 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.application.otp.service.EmailOtpService;
+import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
+import com.vendo.auth_service.adapter.verification.in.dto.ValidateRequest;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
-import com.vendo.auth_service.domain.user.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
+import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
+import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.domain.otp.dto.ValidateRequest;
-import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.common.exception.ExceptionResponse;
 import com.vendo.integration.kafka.event.EmailOtpEvent;
 import com.vendo.integration.redis.common.exception.OtpExpiredException;
@@ -24,18 +23,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.mockito.Mockito.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EmbeddedKafka
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -249,14 +246,14 @@ public class VerificationControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<UpdateUserRequest> updateUserRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+            ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
             verify(userQueryPort).getByEmail(user.email());
             verify(emailOtpService).verifyOtpAndConsume(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort).update(eq(user.id()), updateUserRequestArgumentCaptor.capture());
+            verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
-            UpdateUserRequest updateUserRequest = updateUserRequestArgumentCaptor.getValue();
-            assertThat(updateUserRequest).isNotNull();
-            assertThat(updateUserRequest.emailVerified()).isTrue();
+            User updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
+            assertThat(updateUserArgumentCaptorValue).isNotNull();
+            assertThat(updateUserArgumentCaptorValue.emailVerified()).isTrue();
         }
 
         @Test
@@ -285,7 +282,7 @@ public class VerificationControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(user.email());
             verify(emailOtpService).verifyOtpAndConsume(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
         }
 
         @Test
@@ -298,7 +295,7 @@ public class VerificationControllerIntegrationTest {
                     .when(emailOtpService)
                     .verifyOtpAndConsume(anyString(), eq(validateRequest.email()), any(EmailVerificationOtpNamespace.class));
 
-            String responseContent = mockMvc.perform(post("/verification/validate").param("otp",anyString())
+            String responseContent = mockMvc.perform(post("/verification/validate").param("otp", anyString())
                             .content(objectMapper.writeValueAsString(validateRequest))
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isGone())
@@ -315,7 +312,7 @@ public class VerificationControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(user.email());
             verify(emailOtpService).verifyOtpAndConsume(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
         }
     }
 

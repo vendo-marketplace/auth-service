@@ -2,8 +2,8 @@ package com.vendo.auth_service.adapter.auth.out;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.vendo.auth_service.domain.google.GoogleTokenPayload;
-import com.vendo.auth_service.port.google.GoogleTokenVerifierPort;
+import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
+import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import com.vendo.security.common.exception.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ public class GoogleTokenVerifierAdapter implements GoogleTokenVerifierPort {
 
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
 
-    private static final String PAYLOAD_FULLNAME_FIELD = "name";
+    private static final String PAYLOAD_FULL_NAME_FIELD = "name";
 
     @Override
     public GoogleTokenPayload verify(String idToken) {
@@ -33,7 +33,7 @@ public class GoogleTokenVerifierAdapter implements GoogleTokenVerifierPort {
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
             return GoogleTokenPayload.builder()
                     .email(payload.getEmail())
-                    .fullName((String) payload.get(PAYLOAD_FULLNAME_FIELD))
+                    .fullName((String) payload.get(PAYLOAD_FULL_NAME_FIELD))
                     .build();
         } catch (GeneralSecurityException | IOException e) {
             log.error("Google Id token security check failed: {}", e.getMessage());

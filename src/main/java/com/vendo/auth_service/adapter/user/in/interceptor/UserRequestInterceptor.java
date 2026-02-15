@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.user.in.interceptor;
 
-import com.vendo.auth_service.adapter.in.security.jwt.InternalTokenGenerationService;
+import com.vendo.auth_service.adapter.security.out.jwt.InternalTokenGenerationService;
 import feign.RequestInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

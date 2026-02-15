@@ -1,9 +1,9 @@
 package com.vendo.auth_service.port.auth;
 
-import com.vendo.auth_service.domain.auth.dto.AuthUser;
+import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 
 public interface UserAuthenticationService {
 
-    AuthUser getAuthUser();
+    AuthUserResponse getAuthUser();
 
 }
