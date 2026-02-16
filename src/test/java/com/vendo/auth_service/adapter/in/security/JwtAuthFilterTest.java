@@ -16,7 +16,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
@@ -53,9 +52,6 @@ public class JwtAuthFilterTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Value("${security.jwt.secret.key}")
-    private String JWT_SECRET_KEY;
 
     @AfterEach
     void tearDown() {
