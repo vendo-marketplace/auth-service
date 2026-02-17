@@ -1,4 +1,4 @@
-package com.vendo.auth_service.bootstrap.config.kafka;
+package com.vendo.auth_service.adapter.infrastructure.config.kafka;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.serialization.StringDeserializer;

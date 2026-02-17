@@ -1,4 +1,4 @@
-package com.vendo.auth_service.bootstrap.config.mapper;
+package com.vendo.auth_service.adapter.infrastructure.config.mapper;
 
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.MapperConfig;

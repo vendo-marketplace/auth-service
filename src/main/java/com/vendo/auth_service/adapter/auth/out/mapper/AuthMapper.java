@@ -6,7 +6,7 @@ import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
 import com.vendo.auth_service.application.auth.command.RefreshCommand;
-import com.vendo.auth_service.bootstrap.config.mapper.MapStructConfig;
+import com.vendo.auth_service.adapter.infrastructure.config.mapper.MapStructConfig;
 import org.mapstruct.Mapper;
 
 @Mapper(config = MapStructConfig.class)
