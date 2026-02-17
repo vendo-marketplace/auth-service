@@ -1,9 +1,9 @@
-package com.vendo.auth_service.bootstrap;
+package com.vendo.auth_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "com.vendo.auth_service")
+@SpringBootApplication
 public class AuthServiceApplication {
 
 	public static void main(String[] args) {
