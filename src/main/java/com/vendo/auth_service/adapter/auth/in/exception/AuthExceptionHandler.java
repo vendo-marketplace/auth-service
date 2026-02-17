@@ -1,10 +1,9 @@
 package com.vendo.auth_service.adapter.auth.in.exception;
 
-import com.vendo.common.exception.ExceptionResponse;
-import com.vendo.security.common.exception.AccessDeniedException;
-import com.vendo.security.common.exception.InvalidTokenException;
+import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.AccessDeniedException;
+import com.vendo.security_lib.exception.InvalidTokenException;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

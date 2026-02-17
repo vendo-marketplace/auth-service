@@ -5,8 +5,7 @@ import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.domain.user.service.UserActivityPolicy;
-import com.vendo.security.common.exception.InvalidTokenException;
+import com.vendo.security_lib.exception.InvalidTokenException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +25,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import java.io.IOException;
 import java.util.Collections;
 
-import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HEADER;
-import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
+import static com.vendo.security_lib.constants.AuthConstants.AUTHORIZATION_HEADER;
+import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 
 @Slf4j
 @Component
@@ -87,7 +86,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private AuthUserResponse validateUserAccessibility(String email) {
         User user = userQueryPort.getByEmail(email);
-        UserActivityPolicy.validateActivity(user);
+        user.validateActivity();
         return userMapper.toAuthUser(user);
     }
 

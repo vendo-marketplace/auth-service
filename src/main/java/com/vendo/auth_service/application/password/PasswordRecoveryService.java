@@ -6,13 +6,13 @@ import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
-import com.vendo.integration.kafka.event.EmailOtpEvent;
+import com.vendo.event_lib.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import static com.vendo.integration.kafka.event.EmailOtpEvent.OtpEventType.PASSWORD_RECOVERY;
+import static com.vendo.event_lib.EmailOtpEvent.OtpEventType.PASSWORD_RECOVERY;
 
 @Slf4j
 @Service
@@ -40,7 +40,7 @@ public class PasswordRecoveryService {
     }
 
     public void resetPassword(String otp, ResetPasswordCommand command) {
-        String email = emailOtpService.verifyOtpAndConsume(otp, null, passwordRecoveryOtpNamespace);
+        String email = emailOtpService.verifyByOtp(otp, passwordRecoveryOtpNamespace);
 
         User user = userQueryPort.getByEmail(email);
 

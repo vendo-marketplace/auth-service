@@ -4,7 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
-import com.vendo.security.common.exception.AccessDeniedException;
+import com.vendo.security_lib.exception.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

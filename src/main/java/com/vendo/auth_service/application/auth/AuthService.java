@@ -5,17 +5,16 @@ import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
 import com.vendo.auth_service.application.auth.command.RefreshCommand;
-import com.vendo.auth_service.domain.user.service.UserService;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyExistsException;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.*;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.domain.user.common.type.ProviderType;
-import com.vendo.domain.user.common.type.UserRole;
-import com.vendo.domain.user.common.type.UserStatus;
-import com.vendo.domain.user.service.UserActivityPolicy;
+import com.vendo.user_lib.type.ProviderType;
+import com.vendo.user_lib.type.UserRole;
+import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -27,8 +26,6 @@ public class AuthService {
     private final UserQueryPort userQueryPort;
 
     private final UserCommandPort userCommandPort;
-
-    private final UserService userService;
 
     private final UserAuthenticationService userAuthenticationService;
 
@@ -42,10 +39,14 @@ public class AuthService {
 
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
-        UserActivityPolicy.validateActivity(user);
-        matchPasswordsOrThrow(passwordHashingPort.matches(command.password(), user.password()));
-        TokenPayload tokenPayload = tokenGenerationService.generate(user);
+        user.validateActivity();
+        boolean matches = passwordHashingPort.matches(command.password(), user.password());
 
+        if (matches) {
+            throw new BadCredentialsException("Wrong credentials.");
+        }
+
+        TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())
@@ -53,7 +54,10 @@ public class AuthService {
     }
 
     public void signUp(AuthCommand command) {
-        userService.throwIfExists(userQueryPort.existsByEmail(command.email()));
+        if (userQueryPort.existsByEmail(command.email())) {
+            throw new UserAlreadyExistsException("User already exists.");
+        }
+
         String hashedPassword = passwordHashingPort.hash(command.password());
 
         userCommandPort.save(User.builder()
@@ -62,13 +66,13 @@ public class AuthService {
                 .role(UserRole.USER)
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
-                .emailVerified(false)
                 .build());
     }
 
     public void completeAuth(String email, CompleteAuthCommand command) {
         User user = userQueryPort.getByEmail(email);
-        userService.validateBeforeActivation(user);
+
+        user.validateBeforeActivation();
 
         userCommandPort.update(user.id(), User.builder()
                 .status(UserStatus.ACTIVE)
@@ -91,11 +95,4 @@ public class AuthService {
     public AuthUserResponse getAuthenticatedUserProfile() {
         return userAuthenticationService.getAuthUser();
     }
-
-    private void matchPasswordsOrThrow(boolean b) {
-        if (!b) {
-            throw new BadCredentialsException("Wrong credentials.");
-        }
-    }
-
 }

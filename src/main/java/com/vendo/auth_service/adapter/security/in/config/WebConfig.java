@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.config;
+package com.vendo.auth_service.adapter.security.in.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

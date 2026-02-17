@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.otp.out.props;
 
-import com.vendo.integration.redis.common.config.PrefixProperties;
+import com.vendo.redis_lib.config.PrefixProperties;
 import lombok.Getter;
 import lombok.Setter;
 

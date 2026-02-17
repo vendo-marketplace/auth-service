@@ -1,10 +1,10 @@
 package com.vendo.auth_service.adapter.security.out.jwt.parser;
 
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
-import com.vendo.security.common.exception.InvalidTokenException;
+import com.vendo.security_lib.exception.InvalidTokenException;
 import org.springframework.stereotype.Component;
 
-import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
+import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 
 @Component
 public class JwtTokenExtractor implements BearerTokenExtractor {

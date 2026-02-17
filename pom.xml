@@ -177,11 +177,34 @@
 			<version>1.6.3</version>
             <scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>io.github.vendo-marketplace-be</groupId>
-			<artifactId>common</artifactId>
-			<version>1.4.18</version>
-		</dependency>
+
+        <!-- vendo dependencies-->
+
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>user-lib</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>core-lib</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>redis-lib</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>event-lib</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>security-lib</artifactId>
+            <version>2.1.0</version>
+        </dependency>
 
 	</dependencies>
 	<dependencyManagement>

@@ -1,6 +1,6 @@
 package com.vendo.auth_service.port.otp;
 
-import com.vendo.integration.kafka.event.EmailOtpEvent;
+import com.vendo.event_lib.EmailOtpEvent;
 
 public interface OtpEmailNotificationPort {
 

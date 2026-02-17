@@ -8,8 +8,8 @@ import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
 import com.vendo.auth_service.port.user.UserCommandPort;
-import com.vendo.domain.user.common.type.ProviderType;
-import com.vendo.domain.user.common.type.UserStatus;
+import com.vendo.user_lib.type.ProviderType;
+import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +27,7 @@ public class GoogleOAuthService {
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
         User user = userCommandPort.ensureExists(payload.email());
 
-        if (!user.active()) {
+        if (user.status() == UserStatus.INCOMPLETE) {
             userCommandPort.update(user.id(), User.builder()
                     .status(UserStatus.ACTIVE)
                     .fullName(payload.fullName())

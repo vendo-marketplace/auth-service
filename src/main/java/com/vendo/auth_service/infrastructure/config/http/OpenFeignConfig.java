@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.infrastructure.config.http;
+package com.vendo.auth_service.infrastructure.config.http;
 
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Configuration;

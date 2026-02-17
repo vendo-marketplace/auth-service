@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.infrastructure.out.redis;
+package com.vendo.auth_service.adapter.db.redis.out;
 
 import com.vendo.auth_service.port.otp.OtpStorage;
 import lombok.RequiredArgsConstructor;

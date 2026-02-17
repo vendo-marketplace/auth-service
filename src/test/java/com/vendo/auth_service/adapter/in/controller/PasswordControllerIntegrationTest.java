@@ -12,9 +12,9 @@ import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
-import com.vendo.common.exception.ExceptionResponse;
-import com.vendo.integration.kafka.event.EmailOtpEvent;
-import com.vendo.integration.redis.common.exception.OtpExpiredException;
+import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.event_lib.EmailOtpEvent;
+import com.vendo.redis_lib.exception.OtpExpiredException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -155,7 +155,7 @@ public class PasswordControllerIntegrationTest {
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder()
                     .password(newPassword).build();
 
-            when(emailOtpService.verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(emailOtpService.verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doNothing().when(userCommandPort).update(user.id(), user);
 
@@ -165,7 +165,7 @@ public class PasswordControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<User> usertArgumentCaptor = ArgumentCaptor.forClass(User.class);
-            verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(eq(user.id()), usertArgumentCaptor.capture());
 
@@ -185,7 +185,7 @@ public class PasswordControllerIntegrationTest {
 
             doThrow(new OtpExpiredException("Otp session expired."))
                     .when(emailOtpService)
-                    .verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+                    .verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -202,7 +202,7 @@ public class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(email);
             verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
@@ -214,7 +214,7 @@ public class PasswordControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            when(emailOtpService.verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(emailOtpService.verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
@@ -232,7 +232,7 @@ public class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(emailOtpService).verifyOtpAndConsume(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(anyString(), any(User.class));
         }

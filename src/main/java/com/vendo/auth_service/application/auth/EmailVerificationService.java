@@ -6,11 +6,12 @@ import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
-import com.vendo.integration.kafka.event.EmailOtpEvent;
+import com.vendo.event_lib.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import static com.vendo.integration.kafka.event.EmailOtpEvent.OtpEventType.EMAIL_VERIFICATION;
+import static com.vendo.event_lib.EmailOtpEvent.OtpEventType.EMAIL_VERIFICATION;
 
 @Service
 @RequiredArgsConstructor
@@ -41,11 +42,10 @@ public class EmailVerificationService {
                 .build();
     }
 
+    @Transactional
     public void validate(String otp, ValidateCommand command) {
         User user = userQueryPort.getByEmail(command.email());
-
-        emailOtpService.verifyOtpAndConsume(otp, command.email(), emailVerificationOtpNamespace);
-
+        emailOtpService.verifyEmailByOtp(otp, command.email(), emailVerificationOtpNamespace);
         userCommandPort.update(user.id(), User.builder()
                 .emailVerified(true)
                 .build());

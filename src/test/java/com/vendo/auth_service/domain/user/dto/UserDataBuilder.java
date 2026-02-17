@@ -1,9 +1,9 @@
 package com.vendo.auth_service.domain.user.dto;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.domain.user.common.type.ProviderType;
-import com.vendo.domain.user.common.type.UserRole;
-import com.vendo.domain.user.common.type.UserStatus;
+import com.vendo.user_lib.type.ProviderType;
+import com.vendo.user_lib.type.UserRole;
+import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;

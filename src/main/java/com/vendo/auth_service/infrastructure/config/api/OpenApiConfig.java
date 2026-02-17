@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.config;
+package com.vendo.auth_service.infrastructure.config.api;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
