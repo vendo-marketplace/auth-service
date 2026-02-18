@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.user.model;
 
-import com.vendo.auth_service.domain.user.exception.UserAlreadyActivatedException;
+import com.vendo.user_lib.exception.UserAlreadyActivatedException;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.exception.UserIsUnactiveException;
