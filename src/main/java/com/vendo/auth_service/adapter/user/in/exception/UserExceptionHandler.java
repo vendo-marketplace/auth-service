@@ -2,11 +2,11 @@ package com.vendo.auth_service.adapter.user.in.exception;
 
 import com.vendo.auth_service.domain.user.exception.UserAlreadyActivatedException;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyExistsException;
-import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.exception.UserIsUnactiveException;
+import com.vendo.user_lib.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

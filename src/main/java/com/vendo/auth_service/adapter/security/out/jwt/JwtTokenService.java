@@ -6,7 +6,7 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.security_lib.exception.InvalidTokenException;
-import com.vendo.security_lib.type.TokenClaim;
+import com.vendo.security_lib.type.UserTokenClaim;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -47,10 +47,10 @@ public class JwtTokenService implements TokenGenerationService {
 
     private String generateAccessToken(User user) {
         Map<String, Object> claims = Map.of(
-                TokenClaim.ID.getClaim(), user.id(),
-                TokenClaim.VERIFIED.getClaim(), user.emailVerified(),
-                TokenClaim.ROLES.getClaim(), List.of(user.role().name()),
-                TokenClaim.STATUS.getClaim(), user.status()
+                UserTokenClaim.ID.getClaim(), user.id(),
+                UserTokenClaim.VERIFIED.getClaim(), user.emailVerified(),
+                UserTokenClaim.ROLES.getClaim(), List.of(user.role().name()),
+                UserTokenClaim.STATUS.getClaim(), user.status()
         );
 
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()

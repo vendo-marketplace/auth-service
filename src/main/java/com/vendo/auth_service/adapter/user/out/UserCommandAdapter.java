@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.user.out;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;

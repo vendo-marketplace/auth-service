@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.user.out;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
 import com.vendo.auth_service.port.user.UserQueryPort;
+import com.vendo.user_lib.exception.UserNotFoundException;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
