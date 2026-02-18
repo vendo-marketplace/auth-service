@@ -23,12 +23,12 @@ public class JwtInternalTokenService implements InternalTokenGenerationService {
     @Override
     public String generateInternal() {
         Map<String, Object> claims = Map.of(
-                InternalTokenClaim.ROLES.getClaim(), List.of(ServiceRole.INTERNAL),
-                Claims.AUDIENCE, ServiceName.USER_SERVICE.getServiceName()
+                InternalTokenClaim.ROLES.getClaim(), List.of(ServiceRole.INTERNAL.toString()),
+                Claims.AUDIENCE, ServiceName.USER_SERVICE.toString()
         );
 
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()
-                .subject(ServiceName.AUTH_SERVICE.getServiceName())
+                .subject(ServiceName.AUTH_SERVICE.toString())
                 .claims(claims)
                 .expiration(internalJwtProperties.getExpiration())
                 .build();
