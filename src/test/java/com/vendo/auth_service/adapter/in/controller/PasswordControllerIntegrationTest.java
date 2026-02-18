@@ -1,17 +1,17 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.application.auth.AuthService;
-import com.vendo.auth_service.application.otp.service.EmailOtpService;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
-import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
-import com.vendo.auth_service.port.user.UserCommandPort;
-import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
+import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
+import com.vendo.auth_service.application.auth.AuthService;
+import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
+import com.vendo.auth_service.application.otp.service.EmailOtpService;
+import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.UserNotFoundException;
+import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.event_lib.EmailOtpEvent;
 import com.vendo.redis_lib.exception.OtpExpiredException;
@@ -165,7 +165,7 @@ public class PasswordControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<User> usertArgumentCaptor = ArgumentCaptor.forClass(User.class);
-            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(eq(user.id()), usertArgumentCaptor.capture());
 
@@ -185,7 +185,7 @@ public class PasswordControllerIntegrationTest {
 
             doThrow(new OtpExpiredException("Otp session expired."))
                     .when(emailOtpService)
-                    .verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+                    .verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -202,7 +202,7 @@ public class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(email);
             verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
@@ -232,7 +232,7 @@ public class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(emailOtpService).verifyEmailByOtp(eq(otp), isNull(), any(PasswordRecoveryOtpNamespace.class));
+            verify(emailOtpService).verifyByOtp(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(anyString(), any(User.class));
         }

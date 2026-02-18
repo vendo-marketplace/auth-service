@@ -40,9 +40,9 @@ public class AuthService {
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
         user.validateActivity();
-        boolean matches = passwordHashingPort.matches(command.password(), user.password());
 
-        if (matches) {
+        boolean matches = passwordHashingPort.matches(command.password(), user.password());
+        if (!matches) {
             throw new BadCredentialsException("Wrong credentials.");
         }
 

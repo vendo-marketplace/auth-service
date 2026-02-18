@@ -605,7 +605,7 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
-        void completeProfile_shouldReturn_whenUserAlreadyCompletedRegistration() throws Exception {
+        void completeProfile_shouldReturnConflict_whenUserAlreadyCompletedRegistration() throws Exception {
             User user = UserDataBuilder.buildUserAllFields()
                     .emailVerified(true)
                     .status(UserStatus.ACTIVE)
@@ -628,7 +628,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getErrors()).isNull();
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already activated.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already active.");
 
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(anyString(), any(User.class));
