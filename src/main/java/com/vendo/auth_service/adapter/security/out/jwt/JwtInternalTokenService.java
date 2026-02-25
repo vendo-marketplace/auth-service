@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class JwtInternalTokenService implements InternalTokenGenerationService {
     public String generateInternal() {
         Map<String, Object> claims = Map.of(
                 InternalTokenClaim.ROLES.getClaim(), List.of(ServiceRole.INTERNAL.toString()),
-                Claims.AUDIENCE, ServiceName.USER_SERVICE.toString()
+                Claims.AUDIENCE, Set.of(ServiceName.USER_SERVICE.toString())
         );
 
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()
