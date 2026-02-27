@@ -1,13 +1,17 @@
 package com.vendo.auth_service.adapter.user.out;
 
-import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.adapter.user.in.dto.UserExistsResponse;
+import com.vendo.auth_service.adapter.user.out.config.UserFeignConfig;
+import com.vendo.auth_service.domain.user.model.User;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 @Component
-@FeignClient(name = "user-service", path = "/internal/users")
+@FeignClient(
+        name = "user-service",
+        path = "/internal/users",
+        configuration = UserFeignConfig.class)
 public interface UserClient {
 
     @GetMapping

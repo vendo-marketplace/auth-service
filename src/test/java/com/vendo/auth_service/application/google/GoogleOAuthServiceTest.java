@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-public class GoogleOAuthServiceTest {
+class GoogleOAuthServiceTest {
 
     @InjectMocks
     private GoogleOAuthService googleOAuthService;

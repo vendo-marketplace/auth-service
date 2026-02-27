@@ -6,7 +6,6 @@ import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +19,7 @@ public class UserCommandAdapter implements UserCommandPort {
     public User ensureExists(String email) {
         try {
             return getByEmail(email);
-        } catch (FeignException.NotFound e) {
+        } catch (UserNotFoundException e) {
             User user = User.builder()
                     .email(email)
                     .role(UserRole.USER)
@@ -43,11 +42,6 @@ public class UserCommandAdapter implements UserCommandPort {
     }
 
     private User getByEmail(String email) {
-        try {
-            return userClient.getByEmail(email);
-        } catch (FeignException.NotFound e) {
-            throw new UserNotFoundException("User not found.");
-        }
+        return userClient.getByEmail(email);
     }
-
 }

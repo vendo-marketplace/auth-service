@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.exception.in;
+package com.vendo.auth_service.adapter.server.in.exception;
 
 import com.vendo.core_lib.exception.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @ControllerAdvice
-public class DefaultExceptionHandler {
+public class ServerExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<ExceptionResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
@@ -39,6 +39,18 @@ public class DefaultExceptionHandler {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message("Internal server error.")
+                .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(exceptionResponse);
+    }
+
+    @ExceptionHandler(UnexpectedServerException.class)
+    protected ResponseEntity<ExceptionResponse> handleUnexpectedServerException(UnexpectedServerException e, HttpServletRequest request) {
+        log.error(e.getMessage());
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .message("Unexpected server error.")
                 .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .path(request.getRequestURI())
                 .build();
