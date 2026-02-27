@@ -1,51 +1,43 @@
 package com.vendo.auth_service.application.auth;
 
+import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
+import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.command.ValidateCommand;
+import com.vendo.auth_service.application.otp.OtpVerifier;
+import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.application.otp.service.EmailOtpService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
-import com.vendo.event_lib.EmailOtpEvent;
+import com.vendo.event_lib.OtpEventType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.vendo.event_lib.EmailOtpEvent.OtpEventType.EMAIL_VERIFICATION;
 
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
-    private final EmailOtpService emailOtpService;
-
-    private final EmailVerificationOtpNamespace emailVerificationOtpNamespace;
-
     private final UserQueryPort userQueryPort;
-
     private final UserCommandPort userCommandPort;
 
+    private final OtpVerifier otpVerifier;
+    private final OtpService otpService;
+    private final EmailVerificationOtpNamespace emailVerificationOtpNamespace;
+
     public void sendOtp(String email) {
-        emailOtpService.sendOtp(createVerificationEvent(email), emailVerificationOtpNamespace);
+        userQueryPort.getByEmail(email);
+        otpService.sendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
     public void resendOtp(String email) {
-        emailOtpService.resendOtp(createVerificationEvent(email), emailVerificationOtpNamespace);
-    }
-
-    private EmailOtpEvent createVerificationEvent(String email){
         userQueryPort.getByEmail(email);
-
-        return EmailOtpEvent.builder()
-                .email(email)
-                .otpEventType(EMAIL_VERIFICATION)
-                .build();
+        otpService.resendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
     @Transactional
     public void validate(String otp, ValidateCommand command) {
         User user = userQueryPort.getByEmail(command.email());
-        emailOtpService.verifyEmailByOtp(otp, command.email(), emailVerificationOtpNamespace);
+        otpVerifier.verifyOtpEmail(otp, command.email(), emailVerificationOtpNamespace);
         userCommandPort.update(user.id(), User.builder()
                 .emailVerified(true)
                 .build());
