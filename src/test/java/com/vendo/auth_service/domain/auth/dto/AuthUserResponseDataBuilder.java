@@ -9,9 +9,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public class AuthUserDataBuilder {
+public class AuthUserResponseDataBuilder {
 
-    public static AuthUserResponse.AuthUserResponseBuilder buildAuthUserWithAllFields() {
+    public static AuthUserResponse.AuthUserResponseBuilder buildWithAllFields() {
         return AuthUserResponse.builder()
                 .id(String.valueOf(UUID.randomUUID()))
                 .email("test@gmail.com")
@@ -23,4 +23,5 @@ public class AuthUserDataBuilder {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
     }
+
 }

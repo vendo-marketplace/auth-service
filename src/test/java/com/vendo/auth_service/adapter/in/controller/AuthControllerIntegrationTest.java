@@ -10,7 +10,7 @@ import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
-import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
+import com.vendo.auth_service.domain.auth.dto.AuthUserResponseDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
@@ -640,12 +640,13 @@ class AuthControllerIntegrationTest {
 
         @Test
         void getAuthenticatedUser_shouldReturnUserProfile() throws Exception {
-            AuthUserResponse authUserResponse = AuthUserDataBuilder.buildAuthUserWithAllFields()
+            AuthUserResponse authUser = AuthUserResponseDataBuilder.buildWithAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(authUserResponse);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUserResponse);
+            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+
+            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -660,12 +661,12 @@ class AuthControllerIntegrationTest {
 
             assertThat(content).doesNotContain("password");
             assertThat(responseDto).isNotNull();
-            assertThat(responseDto.id()).isEqualTo(authUserResponse.id());
-            assertThat(responseDto.email()).isEqualTo(authUserResponse.email());
-            assertThat(responseDto.fullName()).isEqualTo(authUserResponse.fullName());
-            assertThat(responseDto.role()).isEqualTo(authUserResponse.role());
-            assertThat(responseDto.status()).isEqualTo(authUserResponse.status());
-            assertThat(responseDto.providerType()).isEqualTo(authUserResponse.providerType());
+            assertThat(responseDto.id()).isEqualTo(authUser.id());
+            assertThat(responseDto.email()).isEqualTo(authUser.email());
+            assertThat(responseDto.fullName()).isEqualTo(authUser.fullName());
+            assertThat(responseDto.role()).isEqualTo(authUser.role());
+            assertThat(responseDto.status()).isEqualTo(authUser.status());
+            assertThat(responseDto.providerType()).isEqualTo(authUser.providerType());
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 

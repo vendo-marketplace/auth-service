@@ -2,8 +2,6 @@ package com.vendo.auth_service.adapter.in.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.common.SecurityContextService;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
-import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
@@ -11,6 +9,7 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
+import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
@@ -60,8 +59,7 @@ public class JwtAuthFilterTest {
 
     @Test
     void doFilterInternal_shouldPassAuthorization_whenUserAlreadyAuthorized() throws Exception {
-        AuthUserResponse authUserResponse = AuthUserDataBuilder.buildAuthUserWithAllFields().build();
-        SecurityContext securityContext = SecurityContextService.initializeSecurityContext(authUserResponse);
+        SecurityContext securityContext = SecurityContextService.initializeSecurityContext(UserRole.USER);
 
         String content = mockMvc.perform(get("/test/ping")
                         .with(securityContext(securityContext)))

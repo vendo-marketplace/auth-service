@@ -1,12 +1,12 @@
 package com.vendo.auth_service.adapter.auth.in;
 
 import com.vendo.auth_service.adapter.auth.out.mapper.AuthMapper;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.AuthService;
+import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

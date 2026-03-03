@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.security.in;
 
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -56,8 +56,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String jwtToken = getTokenFromRequest(request);
             String subject = tokenClaimsParser.extractSubject(jwtToken);
 
-            AuthUserResponse authUserResponse = validateUserAccessibility(subject);
-            addAuthenticationToContext(authUserResponse);
+            AuthUser authUser = validateUserAccessibility(subject);
+            addAuthenticationToContext(authUser);
         } catch (Exception e) {
             handlerExceptionResolver.resolveException(request, response, null, e);
             return;
@@ -84,17 +84,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return authorization.substring(BEARER_PREFIX.length());
     }
 
-    private AuthUserResponse validateUserAccessibility(String email) {
+    private AuthUser validateUserAccessibility(String email) {
         User user = userQueryPort.getByEmail(email);
         user.validateActivity();
         return userMapper.toAuthUser(user);
     }
 
-    private void addAuthenticationToContext(AuthUserResponse authUserResponse) {
+    private void addAuthenticationToContext(AuthUser authUser) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                authUserResponse,
+                authUser,
                 null,
-                Collections.singleton(new SimpleGrantedAuthority(authUserResponse.role().name())));
+                Collections.singleton(new SimpleGrantedAuthority(authUser.role().name())));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }
