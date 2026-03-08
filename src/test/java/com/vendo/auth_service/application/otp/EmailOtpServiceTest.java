@@ -1,6 +1,5 @@
 package com.vendo.auth_service.application.otp;
 
-
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
@@ -31,8 +30,10 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(MockitoExtension.class)
 public class EmailOtpServiceTest {
+
     @InjectMocks
     EmailOtpService emailOtpService;
+
     @Mock
     private OtpGenerator otpGenerator;
     @Mock
@@ -44,9 +45,12 @@ public class EmailOtpServiceTest {
     @Mock
     private OtpPolicyService otpPolicyService;
 
-    @Mock private PrefixProperties emailPrefix;
-    @Mock private PrefixProperties otpPrefix;
-    @Mock private PrefixProperties attemptsPrefix;
+    @Mock
+    private PrefixProperties emailPrefix;
+    @Mock
+    private PrefixProperties otpPrefix;
+    @Mock
+    private PrefixProperties attemptsPrefix;
 
     private final String TEST_EMAIL = "email@gmail.com";
     private final String OLD_OTP = "old-otp";

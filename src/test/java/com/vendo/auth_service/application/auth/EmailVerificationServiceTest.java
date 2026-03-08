@@ -49,7 +49,7 @@ public class EmailVerificationServiceTest {
         User user = UserDataBuilder.buildUserAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        
+
         emailVerificationService.sendOtp(TEST_EMAIL);
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
@@ -62,6 +62,7 @@ public class EmailVerificationServiceTest {
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
         assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
     }
+
     @Test
     void sendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
@@ -70,6 +71,7 @@ public class EmailVerificationServiceTest {
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
     }
+
     @Test
     void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
         User user = UserDataBuilder.buildUserAllFields().build();
@@ -89,6 +91,7 @@ public class EmailVerificationServiceTest {
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
         assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
     }
+
     @Test
     void resendOtp_shouldSuccessfullySendOtp_WhenUserIsValid() {
         User user = UserDataBuilder.buildUserAllFields().build();
@@ -107,6 +110,7 @@ public class EmailVerificationServiceTest {
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
         assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
     }
+
     @Test
     void resendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
@@ -135,6 +139,7 @@ public class EmailVerificationServiceTest {
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
         assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
     }
+
     @Test
     void validate_shouldUpdateUser_WhenUserIsValid() {
         User user = UserDataBuilder.buildUserAllFields().build();
@@ -148,6 +153,7 @@ public class EmailVerificationServiceTest {
         verify(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
         verify(userCommandPort).update(eq(user.id()), argThat(updatedUser -> updatedUser.emailVerified() == true));
     }
+
     @Test
     void validate_shouldThrowUserNotFoundException_whenUserNotFound() {
         ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
@@ -159,6 +165,7 @@ public class EmailVerificationServiceTest {
         verify(userQueryPort).getByEmail(validateCommand.email());
         verifyNoInteractions(otpService, userCommandPort);
     }
+
     @Test
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
         ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
