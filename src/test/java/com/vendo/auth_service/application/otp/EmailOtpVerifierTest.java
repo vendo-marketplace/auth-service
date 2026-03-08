@@ -12,8 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import java.util.Optional;
 
@@ -22,7 +20,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
 @Slf4j
-@MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(MockitoExtension.class)
 public class EmailOtpVerifierTest {
 
@@ -43,78 +40,86 @@ public class EmailOtpVerifierTest {
     private static final String TEST_EMAIL = "email@gmail.com";
     private static final String TEST_OTP = "otp";
 
-    @BeforeEach
-    void setUp() {
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
-        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
-        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
-        when(emailPrefix.buildPrefix(anyString()))
-                .thenAnswer(inv -> "email:" + inv.getArgument(0));
-        when(otpPrefix.buildPrefix(anyString()))
-                .thenAnswer(inv -> "otp:" + inv.getArgument(0));
-        when(attemptsPrefix.buildPrefix(anyString()))
-                .thenAnswer(inv -> "attempts:" + inv.getArgument(0));
-    }
-
     @Test
     void verify_shouldReturnEmail_whenOtpValid() {
-        when(otpStorage.getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP))).thenReturn(Optional.of(TEST_EMAIL));
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn("otp:" + TEST_OTP);
+
+        when(otpStorage.getValue("otp:" + TEST_OTP)).thenReturn(Optional.of(TEST_EMAIL));
 
         emailOtpVerifier.verify(TEST_OTP, otpNamespace);
 
-        verify(otpStorage).getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP));
-        verify(otpStorage).deleteValues(otpNamespace.getOtp().buildPrefix(TEST_OTP));
+        verify(otpStorage).getValue("otp:" + TEST_OTP);
+        verify(otpStorage).deleteValues("otp:" + TEST_OTP);
     }
 
     @Test
     void verify_shouldThrowOtpExpiredException_whenOtpExpired() {
-        when(otpStorage.getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP))).thenReturn(Optional.empty()).thenThrow(new OtpExpiredException("Otp session expired."));
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn("otp:" + TEST_OTP);
+
+        when(otpStorage.getValue("otp:" + TEST_OTP)).thenReturn(Optional.empty()).thenThrow(new OtpExpiredException("Otp session expired."));
 
         assertThatThrownBy(() -> emailOtpVerifier.verify(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
-        verify(otpStorage).getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP));
+        verify(otpStorage).getValue("otp:" + TEST_OTP);
     }
 
     @Test
     void verifyOtpEmail_shouldCleanUpOtpNamespaces_whenEmailsMatch() {
         String actualEmail = TEST_EMAIL;
-        when(otpStorage.getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP))).thenReturn(Optional.of(actualEmail));
+
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
+        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
+
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn("otp:" + TEST_OTP);
+        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn("email:" + TEST_EMAIL);
+        when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn("attempts:" + TEST_EMAIL);
+
+        when(otpStorage.getValue("otp:" + TEST_OTP)).thenReturn(Optional.of(actualEmail));
 
         emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace);
 
         verify(otpStorage).getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP));
         verify(otpStorage).deleteValues(
-                otpNamespace.getOtp().buildPrefix(TEST_OTP),
-                otpNamespace.getEmail().buildPrefix(actualEmail),
-                otpNamespace.getAttempts().buildPrefix(actualEmail)
+                "otp:" + TEST_OTP,
+                "email:" + TEST_EMAIL,
+                "attempts:" + TEST_EMAIL
         );
     }
 
     @Test
     void verifyOtpEmail_shouldThrowOtpExpiredException_whenOtpExpired() {
-        when(otpStorage.getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP))).thenReturn(Optional.empty()).thenThrow(new OtpExpiredException("Otp session expired."));
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn("otp:" + TEST_OTP);
+
+        when(otpStorage.getValue("otp:" + TEST_OTP)).thenReturn(Optional.empty()).thenThrow(new OtpExpiredException("Otp session expired."));
 
         assertThatThrownBy(() -> emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
-        verify(otpStorage).getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP));
+        verify(otpStorage).getValue("otp:" + TEST_OTP);
     }
 
     @Test
     void verifyOtpEmail_shouldThrowInvalidOtpException_whenEmailsNotMatch() {
         String actualEmail = "actual@gmail.com";
 
-        when(otpStorage.getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP))).thenReturn(Optional.of(actualEmail));
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn("otp:" + TEST_OTP);
+
+        when(otpStorage.getValue("otp:" + TEST_OTP)).thenReturn(Optional.of(actualEmail));
 
         assertThatThrownBy(() -> emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
 
         assertThat(!TEST_EMAIL.equals(actualEmail));
 
-        verify(otpStorage).getValue(otpNamespace.getOtp().buildPrefix(TEST_OTP));
+        verify(otpStorage).getValue("otp:" + TEST_OTP);
         verify(otpStorage, never()).deleteValues(
-                otpNamespace.getOtp().buildPrefix(TEST_OTP),
-                otpNamespace.getEmail().buildPrefix(actualEmail),
-                otpNamespace.getAttempts().buildPrefix(actualEmail)
+                "otp:" + TEST_OTP,
+                "email:" + actualEmail,
+                "attempts:" + actualEmail
         );
     }
 }
