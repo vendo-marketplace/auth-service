@@ -1,6 +1,5 @@
 package com.vendo.auth_service.domain.otp;
 
-
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +7,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class OtpPolicyServiceTest {
+
     private final OtpPolicyService otpPolicyService = new OtpPolicyService();
 
     @Test

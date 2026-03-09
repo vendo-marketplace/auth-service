@@ -13,20 +13,26 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EmailOtpVerifierTest {
 
+    private static final String TEST_EMAIL = "email@gmail.com";
+    private static final String TEST_OTP = "otp";
+    private static final String TEST_OTP_BUILT_PREFIX = "otp:" + TEST_OTP;
+    private static final String TEST_EMAIL_BUILT_PREFIX = "email:" + TEST_EMAIL;
+    private static final String TEST_ATTEMPTS_BUILT_PREFIX = "attempts:" + TEST_EMAIL;
+
     @InjectMocks
     private EmailOtpVerifier emailOtpVerifier;
+
     @Mock
     private OtpStorage otpStorage;
     @Mock
     private OtpNamespace otpNamespace;
-
     @Mock
     private PrefixProperties emailPrefix;
     @Mock
@@ -34,18 +40,10 @@ public class EmailOtpVerifierTest {
     @Mock
     private PrefixProperties attemptsPrefix;
 
-    private static final String TEST_EMAIL = "email@gmail.com";
-    private static final String TEST_OTP = "otp";
-
-    private static final String TEST_OTP_BUILT_PREFIX = "otp:" + TEST_OTP;
-    private static final String TEST_EMAIL_BUILT_PREFIX = "email:" + TEST_EMAIL;
-    private static final String TEST_ATTEMPTS_BUILT_PREFIX = "attempts:" + TEST_EMAIL;
-
     @Test
     void verify_shouldReturnEmail_whenOtpValid() {
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
-
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.of(TEST_EMAIL));
 
         emailOtpVerifier.verify(TEST_OTP, otpNamespace);
@@ -58,7 +56,6 @@ public class EmailOtpVerifierTest {
     void verify_shouldThrowOtpExpiredException_whenOtpExpired() {
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
-
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> emailOtpVerifier.verify(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
@@ -71,11 +68,9 @@ public class EmailOtpVerifierTest {
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
         when(otpNamespace.getEmail()).thenReturn(emailPrefix);
         when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
         when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
         when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
-
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.of(TEST_EMAIL));
 
         emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace);
@@ -92,7 +87,6 @@ public class EmailOtpVerifierTest {
     void verifyOtpEmail_shouldThrowOtpExpiredException_whenOtpExpired() {
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
-
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
@@ -105,13 +99,10 @@ public class EmailOtpVerifierTest {
         String actualEmail = "actual@gmail.com";
 
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
-
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
-
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.of(actualEmail));
 
         assertThatThrownBy(() -> emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
-
         assertThat(TEST_EMAIL).isNotEqualTo(actualEmail);
 
         verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
