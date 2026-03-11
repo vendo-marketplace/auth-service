@@ -61,6 +61,7 @@ public class EmailOtpVerifierTest {
         assertThatThrownBy(() -> emailOtpVerifier.verify(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
         verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
+        verify(otpStorage, never()).deleteValues(anyString());
     }
 
     @Test
@@ -92,6 +93,7 @@ public class EmailOtpVerifierTest {
         assertThatThrownBy(() -> emailOtpVerifier.verifyOtpEmail(TEST_OTP, TEST_EMAIL, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
         verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
+        verify(otpStorage, never()).deleteValues(anyString(), anyString(), anyString());
     }
 
     @Test
