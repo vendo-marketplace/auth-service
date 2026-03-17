@@ -18,4 +18,5 @@ public class StartupRunnerConfig implements CommandLineRunner {
     public void run(String... args) {
         log.info("Swagger UI: {}", SWAGGER_UI_URL_TEMPLATE.formatted(SERVER_URL));
     }
+
 }

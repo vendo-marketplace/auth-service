@@ -25,4 +25,5 @@ public class GoogleIdTokenVerifierConfig {
                 .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
                 .build();
     }
+
 }

@@ -95,7 +95,7 @@ public class EmailOtpServiceTest {
 
         when(otpStorage.hasActiveKey(TEST_EMAIL_BUILT_PREFIX)).thenReturn(true);
 
-        assertThatThrownBy(() -> emailOtpService.sendOtp(otpCommand, otpNamespace)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp has already sent.");
+        assertThatThrownBy(() -> emailOtpService.sendOtp(otpCommand, otpNamespace)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         verify(otpStorage).hasActiveKey(TEST_EMAIL_BUILT_PREFIX);
         verifyNoInteractions(otpGenerator, otpEmailNotificationPort);
@@ -194,4 +194,5 @@ public class EmailOtpServiceTest {
         verify(otpEmailNotificationPort, never()).sendOtpEmailNotification(any());
         verifyNoMoreInteractions(otpStorage, otpGenerator, otpEmailNotificationPort);
     }
+
 }

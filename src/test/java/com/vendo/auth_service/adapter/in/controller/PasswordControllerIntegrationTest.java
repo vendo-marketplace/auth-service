@@ -93,7 +93,7 @@ class PasswordControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doThrow(new OtpAlreadySentException("Otp has already sent."))
+            doThrow(new OtpAlreadySentException("Otp already sent."))
                     .when(otpService)
                     .sendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
 
@@ -107,7 +107,7 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotBlank();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp has already sent.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp already sent.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/forgot");
 
@@ -314,4 +314,5 @@ class PasswordControllerIntegrationTest {
             verify(otpService).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
         }
     }
+
 }

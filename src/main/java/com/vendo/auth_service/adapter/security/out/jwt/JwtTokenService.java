@@ -70,4 +70,5 @@ public class JwtTokenService implements TokenGenerationService {
 
         return jwtUtils.buildToken(jwtProperties.getKey(), jwtPayload);
     }
+
 }

@@ -44,4 +44,5 @@ public class UserCommandAdapter implements UserCommandPort {
     private User getByEmail(String email) {
         return userClient.getByEmail(email);
     }
+
 }

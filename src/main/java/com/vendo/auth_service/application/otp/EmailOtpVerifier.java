@@ -45,4 +45,5 @@ public class EmailOtpVerifier implements OtpVerifier {
         return otpStorage.getValue(namespace.getOtp().buildPrefix(otp))
                 .orElseThrow(() -> new OtpExpiredException("Otp session expired."));
     }
+
 }

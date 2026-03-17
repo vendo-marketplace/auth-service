@@ -20,4 +20,5 @@ public class PasswordEncoderAdapter implements PasswordHashingPort {
     public boolean matches(String raw, String hash) {
         return passwordEncoder.matches(raw, hash);
     }
+
 }

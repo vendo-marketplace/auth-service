@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PasswordRecoveryServiceTest {
+
     @InjectMocks
     PasswordRecoveryService passwordRecoveryService;
     @Mock
@@ -181,4 +182,5 @@ public class PasswordRecoveryServiceTest {
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
         assertThat(capturedEvent.type()).isEqualTo(OtpEventType.PASSWORD_RECOVERY);
     }
+
 }

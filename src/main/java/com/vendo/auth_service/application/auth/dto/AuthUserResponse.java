@@ -10,6 +10,7 @@ import java.time.LocalDate;
 
 @Builder
 public record AuthUserResponse(
+
         String id,
         String email,
         Boolean emailVerified,
@@ -20,5 +21,6 @@ public record AuthUserResponse(
         String fullName,
         Instant createdAt,
         Instant updatedAt
+
 ) {
 }

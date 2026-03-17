@@ -16,5 +16,7 @@ public record CompleteAuthRequest(
 
         @NotNull(message = "Birth date is required.")
         @Adult(message = "Birth date should be at least 18 years old.")
-        LocalDate birthDate) {
+        LocalDate birthDate
+
+) {
 }

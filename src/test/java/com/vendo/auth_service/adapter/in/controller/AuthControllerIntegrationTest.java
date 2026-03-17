@@ -701,4 +701,5 @@ class AuthControllerIntegrationTest {
             verify(securityContextHelper).getAuthUser();
         }
     }
+
 }

@@ -92,4 +92,5 @@ public class AuthService {
     public AuthUserResponse getAuthenticatedUserProfile() {
         return userAuthenticationService.getAuthUser();
     }
+
 }

@@ -45,4 +45,5 @@ public class PasswordRecoveryService {
         userQueryPort.getByEmail(email);
         otpService.resendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
     }
+
 }

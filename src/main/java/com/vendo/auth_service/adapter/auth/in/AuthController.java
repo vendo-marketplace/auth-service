@@ -48,4 +48,5 @@ public class AuthController {
     ResponseEntity<AuthUserResponse> getAuthenticatedUserProfile() {
         return ResponseEntity.ok(authService.getAuthenticatedUserProfile());
     }
+
 }

@@ -16,4 +16,5 @@ public class JwtProperties {
     private int accessExpiration;
 
     private int refreshExpiration;
+
 }

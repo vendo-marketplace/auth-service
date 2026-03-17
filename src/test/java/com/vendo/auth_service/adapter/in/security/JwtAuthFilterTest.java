@@ -275,4 +275,5 @@ public class JwtAuthFilterTest {
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
+
 }

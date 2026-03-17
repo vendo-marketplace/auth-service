@@ -39,11 +39,14 @@ public final class JwtUtils {
 
     @Builder
     public record JwtPayload(
+
             @NotBlank(message = "Subject is required")
             String subject,
 
             Map<String, Object> claims,
-            int expiration) {
+            int expiration
+
+    ) {
     }
 
 }

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EmailVerificationServiceTest {
+
     @InjectMocks
     EmailVerificationService emailVerificationService;
     @Mock
@@ -77,9 +78,9 @@ public class EmailVerificationServiceTest {
         User user = UserDataBuilder.buildUserAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        doThrow(new OtpAlreadySentException("Otp has already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
+        doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
 
-        assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp has already sent.");
+        assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
@@ -180,4 +181,5 @@ public class EmailVerificationServiceTest {
         verify(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
         verifyNoInteractions(userCommandPort);
     }
+
 }

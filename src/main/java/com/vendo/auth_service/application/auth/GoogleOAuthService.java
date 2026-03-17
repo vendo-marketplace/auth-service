@@ -41,6 +41,6 @@ public class GoogleOAuthService {
                     .providerType(ProviderType.GOOGLE).build()
             );
         }
-
     }
+
 }

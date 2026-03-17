@@ -15,4 +15,5 @@ public class OtpSixDigitGenerator implements OtpGenerator {
         int otp = 100000 + RANDOM.nextInt(900000);
         return String.valueOf(otp);
     }
+
 }

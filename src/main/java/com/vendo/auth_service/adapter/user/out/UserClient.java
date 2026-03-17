@@ -25,4 +25,5 @@ public interface UserClient {
 
     @PostMapping
     User save(@RequestBody User body);
+
 }

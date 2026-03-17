@@ -23,4 +23,5 @@ public class OtpEmailEventProducer implements OtpEmailNotificationPort {
         log.info("Sent event for email otp notification: {}", event);
         kafkaTemplate.send(emailOtpEventTopic, event);
     }
+
 }

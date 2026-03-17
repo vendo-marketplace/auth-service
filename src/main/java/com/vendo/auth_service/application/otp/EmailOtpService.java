@@ -40,7 +40,7 @@ public class EmailOtpService implements OtpService {
     private void throwIfOtpAlreadySent(String email, OtpNamespace namespace) {
         boolean activeKey = otpStorage.hasActiveKey(namespace.getEmail().buildPrefix(email));
         if (activeKey) {
-            throw new OtpAlreadySentException("Otp has already sent.");
+            throw new OtpAlreadySentException("Otp already sent.");
         }
     }
 

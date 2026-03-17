@@ -42,4 +42,5 @@ public class EmailVerificationService {
                 .emailVerified(true)
                 .build());
     }
+
 }

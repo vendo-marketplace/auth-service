@@ -19,4 +19,5 @@ public class UserRequestInterceptor {
     RequestInterceptor internalUserInfoInterceptor() {
         return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + internalTokenGenerationService.generateInternal());
     }
+
 }

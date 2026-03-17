@@ -24,4 +24,5 @@ public class UserDataBuilder {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
     }
+
 }

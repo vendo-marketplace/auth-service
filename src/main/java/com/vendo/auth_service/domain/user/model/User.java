@@ -14,6 +14,7 @@ import java.time.LocalDate;
 
 @Builder
 public record User(
+
         String id,
         String email,
         Boolean emailVerified,
@@ -25,6 +26,7 @@ public record User(
         String fullName,
         Instant createdAt,
         Instant updatedAt
+
 ) {
 
     public void validateBeforeActivation() {

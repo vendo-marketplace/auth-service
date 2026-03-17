@@ -112,4 +112,5 @@ public class EmailOtpVerifierTest {
                 anyString(), anyString(), anyString()
         );
     }
+
 }

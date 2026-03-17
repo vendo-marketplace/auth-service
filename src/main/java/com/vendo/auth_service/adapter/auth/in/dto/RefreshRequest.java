@@ -5,6 +5,9 @@ import lombok.Builder;
 
 @Builder
 public record RefreshRequest(
+
     @NotBlank(message = "Refresh token is required.")
-    String refreshToken) {
+    String refreshToken
+
+) {
 }

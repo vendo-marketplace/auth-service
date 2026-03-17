@@ -26,5 +26,6 @@ public class SecurityContextHelper implements UserAuthenticationService {
 
         return userMapper.toResponse(authUser);
     }
+
 }
 

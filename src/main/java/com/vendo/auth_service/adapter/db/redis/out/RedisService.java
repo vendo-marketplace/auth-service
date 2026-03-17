@@ -29,4 +29,5 @@ public class RedisService {
     public boolean hasActiveKey(String key) {
         return redisTemplate.hasKey(key);
     }
+
 }

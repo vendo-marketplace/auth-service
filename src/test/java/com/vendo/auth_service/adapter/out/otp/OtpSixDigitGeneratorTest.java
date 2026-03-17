@@ -17,4 +17,5 @@ public class OtpSixDigitGeneratorTest {
             assertThat(otp).hasSize(6).matches("[1-9]\\d{5}");
         }
     }
+
 }

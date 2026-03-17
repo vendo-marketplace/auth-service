@@ -27,4 +27,5 @@ public class AuthAntPathResolver implements AntPathResolver {
     public boolean isPermittedPath(String path) {
         return Arrays.stream(PERMITTED_PATHS).anyMatch(pr -> antPathMatcher.match(pr, path));
     }
+
 }

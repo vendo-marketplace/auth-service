@@ -87,7 +87,7 @@ class VerificationControllerIntegrationTest {
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doThrow(new OtpAlreadySentException("Otp has already sent."))
+            doThrow(new OtpAlreadySentException("Otp already sent."))
                     .when(otpService)
                     .sendOtp(commandArgumentCaptor.capture(), any(EmailVerificationOtpNamespace.class));
 
@@ -101,7 +101,7 @@ class VerificationControllerIntegrationTest {
             assertThat(responseContent).isNotNull();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp has already sent.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp already sent.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/send-otp");
 
@@ -318,4 +318,5 @@ class VerificationControllerIntegrationTest {
             verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
         }
     }
+
 }

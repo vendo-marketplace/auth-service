@@ -4,6 +4,9 @@ import lombok.Builder;
 
 @Builder
 public record TokenPayload(
+
         String accessToken,
-        String refreshToken) {
+        String refreshToken
+
+) {
 }

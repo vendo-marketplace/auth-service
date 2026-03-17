@@ -8,5 +8,4 @@ public interface OtpVerifier {
 
     void verifyOtpEmail(String otp, String email, OtpNamespace namespace);
 
-
 }

@@ -18,4 +18,5 @@ public class AdultValidator implements ConstraintValidator<Adult, LocalDate> {
 
         return !value.plusYears(EIGHTEEN_YEARS).isAfter(LocalDate.now());
     }
+
 }
