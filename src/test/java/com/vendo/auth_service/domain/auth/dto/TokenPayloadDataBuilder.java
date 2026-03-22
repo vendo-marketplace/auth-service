@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.domain.security.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.TokenPayload;
 
 public class TokenPayloadDataBuilder {
 
@@ -9,4 +9,5 @@ public class TokenPayloadDataBuilder {
                 .accessToken("test_access_token")
                 .refreshToken("test_refresh_token");
     }
+
 }

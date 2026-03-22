@@ -1,54 +1,48 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.adapter.common.JwtGenerator;
-import com.vendo.auth_service.adapter.in.security.SecurityContextHelper;
-import com.vendo.auth_service.domain.security.AuthUser;
-import com.vendo.auth_service.adapter.in.web.dto.*;
-import com.vendo.auth_service.domain.security.AuthResponse;
-import com.vendo.auth_service.domain.security.CompleteAuthRequest;
-import com.vendo.auth_service.domain.security.RefreshRequest;
-import com.vendo.auth_service.domain.security.TokenPayload;
-import com.vendo.auth_service.adapter.out.security.service.JwtHelper;
-import com.vendo.auth_service.adapter.out.security.service.JwtService;
+import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
+import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
+import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
+import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
+import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
+import com.vendo.auth_service.application.auth.dto.AuthResponse;
+import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
-import com.vendo.auth_service.domain.auth.dto.AuthUserDataBuilder;
+import com.vendo.auth_service.domain.auth.dto.AuthUserResponseDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
-import com.vendo.auth_service.domain.user.common.dto.SaveUserRequest;
-import com.vendo.auth_service.domain.user.common.dto.UpdateUserRequest;
-import com.vendo.auth_service.domain.user.common.dto.User;
-import com.vendo.auth_service.domain.user.common.exception.UserNotFoundException;
-import com.vendo.auth_service.domain.user.dto.SaveUserRequestDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.security.BearerTokenExtractor;
+import com.vendo.auth_service.port.security.PasswordHashingPort;
+import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.common.exception.ExceptionResponse;
-import com.vendo.domain.user.common.type.ProviderType;
-import com.vendo.domain.user.common.type.UserRole;
-import com.vendo.domain.user.common.type.UserStatus;
-import com.vendo.security.common.exception.InvalidTokenException;
-import io.jsonwebtoken.Claims;
+import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.InvalidTokenException;
+import com.vendo.user_lib.exception.UserNotFoundException;
+import com.vendo.user_lib.type.ProviderType;
+import com.vendo.user_lib.type.UserRole;
+import com.vendo.user_lib.type.UserStatus;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -57,14 +51,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 
 import static com.vendo.auth_service.adapter.common.SecurityContextService.initializeSecurityContext;
-import static com.vendo.security.common.constants.AuthConstants.AUTHORIZATION_HEADER;
-import static com.vendo.security.common.constants.AuthConstants.BEARER_PREFIX;
+import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EmbeddedKafka
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -77,7 +69,7 @@ class AuthControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private PasswordEncoder passwordEncoder;
+    private PasswordHashingPort passwordHashingPort;
 
     @MockitoBean
     private UserQueryPort userQueryPort;
@@ -86,16 +78,16 @@ class AuthControllerIntegrationTest {
     private UserCommandPort userCommandPort;
 
     @MockitoBean
-    private JwtService jwtService;
-
-    @MockitoBean
-    private JwtHelper jwtHelper;
-
-    @MockitoBean
-    private JwtGenerator jwtGenerator;
-
-    @MockitoBean
     private SecurityContextHelper securityContextHelper;
+
+    @MockitoBean
+    private TokenClaimsParser tokenClaimsParser;
+
+    @MockitoBean
+    private BearerTokenExtractor bearerTokenExtractor;
+
+    @MockitoBean
+    private TokenGenerationService tokenGenerationService;
 
     @BeforeEach
     void setUp() {
@@ -113,31 +105,30 @@ class AuthControllerIntegrationTest {
         @Test
         void signUp_shouldSuccessfullyRegisterUser() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            SaveUserRequest saveUserRequest = SaveUserRequestDataBuilder.buildWithAllFields().build();
             User user = UserDataBuilder.buildUserAllFields()
                     .email(authRequest.email())
                     .build();
             String encodedPassword = "encoded_password";
 
             when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(false);
-            when(passwordEncoder.encode(authRequest.password())).thenReturn(encodedPassword);
-            when(userCommandPort.save(saveUserRequest)).thenReturn(user);
+            when(passwordHashingPort.hash(authRequest.password())).thenReturn(encodedPassword);
+            when(userCommandPort.save(user)).thenReturn(user);
 
             mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
+            ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
             verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
+            verify(userCommandPort).save(userArgumentCaptor.capture());
 
-            SaveUserRequest userRequestArgumentCaptorValue = saveUserRequestArgumentCaptor.getValue();
-            assertThat(userRequestArgumentCaptorValue.email()).isEqualTo(authRequest.email());
-            assertThat(userRequestArgumentCaptorValue.password()).isEqualTo(encodedPassword);
-            assertThat(userRequestArgumentCaptorValue.role()).isEqualTo(UserRole.USER);
-            assertThat(userRequestArgumentCaptorValue.status()).isEqualTo(UserStatus.INCOMPLETE);
-            assertThat(userRequestArgumentCaptorValue.providerType()).isEqualTo(ProviderType.LOCAL);
+            User userArgumentCaptorValue = userArgumentCaptor.getValue();
+            assertThat(userArgumentCaptorValue.email()).isEqualTo(authRequest.email());
+            assertThat(userArgumentCaptorValue.password()).isEqualTo(encodedPassword);
+            assertThat(userArgumentCaptorValue.role()).isEqualTo(UserRole.USER);
+            assertThat(userArgumentCaptorValue.status()).isEqualTo(UserStatus.INCOMPLETE);
+            assertThat(userArgumentCaptorValue.providerType()).isEqualTo(ProviderType.LOCAL);
         }
 
         @Test
@@ -162,8 +153,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-up");
 
             verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(passwordEncoder, never()).encode(anyString());
-            verify(userCommandPort, never()).save(any(SaveUserRequest.class));
+            verify(passwordHashingPort, never()).hash(anyString());
+            verify(userCommandPort, never()).save(any(User.class));
         }
     }
 
@@ -177,13 +168,12 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.ACTIVE)
                     .email(authRequest.email())
                     .emailVerified(true)
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
-            when(passwordEncoder.matches(authRequest.password(), user.password())).thenReturn(true);
-            when(jwtService.generate(user)).thenReturn(tokenPayload);
+            when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(true);
+            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -201,8 +191,8 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.refreshToken()).isNotBlank();
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordEncoder).matches(authRequest.password(), user.password());
-            verify(jwtService).generate(user);
+            verify(passwordHashingPort).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService).generate(user);
         }
 
         @Test
@@ -225,8 +215,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordEncoder, never()).matches(anyString(), anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(passwordHashingPort, never()).matches(anyString(), anyString());
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
 
         @Test
@@ -235,7 +225,6 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields()
                     .status(UserStatus.BLOCKED)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -256,8 +245,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
@@ -267,7 +256,6 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(true)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
@@ -288,8 +276,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
@@ -299,7 +287,6 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(false)
                     .email(authRequest.email())
-                    .password(passwordEncoder.encode(authRequest.password()))
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
@@ -320,8 +307,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordEncoder, never()).matches(authRequest.password(), user.password());
-            verify(jwtService, never()).generate(user);
+            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(user);
         }
     }
 
@@ -334,10 +321,10 @@ class AuthControllerIntegrationTest {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenReturn(user.email());
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            when(jwtService.generate(user)).thenReturn(tokenPayload);
+            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -354,10 +341,10 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.accessToken()).isNotBlank();
             assertThat(authResponse.refreshToken()).isNotBlank();
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
-            verify(jwtService).generate(user);
+            verify(tokenGenerationService).generate(user);
         }
 
         @Test
@@ -365,8 +352,8 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenReturn(user.email());
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
             String content = mockMvc.perform(post("/auth/refresh")
@@ -384,17 +371,17 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
-            verify(jwtService, never()).generate(user);
+            verify(tokenGenerationService, never()).generate(user);
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenThrow(new InvalidTokenException("Invalid token."));
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenThrow(new InvalidTokenException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -411,18 +398,18 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService, never()).extractEmail(anyString());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser, never()).extractSubject(anyString());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(jwtService.parse(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(jwtService.extractEmail(refreshRequest.refreshToken())).thenThrow(ExpiredJwtException.class);
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(ExpiredJwtException.class);
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -439,10 +426,10 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(jwtService).parse(refreshRequest.refreshToken());
-            verify(jwtService).extractEmail(refreshRequest.refreshToken());
+            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(jwtService, never()).generate(any(User.class));
+            verify(tokenGenerationService, never()).generate(any(User.class));
         }
     }
 
@@ -456,10 +443,10 @@ class AuthControllerIntegrationTest {
                     .emailVerified(false)
                     .build();
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
-            ArgumentCaptor<UpdateUserRequest> updateUserRequestArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+            ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doNothing().when(userCommandPort).update(eq(user.id()), updateUserRequestArgumentCaptor.capture());
+            doNothing().when(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
             mockMvc.perform(patch("/auth/complete-auth")
                             .param("email", user.email())
@@ -467,15 +454,14 @@ class AuthControllerIntegrationTest {
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
                     .andExpect(status().isOk());
 
-            UpdateUserRequest updateUserRequest = updateUserRequestArgumentCaptor.getValue();
+            User updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort).update(user.id(), updateUserRequest);
+            verify(userCommandPort).update(user.id(), updateUserArgumentCaptorValue);
 
-            UpdateUserRequest userRequestArgumentCaptorValue = updateUserRequestArgumentCaptor.getValue();
-            assertThat(userRequestArgumentCaptorValue).isNotNull();
-            assertThat(userRequestArgumentCaptorValue.status()).isEqualTo(updateUserRequest.status());
-            assertThat(userRequestArgumentCaptorValue.fullName()).isEqualTo(updateUserRequest.fullName());
-            assertThat(userRequestArgumentCaptorValue.birthDate()).isEqualTo(updateUserRequest.birthDate());
+            assertThat(updateUserArgumentCaptorValue).isNotNull();
+            assertThat(updateUserArgumentCaptorValue.status()).isEqualTo(UserStatus.ACTIVE);
+            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
+            assertThat(updateUserArgumentCaptorValue.birthDate()).isEqualTo(completeAuthRequest.birthDate());
         }
 
         @Test
@@ -586,7 +572,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
 
         @Test
@@ -615,11 +601,11 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
 
         @Test
-        void completeProfile_shouldReturn_whenUserAlreadyCompletedRegistration() throws Exception {
+        void completeProfile_shouldReturnConflict_whenUserAlreadyCompletedRegistration() throws Exception {
             User user = UserDataBuilder.buildUserAllFields()
                     .emailVerified(true)
                     .status(UserStatus.ACTIVE)
@@ -642,10 +628,10 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getErrors()).isNull();
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already activated.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already active.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userCommandPort, never()).update(anyString(), any(User.class));
         }
     }
 
@@ -654,10 +640,11 @@ class AuthControllerIntegrationTest {
 
         @Test
         void getAuthenticatedUser_shouldReturnUserProfile() throws Exception {
-            AuthUser authUser = AuthUserDataBuilder.buildAuthUserWithAllFields()
+            AuthUserResponse authUser = AuthUserResponseDataBuilder.buildWithAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(authUser);
+
+            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 
@@ -713,33 +700,6 @@ class AuthControllerIntegrationTest {
 
             verify(securityContextHelper).getAuthUser();
         }
-
-        @Test
-        void getAuthenticatedUser_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields()
-                    .status(UserStatus.ACTIVE)
-                    .build();
-            String accessToken = "access_token";
-            Claims mockedClaims = mock(Claims.class);
-
-            when(jwtHelper.extractAllClaims(accessToken)).thenReturn(mockedClaims);
-            when(mockedClaims.getSubject()).thenReturn(user.email());
-            when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
-
-            String content = mockMvc.perform(get("/auth/me")
-                            .header(AUTHORIZATION_HEADER, BEARER_PREFIX + accessToken)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isNotFound())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/me");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
-        }
     }
+
 }

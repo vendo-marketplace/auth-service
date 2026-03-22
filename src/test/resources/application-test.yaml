@@ -4,55 +4,28 @@ server:
 client:
   url: client_test_url
 
-spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379
-    mongodb:
-      uri: mongodb://root:secret@localhost:27017/mydatabase?authSource=admin&authMechanism=SCRAM-SHA-256
-      authentication-database: admin
-
 google:
   client_id: test_google_client_id
 
 security:
   jwt:
-    internal-key: internalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkeyinternalkey
-    secret-key: secretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkey
-    access-expiration-time: 60000
-    refresh-expiration-time: 120000
+    secret:
+      key: df75c379cea38421a582b41788c77f5a81bcd94346acc43f5c5906a27153d026e64c02240c3478e4e121e638ba4af634
+      access-expiration: 60000
+      refresh-expiration: 120000
+    internal:
+      key: 8539cf66b1790c36a20d79678f492666d1a62f80b6aaf56e21c9408eda55fd25879efe9ea032679b07456694a99d36cd
+      expiration: 60000
 
 eureka:
   client:
     enabled: false
 
-redis:
-  password-recovery:
-    email:
-      prefix: "test-email-prefix:"
-      ttl: 600
-    otp:
-      prefix: "test-otp-prefix:"
-      ttl: 600
-    attempts:
-      prefix: "test-attempts-prefix:"
-      ttl: 3600
-  email-verification:
-    email:
-      prefix: "test-email-prefix:"
-      ttl: 600
-    otp:
-      prefix: "test-otp-prefix:"
-      ttl: 600
-    attempts:
-      prefix: "test-attempts-prefix:"
-      ttl: 3600
-
 kafka:
   events:
     email-otp-notification-event:
       topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
-      groupId: "email_otp_notification_test_group"
-      properties:
-        auto-offset-reset: "earliest"
+
+spring:
+  kafka:
+    bootstrap-servers: test

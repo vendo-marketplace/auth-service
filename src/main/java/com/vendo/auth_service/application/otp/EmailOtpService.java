@@ -1,97 +1,74 @@
 package com.vendo.auth_service.application.otp;
 
+import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
+import com.vendo.auth_service.application.auth.command.OtpCommand;
+import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
+import com.vendo.auth_service.domain.otp.OtpPolicyService;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
-import com.vendo.auth_service.adapter.out.db.redis.common.namespace.otp.OtpNamespace;
-import com.vendo.integration.kafka.event.EmailOtpEvent;
-import com.vendo.integration.redis.common.exception.OtpExpiredException;
+import com.vendo.event_lib.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
-// TODO move business logic to domain layer and write mocking tests
-public class EmailOtpService {
-
-    private final OtpGenerator otpGenerator;
+public class EmailOtpService implements OtpService {
 
     private final OtpStorage otpStorage;
-
+    private final OtpGenerator otpGenerator;
     private final OtpEmailNotificationPort otpEmailNotificationPort;
+    private final OtpPolicyService otpPolicyService;
 
-    public void sendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
-        if (otpStorage.hasActiveKey(otpNamespace.getEmail().buildPrefix(event.getEmail()))) {
-            throw new OtpAlreadySentException("Otp has already sent.");
-        }
-
+    @Override
+    public void sendOtp(OtpCommand command, OtpNamespace namespace) {
+        throwIfOtpAlreadySent(command.email(), namespace);
         String otp = otpGenerator.generate();
-        event.setOtp(otp);
-
-        otpStorage.saveValue(otpNamespace.getOtp().buildPrefix(otp), event.getEmail(), otpNamespace.getOtp().getTtl());
-        otpStorage.saveValue(otpNamespace.getEmail().buildPrefix(event.getEmail()), otp, otpNamespace.getEmail().getTtl());
-
-        otpEmailNotificationPort.sendOtpEmailNotification(event);
+        saveOtpNamespaces(otp, command.email(), namespace);
+        otpEmailNotificationPort.sendOtpEmailNotification(new EmailOtpEvent(otp, command.email(), command.type()));
     }
 
-    public void resendOtp(EmailOtpEvent event, OtpNamespace otpNamespace) {
-        otpStorage.getValue(otpNamespace.getEmail().buildPrefix(event.getEmail()))
-                .orElseThrow(() -> new OtpExpiredException("Otp session expired."));
-
-        increaseResendAttemptsOrThrow(event.getEmail(), otpNamespace);
-
-        String otp = getOtpOrGenerate(event.getEmail(), otpNamespace);
-        event.setOtp(otp);
-
-        otpEmailNotificationPort.sendOtpEmailNotification(event);
+    @Override
+    public void resendOtp(OtpCommand command, OtpNamespace otpNamespace) {
+        String otp = getOtpOrGenerate(command.email(), otpNamespace);
+        increaseResendAttemptsOrThrow(command.email(), otpNamespace);
+        otpEmailNotificationPort.sendOtpEmailNotification(new EmailOtpEvent(otp, command.email(), command.type()));
     }
 
-    public String verifyOtpAndConsume(String otp, String expectedEmail, OtpNamespace namespace) {
-        String actualEmail = otpStorage.getValue(namespace.getOtp().buildPrefix(otp))
-                .orElseThrow(() -> new OtpExpiredException("Otp session expired."));
-
-        if (expectedEmail != null && !actualEmail.equals(expectedEmail)) {
-            throw new InvalidOtpException("Invalid otp.");
+    private void throwIfOtpAlreadySent(String email, OtpNamespace namespace) {
+        boolean activeKey = otpStorage.hasActiveKey(namespace.getEmail().buildPrefix(email));
+        if (activeKey) {
+            throw new OtpAlreadySentException("Otp already sent.");
         }
-
-        otpStorage.deleteValues(
-                namespace.getOtp().buildPrefix(otp),
-                namespace.getEmail().buildPrefix(actualEmail),
-                namespace.getAttempts().buildPrefix(actualEmail)
-        );
-
-        return actualEmail;
     }
 
-    private void increaseResendAttemptsOrThrow(String email, OtpNamespace otpNamespace) {
-        Optional<String> attempts = otpStorage.getValue(otpNamespace.getAttempts().buildPrefix(email));
-        int attempt = attempts.map(Integer::parseInt).orElse(0);
-
-        if (attempt >= 3) {
-            throw new TooManyOtpRequestsException("Reached maximum attempts.");
-        }
-
-        otpStorage.saveValue(
-                otpNamespace.getAttempts().buildPrefix(email),
-                String.valueOf(attempt + 1),
-                otpNamespace.getAttempts().getTtl());
+    private void saveOtpNamespaces(String otp, String email, OtpNamespace namespace) {
+        otpStorage.saveValue(namespace.getOtp().buildPrefix(otp), email, namespace.getOtp().ttl());
+        otpStorage.saveValue(namespace.getEmail().buildPrefix(email), otp, namespace.getEmail().ttl());
     }
 
     private String getOtpOrGenerate(String email, OtpNamespace otpNamespace) {
         Optional<String> otp = otpStorage.getValue(otpNamespace.getEmail().buildPrefix(email));
 
         if (otp.isEmpty()) {
-            otp = otp.map(o -> otpGenerator.generate());
-            otpStorage.saveValue(otpNamespace.getEmail().buildPrefix(email), otp.get(), otpNamespace.getOtp().getTtl());
+            String newOtp = otpGenerator.generate();
+            otpStorage.saveValue(otpNamespace.getEmail().buildPrefix(email), newOtp, otpNamespace.getOtp().ttl());
+            return newOtp;
         }
 
         return otp.get();
     }
+
+    private void increaseResendAttemptsOrThrow(String email, OtpNamespace otpNamespace) {
+        Optional<String> attempts = otpStorage.getValue(otpNamespace.getAttempts().buildPrefix(email));
+        int attempt = otpPolicyService.throwOrIncreaseAttempts(attempts.map(Integer::parseInt).orElse(0));
+
+        otpStorage.saveValue(
+                otpNamespace.getAttempts().buildPrefix(email),
+                String.valueOf(attempt),
+                otpNamespace.getAttempts().ttl());
+    }
+
 }

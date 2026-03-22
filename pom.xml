@@ -139,11 +139,6 @@
 		<!--test dependencies-->
 
         <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
@@ -169,26 +164,6 @@
 			<version>2.8.1</version>
 		</dependency>
 
-		<!--utility dependencies-->
-
-        <!--JWT dependencies-->
-
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.12.6</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.12.6</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.6</version>
-        </dependency>
-
         <!--utility dependencies-->
 
         <dependency>
@@ -196,27 +171,40 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.6.3</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.vendo-marketplace-be</groupId>
-            <artifactId>common</artifactId>
-            <version>1.4.15</version>
-        </dependency>
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>1.6.3</version>
             <scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>io.github.vendo-marketplace-be</groupId>
-			<artifactId>common</artifactId>
-			<version>1.4.15</version>
-		</dependency>
+
+        <!-- vendo dependencies-->
+
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>user-lib</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>core-lib</artifactId>
+            <version>2.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>redis-lib</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>event-lib</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.vendo-marketplace-be</groupId>
+            <artifactId>security-lib</artifactId>
+            <version>2.2.1</version>
+        </dependency>
 
 	</dependencies>
 	<dependencyManagement>
