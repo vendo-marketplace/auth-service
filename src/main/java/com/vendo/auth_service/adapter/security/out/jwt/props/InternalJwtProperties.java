@@ -13,6 +13,6 @@ public class InternalJwtProperties {
 
     private String key;
 
-    private int expirationTime;
+    private long expirationTime;
 
 }

@@ -44,7 +44,7 @@ public final class JwtUtils {
             String subject,
 
             Map<String, Object> claims,
-            int expirationTime
+            long expirationTime
 
     ) {
     }

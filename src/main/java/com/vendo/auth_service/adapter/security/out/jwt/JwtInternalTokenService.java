@@ -31,7 +31,7 @@ public class JwtInternalTokenService implements InternalTokenGenerationService {
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()
                 .subject(ServiceName.AUTH_SERVICE.toString())
                 .claims(claims)
-                .expiration(internalJwtProperties.getExpiration())
+                .expirationTime(internalJwtProperties.getExpirationTime())
                 .build();
 
         return jwtUtils.buildToken(internalJwtProperties.getKey(), jwtPayload);
