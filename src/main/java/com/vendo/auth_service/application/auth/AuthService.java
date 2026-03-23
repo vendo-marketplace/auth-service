@@ -3,10 +3,7 @@ package com.vendo.auth_service.application.auth;
 import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
 import com.vendo.auth_service.application.auth.command.RefreshCommand;
-import com.vendo.auth_service.application.auth.dto.AuthResponse;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
-import com.vendo.auth_service.application.auth.dto.TokenPayload;
-import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
+import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
@@ -59,7 +56,7 @@ public class AuthService {
 
         String hashedPassword = passwordHashingPort.hash(command.password());
 
-        userCommandPort.save(User.builder()
+        userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.INCOMPLETE)
                 .role(UserRole.USER)

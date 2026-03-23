@@ -6,10 +6,7 @@ import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
-import com.vendo.auth_service.application.auth.dto.AuthResponse;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
-import com.vendo.auth_service.application.auth.dto.TokenPayload;
-import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
+import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.AuthUserResponseDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
@@ -109,27 +106,29 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.buildUserAllFields()
                     .email(authRequest.email())
                     .build();
+            SaveUserRequest request = SaveUserRequest.builder().build();
+
             String encodedPassword = "encoded_password";
 
             when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(false);
             when(passwordHashingPort.hash(authRequest.password())).thenReturn(encodedPassword);
-            when(userCommandPort.save(user)).thenReturn(user);
+            when(userCommandPort.save(request)).thenReturn(user);
 
             mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
+            ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
             verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(userCommandPort).save(userArgumentCaptor.capture());
+            verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
 
-            User userArgumentCaptorValue = userArgumentCaptor.getValue();
-            assertThat(userArgumentCaptorValue.email()).isEqualTo(authRequest.email());
-            assertThat(userArgumentCaptorValue.password()).isEqualTo(encodedPassword);
-            assertThat(userArgumentCaptorValue.role()).isEqualTo(UserRole.USER);
-            assertThat(userArgumentCaptorValue.status()).isEqualTo(UserStatus.INCOMPLETE);
-            assertThat(userArgumentCaptorValue.providerType()).isEqualTo(ProviderType.LOCAL);
+            SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
+            assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
+            assertThat(saveUserRequestCaptor.password()).isEqualTo(encodedPassword);
+            assertThat(saveUserRequestCaptor.role()).isEqualTo(UserRole.USER);
+            assertThat(saveUserRequestCaptor.status()).isEqualTo(UserStatus.INCOMPLETE);
+            assertThat(saveUserRequestCaptor.providerType()).isEqualTo(ProviderType.LOCAL);
         }
 
         @Test
@@ -155,7 +154,7 @@ class AuthControllerIntegrationTest {
 
             verify(userQueryPort).existsByEmail(authRequest.email());
             verify(passwordHashingPort, never()).hash(anyString());
-            verify(userCommandPort, never()).save(any(User.class));
+            verify(userCommandPort, never()).save(any(SaveUserRequest.class));
         }
     }
 
