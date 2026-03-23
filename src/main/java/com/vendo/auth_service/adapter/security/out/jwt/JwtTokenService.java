@@ -56,7 +56,7 @@ public class JwtTokenService implements TokenGenerationService {
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()
                 .subject(user.email())
                 .claims(claims)
-                .expiration(jwtProperties.getAccessExpiration())
+                .expirationTime(jwtProperties.getAccessExpirationTime())
                 .build();
         return jwtUtils.buildToken(jwtProperties.getKey(), jwtPayload);
     }
@@ -65,7 +65,7 @@ public class JwtTokenService implements TokenGenerationService {
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()
                 .subject(subject)
                 .claims(Map.of())
-                .expiration(jwtProperties.getAccessExpiration())
+                .expirationTime(jwtProperties.getRefreshExpirationTime())
                 .build();
 
         return jwtUtils.buildToken(jwtProperties.getKey(), jwtPayload);

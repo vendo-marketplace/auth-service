@@ -13,8 +13,8 @@ public class JwtProperties {
 
     private String key;
 
-    private int accessExpiration;
+    private int accessExpirationTime;
 
-    private int refreshExpiration;
+    private int refreshExpirationTime;
 
 }

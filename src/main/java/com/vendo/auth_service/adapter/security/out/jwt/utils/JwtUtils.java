@@ -32,7 +32,7 @@ public final class JwtUtils {
                 .subject(jwtPayload.subject())
                 .claims(jwtPayload.claims())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtPayload.expiration()))
+                .expiration(new Date(System.currentTimeMillis() + jwtPayload.expirationTime))
                 .signWith(getSignInKey(secretKey), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -44,7 +44,7 @@ public final class JwtUtils {
             String subject,
 
             Map<String, Object> claims,
-            int expiration
+            int expirationTime
 
     ) {
     }
