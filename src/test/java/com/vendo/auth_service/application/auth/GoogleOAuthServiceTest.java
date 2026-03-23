@@ -4,6 +4,7 @@ import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
@@ -63,7 +64,7 @@ class GoogleOAuthServiceTest {
 
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
-        verify(userCommandPort, never()).update(anyString(), any(User.class));
+        verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         verify(tokenGenerationService).generate(user);
     }
 
@@ -87,13 +88,13 @@ class GoogleOAuthServiceTest {
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
 
-        ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
+        ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
         verify(tokenGenerationService).generate(user);
 
-        User updateUser = updateUserArgumentCaptor.getValue();
+        UpdateUserRequest updateUser = updateUserArgumentCaptor.getValue();
         assertThat(updateUser.status()).isEqualTo(UserStatus.ACTIVE);
         assertThat(updateUser.providerType()).isEqualTo(ProviderType.GOOGLE);
     }
@@ -121,7 +122,7 @@ class GoogleOAuthServiceTest {
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(tokenGenerationService).generate(user);
-        verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
+        verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
     }
 
     @Test

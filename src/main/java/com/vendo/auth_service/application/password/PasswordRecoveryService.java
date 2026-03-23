@@ -2,6 +2,7 @@ package com.vendo.auth_service.application.password;
 
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
@@ -36,7 +37,7 @@ public class PasswordRecoveryService {
     public void resetPassword(String otp, ResetPasswordCommand command) {
         String email = otpVerifier.verify(otp, passwordRecoveryOtpNamespace);
         User user = userQueryPort.getByEmail(email);
-        userCommandPort.update(user.id(), User.builder()
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .password(passwordEncoder.encode(command.password()))
                 .build());
     }

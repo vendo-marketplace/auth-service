@@ -9,6 +9,7 @@ import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.AuthUserResponseDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
@@ -443,7 +444,7 @@ class AuthControllerIntegrationTest {
                     .emailVerified(false)
                     .build();
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
-            ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
+            ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doNothing().when(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
@@ -454,7 +455,7 @@ class AuthControllerIntegrationTest {
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
                     .andExpect(status().isOk());
 
-            User updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
+            UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(user.id(), updateUserArgumentCaptorValue);
 
@@ -572,7 +573,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(User.class));
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
 
         @Test
@@ -601,7 +602,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(User.class));
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
 
         @Test
@@ -631,7 +632,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already active.");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(User.class));
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
     }
 

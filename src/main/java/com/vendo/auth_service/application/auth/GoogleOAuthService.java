@@ -4,6 +4,7 @@ import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.security.TokenGenerationService;
@@ -35,7 +36,7 @@ public class GoogleOAuthService {
 
     private void updateIfIncomplete(User user, GoogleTokenPayload payload) {
         if (user.status() == UserStatus.INCOMPLETE) {
-            userCommandPort.update(user.id(), User.builder()
+            userCommandPort.update(user.id(), UpdateUserRequest.builder()
                     .status(UserStatus.ACTIVE)
                     .fullName(payload.fullName())
                     .providerType(ProviderType.GOOGLE).build()

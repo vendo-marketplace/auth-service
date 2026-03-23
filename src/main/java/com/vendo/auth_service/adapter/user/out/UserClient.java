@@ -2,6 +2,7 @@ package com.vendo.auth_service.adapter.user.out;
 
 import com.vendo.auth_service.adapter.user.in.dto.UserExistsResponse;
 import com.vendo.auth_service.adapter.user.out.config.UserFeignConfig;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,7 @@ public interface UserClient {
     UserExistsResponse existsByEmail(@RequestParam("email") String email);
 
     @PutMapping
-    void update(@RequestParam("id") String id, @RequestBody User body);
+    void update(@RequestParam("id") String id, @RequestBody UpdateUserRequest body);
 
     @PostMapping
     User save(@RequestBody User body);

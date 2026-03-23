@@ -4,8 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.adapter.verification.in.dto.ValidateRequest;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
-import com.vendo.auth_service.application.otp.OtpVerifier;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
+import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
@@ -249,12 +250,12 @@ class VerificationControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<User> updateUserArgumentCaptor = ArgumentCaptor.forClass(User.class);
+            ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
             verify(userQueryPort).getByEmail(user.email());
             verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
             verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
-            User updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
+            UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.emailVerified()).isTrue();
         }
@@ -285,7 +286,7 @@ class VerificationControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(user.email());
             verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
+            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
 
         @Test
@@ -315,7 +316,7 @@ class VerificationControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(user.email());
             verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort, never()).update(eq(user.id()), any(User.class));
+            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
     }
 

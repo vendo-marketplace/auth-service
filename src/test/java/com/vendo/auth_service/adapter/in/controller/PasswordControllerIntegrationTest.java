@@ -6,6 +6,7 @@ import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace
 import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
 import com.vendo.auth_service.application.auth.AuthService;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
@@ -160,19 +161,19 @@ class PasswordControllerIntegrationTest {
 
             when(otpVerifier.verify(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doNothing().when(userCommandPort).update(user.id(), user);
+            doNothing().when(userCommandPort).update(user.id(), UpdateUserRequest.builder().password(newPassword).build());
 
             mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<User> usertArgumentCaptor = ArgumentCaptor.forClass(User.class);
+            ArgumentCaptor<UpdateUserRequest> usertArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(eq(user.id()), usertArgumentCaptor.capture());
 
-            User updateUserRequestCaptured = usertArgumentCaptor.getValue();
+            UpdateUserRequest updateUserRequestCaptured = usertArgumentCaptor.getValue();
             assertThat(updateUserRequestCaptured).isNotNull();
             assertThat(updateUserRequestCaptured.password()).isNotBlank();
             assertThat(updateUserRequestCaptured.birthDate()).isNull();
@@ -207,7 +208,7 @@ class PasswordControllerIntegrationTest {
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(email);
-            verify(userCommandPort, never()).update(anyString(), any(User.class));
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
 
         @Test
@@ -237,7 +238,7 @@ class PasswordControllerIntegrationTest {
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(User.class));
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
     }
 

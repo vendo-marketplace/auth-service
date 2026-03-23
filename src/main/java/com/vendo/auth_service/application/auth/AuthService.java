@@ -6,6 +6,7 @@ import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
@@ -70,7 +71,7 @@ public class AuthService {
     public void completeAuth(String email, CompleteAuthCommand command) {
         User user = userQueryPort.getByEmail(email);
         user.validateBeforeActivation();
-        userCommandPort.update(user.id(), User.builder()
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());

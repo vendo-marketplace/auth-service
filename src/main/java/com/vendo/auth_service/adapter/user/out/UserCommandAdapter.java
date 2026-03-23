@@ -1,5 +1,6 @@
 package com.vendo.auth_service.adapter.user.out;
 
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.user_lib.exception.UserNotFoundException;
@@ -37,8 +38,8 @@ public class UserCommandAdapter implements UserCommandPort {
     }
 
     @Override
-    public void update(String id, User user) {
-        userClient.update(id, user);
+    public void update(String id, UpdateUserRequest request) {
+        userClient.update(id, request);
     }
 
     private User getByEmail(String email) {

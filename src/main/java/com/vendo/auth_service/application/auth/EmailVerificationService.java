@@ -3,6 +3,7 @@ package com.vendo.auth_service.application.auth;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.command.ValidateCommand;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.domain.user.model.User;
@@ -38,7 +39,7 @@ public class EmailVerificationService {
     public void validate(String otp, ValidateCommand command) {
         User user = userQueryPort.getByEmail(command.email());
         otpVerifier.verifyOtpEmail(otp, command.email(), emailVerificationOtpNamespace);
-        userCommandPort.update(user.id(), User.builder()
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .emailVerified(true)
                 .build());
     }
