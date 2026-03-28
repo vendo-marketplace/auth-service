@@ -11,16 +11,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${server.url}")
     private String SERVER_URL;
 
-    @Value("${client.url}")
-    private String CLIENT_URL;
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns(
-                        "https://*.vercel.app"
-                )
-                .allowedOrigins(SERVER_URL, CLIENT_URL)
+                .allowedOrigins(SERVER_URL)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
