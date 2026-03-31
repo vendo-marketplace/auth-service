@@ -21,6 +21,7 @@ public class AuthAntPathResolver implements AntPathResolver {
             "/verification/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
+            "/actuator/health"
     };
 
     @Override
