@@ -440,7 +440,6 @@ class AuthControllerIntegrationTest {
         void completeAuth_shouldSuccessfullyCompleteRegistration() throws Exception {
             User user = UserDataBuilder.buildUserAllFields()
                     .status(UserStatus.INCOMPLETE)
-                    .emailVerified(false)
                     .build();
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
