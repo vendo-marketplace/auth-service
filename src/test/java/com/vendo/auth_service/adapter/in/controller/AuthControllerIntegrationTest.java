@@ -605,6 +605,35 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
+        void completeProfile_shouldReturnForbidden_whenUserEmailNotVerified() throws Exception {
+            User user = UserDataBuilder.buildUserAllFields()
+                    .emailVerified(false)
+                    .status(UserStatus.INCOMPLETE)
+                    .build();
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+            String content = mockMvc.perform(patch("/auth/complete-auth")
+                            .param("email", user.email())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
+                    .andExpect(status().isForbidden())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(content).isNotNull();
+            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+
+            assertThat(exceptionResponse).isNotNull();
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+
+            verify(userQueryPort).getByEmail(user.email());
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
         void completeProfile_shouldReturnConflict_whenUserAlreadyCompletedRegistration() throws Exception {
             User user = UserDataBuilder.buildUserAllFields()
                     .emailVerified(true)

@@ -31,7 +31,7 @@ public class AuthController {
         authService.signUp(authMapper.toCommand(request));
     }
 
-    @PatchMapping("/complete-auth")
+    @PatchMapping("/complete")
     void completeAuth(
             @RequestParam String email,
             @Valid @RequestBody CompleteAuthRequest request
