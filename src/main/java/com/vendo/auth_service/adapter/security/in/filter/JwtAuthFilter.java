@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.security.in;
+package com.vendo.auth_service.adapter.security.in.filter;
 
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.adapter.security.out.dto.AuthUser;

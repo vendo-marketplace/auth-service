@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.out.config;
 
-import com.vendo.auth_service.adapter.security.in.JwtAuthFilter;
+import com.vendo.auth_service.adapter.security.in.filter.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import static com.vendo.auth_service.adapter.security.in.AuthAntPathResolver.PERMITTED_PATHS;
+import static com.vendo.auth_service.adapter.security.in.filter.AuthAntPathResolver.PERMITTED_PATHS;
 
 @Configuration
 @EnableWebSecurity
