@@ -4,7 +4,7 @@ import com.vendo.core_lib.exception.ExceptionResponse;
 
 public interface ExceptionWrapper {
 
-    ExceptionResponse getResponse();
+    ExceptionResponse getResponse(Exception e);
 
     Class<? extends Exception> getException();
 

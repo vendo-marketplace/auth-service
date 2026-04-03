@@ -13,6 +13,7 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +52,11 @@ public class JwtAuthFilterTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.clearContext();
+    }
 
     @AfterEach
     void tearDown() {
@@ -117,7 +123,7 @@ public class JwtAuthFilterTest {
         assertThat(content).isNotBlank();
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
     }
@@ -160,7 +166,7 @@ public class JwtAuthFilterTest {
 
         assertThat(content).isNotBlank();
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Token has expired.");
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
 

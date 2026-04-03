@@ -5,15 +5,17 @@ import com.vendo.auth_service.adapter.security.out.jwt.utils.JwtUtils;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
-import com.vendo.security_lib.exception.InvalidTokenException;
 import com.vendo.security_lib.type.UserTokenClaim;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtTokenService implements TokenGenerationService {
@@ -41,7 +43,8 @@ public class JwtTokenService implements TokenGenerationService {
         try {
             return jwtUtils.parseSignedClaims(token, secretKey).getPayload();
         } catch (JwtException e) {
-            throw new InvalidTokenException(e.getMessage());
+            log.error(e.getMessage());
+            throw new BadCredentialsException("Invalid or expired token.");
         }
     }
 

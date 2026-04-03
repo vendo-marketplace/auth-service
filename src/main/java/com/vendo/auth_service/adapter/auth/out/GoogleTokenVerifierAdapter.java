@@ -4,9 +4,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
-import com.vendo.security_lib.exception.AccessDeniedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class GoogleTokenVerifierAdapter implements GoogleTokenVerifierPort {
             GoogleIdToken googleIdToken = googleIdTokenVerifier.verify(idToken);
 
             if (googleIdToken == null) {
-                throw new AccessDeniedException("Id token is not verified.");
+                throw new BadCredentialsException("Id token is not verified.");
             }
 
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
@@ -37,7 +37,7 @@ public class GoogleTokenVerifierAdapter implements GoogleTokenVerifierPort {
                     .build();
         } catch (GeneralSecurityException | IOException e) {
             log.error("Google Id token security check failed: {}", e.getMessage());
-            throw new AccessDeniedException("Invalid Id token.");
+            throw new BadCredentialsException("Invalid Id token.");
         }
     }
 
