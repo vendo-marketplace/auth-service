@@ -11,7 +11,6 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
-import com.vendo.security_lib.exception.AccessDeniedException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.Test;
@@ -20,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -132,10 +132,10 @@ class GoogleOAuthServiceTest {
         String idToken = "test_id_token";
         String email = "test_email";
 
-        when(googleTokenVerifierPort.verify(idToken)).thenThrow(AccessDeniedException.class);
+        when(googleTokenVerifierPort.verify(idToken)).thenThrow(BadCredentialsException.class);
 
         assertThatThrownBy(() -> googleOAuthService.googleAuth(googleAuthRequest))
-                .isInstanceOf(AccessDeniedException.class);
+                .isInstanceOf(BadCredentialsException.class);
 
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort, never()).ensureExists(email);

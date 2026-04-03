@@ -2,6 +2,7 @@ package com.vendo.auth_service.adapter.security.in.filter.exception;
 
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.core_lib.exception.InternalServerException;
+import com.vendo.security_lib.exception.ExceptionWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,10 +12,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FilterExceptionParser {
 
-    private final List<ExceptionWrapper> wrappers;
+    private final List<ExceptionWrapper<ExceptionResponse>> wrappers;
 
     public ExceptionResponse parse(Exception e) {
-        ExceptionWrapper wrapper = wrappers.stream()
+        ExceptionWrapper<ExceptionResponse> wrapper = wrappers.stream()
                 .filter(eWrapper -> eWrapper.getException().isInstance(e))
                 .findFirst()
                 .orElseThrow(() -> new InternalServerException("No exception wrapper found for %s.".formatted(e.getClass())));

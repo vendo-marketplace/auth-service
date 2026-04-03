@@ -1,11 +1,11 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.adapter.security.in.filter.exception.FilterExceptionHandler;
 import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
+import com.vendo.security_lib.exception.FilterExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

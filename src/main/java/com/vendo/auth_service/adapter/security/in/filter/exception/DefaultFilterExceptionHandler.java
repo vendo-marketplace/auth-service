@@ -1,6 +1,7 @@
 package com.vendo.auth_service.adapter.security.in.filter.exception;
 
 import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.FilterExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
