@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.in.filter.exception.wrappers;
 
-import com.vendo.auth_service.adapter.server.out.util.ObjectProviderUtil;
+import com.vendo.auth_service.adapter.spring.out.ObjectProviderUtil;
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.security_lib.exception.ExceptionWrapper;
 import io.jsonwebtoken.JwtException;

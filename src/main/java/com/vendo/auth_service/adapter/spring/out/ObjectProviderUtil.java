@@ -1,11 +1,11 @@
-package com.vendo.auth_service.adapter.server.out.util;
+package com.vendo.auth_service.adapter.spring.out;
 
 import com.vendo.core_lib.exception.InternalServerException;
 import org.springframework.beans.factory.ObjectProvider;
 
 public final class ObjectProviderUtil {
 
-    public static  <T> T getOrThrowIfNotHttpMethodCall(ObjectProvider<T> provider) {
+    public static <T> T getOrThrowIfNotHttpMethodCall(ObjectProvider<T> provider) {
         T value = provider.getIfAvailable();
 
         if (value == null) {
