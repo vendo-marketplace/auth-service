@@ -440,7 +440,6 @@ class AuthControllerIntegrationTest {
         void completeAuth_shouldSuccessfullyCompleteRegistration() throws Exception {
             User user = UserDataBuilder.buildUserAllFields()
                     .status(UserStatus.INCOMPLETE)
-                    .emailVerified(false)
                     .build();
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
@@ -448,7 +447,7 @@ class AuthControllerIntegrationTest {
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doNothing().when(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
-            mockMvc.perform(patch("/auth/complete-auth")
+            mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -471,7 +470,7 @@ class AuthControllerIntegrationTest {
                     .fullName("Invalid_fullName")
                     .build();
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -484,7 +483,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(1);
@@ -498,7 +497,7 @@ class AuthControllerIntegrationTest {
                     .birthDate(LocalDate.now())
                     .build();
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -511,7 +510,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(1);
@@ -526,7 +525,7 @@ class AuthControllerIntegrationTest {
                     .birthDate(LocalDate.of(2025, 1, 1))
                     .build();
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -539,7 +538,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(2);
@@ -554,7 +553,7 @@ class AuthControllerIntegrationTest {
 
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -567,7 +566,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
 
@@ -585,7 +584,7 @@ class AuthControllerIntegrationTest {
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -596,9 +595,38 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
+
+            verify(userQueryPort).getByEmail(user.email());
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
+        void completeProfile_shouldReturnForbidden_whenUserEmailNotVerified() throws Exception {
+            User user = UserDataBuilder.buildUserAllFields()
+                    .emailVerified(false)
+                    .status(UserStatus.INCOMPLETE)
+                    .build();
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+            String content = mockMvc.perform(patch("/auth/complete")
+                            .param("email", user.email())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
+                    .andExpect(status().isForbidden())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(content).isNotNull();
+            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+
+            assertThat(exceptionResponse).isNotNull();
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
 
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
@@ -614,7 +642,7 @@ class AuthControllerIntegrationTest {
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-            String content = mockMvc.perform(patch("/auth/complete-auth")
+            String content = mockMvc.perform(patch("/auth/complete")
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
@@ -625,7 +653,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete-auth");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getErrors()).isNull();
             assertThat(exceptionResponse.getMessage()).isEqualTo("User account is already active.");
