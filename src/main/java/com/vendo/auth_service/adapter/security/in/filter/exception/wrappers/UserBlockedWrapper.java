@@ -3,7 +3,7 @@ package com.vendo.auth_service.adapter.security.in.filter.exception.wrappers;
 import com.vendo.auth_service.adapter.spring.out.ObjectProviderUtil;
 import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.security_lib.exception.ExceptionWrapper;
-import com.vendo.user_lib.exception.UserAuthorizationException;
+import com.vendo.user_lib.exception.UserBlockedException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class UserAuthorizationWrapper implements ExceptionWrapper<ExceptionResponse> {
+public class UserBlockedWrapper implements ExceptionWrapper<ExceptionResponse> {
 
     private final ObjectProvider<HttpServletRequest> providerRequest;
 
@@ -21,7 +21,7 @@ public class UserAuthorizationWrapper implements ExceptionWrapper<ExceptionRespo
         HttpServletRequest request = ObjectProviderUtil.getOrThrowIfNotHttpMethodCall(providerRequest);
 
         return ExceptionResponse.builder()
-                .code(HttpStatus.UNAUTHORIZED.value())
+                .code(HttpStatus.FORBIDDEN.value())
                 .message(e.getMessage())
                 .path(request.getRequestURI())
                 .build();
@@ -29,6 +29,6 @@ public class UserAuthorizationWrapper implements ExceptionWrapper<ExceptionRespo
 
     @Override
     public Class<? extends Exception> getException() {
-        return UserAuthorizationException.class;
+        return UserBlockedException.class;
     }
 }
