@@ -12,7 +12,7 @@ public record UpdateUserRequest(
         String password,
         LocalDate birthDate,
         UserStatus status,
-        boolean emailVerified,
+        Boolean emailVerified,
         ProviderType providerType
 ) {
 }
