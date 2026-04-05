@@ -13,6 +13,7 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +52,11 @@ public class JwtAuthFilterTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        SecurityContextHolder.clearContext();
+    }
 
     @AfterEach
     void tearDown() {
@@ -117,7 +123,7 @@ public class JwtAuthFilterTest {
         assertThat(content).isNotBlank();
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
     }
@@ -160,7 +166,7 @@ public class JwtAuthFilterTest {
 
         assertThat(content).isNotBlank();
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Token has expired.");
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
 
@@ -169,7 +175,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnForbidden_whenUserIsBlocked() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenUserIsBlocked() throws Exception {
         User user = UserDataBuilder.buildUserAllFields()
                 .status(UserStatus.BLOCKED)
                 .emailVerified(true)
@@ -196,7 +202,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnForbidden_whenUserIsIncomplete() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenUserIsIncomplete() throws Exception {
         User user = UserDataBuilder.buildUserAllFields()
                 .status(UserStatus.INCOMPLETE)
                 .emailVerified(true)
@@ -207,7 +213,7 @@ public class JwtAuthFilterTest {
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isForbidden())
+                .andExpect(status().isUnauthorized())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -216,7 +222,7 @@ public class JwtAuthFilterTest {
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
 
         verify(tokenClaimsParser).extractSubject(accessToken);
@@ -224,7 +230,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnForbidden_whenUserEmailIsNotVerified() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenUserEmailIsNotVerified() throws Exception {
         User user = UserDataBuilder.buildUserAllFields()
                 .emailVerified(false)
                 .build();
@@ -234,7 +240,7 @@ public class JwtAuthFilterTest {
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isForbidden())
+                .andExpect(status().isUnauthorized())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -243,14 +249,14 @@ public class JwtAuthFilterTest {
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
 
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
-    void doFilterInternal_shouldReturnForbiddenForEmailNotVerifiedFirst_whenUserEmailIsNotVerifiedAndStatusIsIncomplete() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorizedForEmailNotVerifiedFirst_whenUserEmailIsNotVerifiedAndStatusIsIncomplete() throws Exception {
         User user = UserDataBuilder.buildUserAllFields()
                 .status(UserStatus.INCOMPLETE)
                 .emailVerified(false)
@@ -261,7 +267,7 @@ public class JwtAuthFilterTest {
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isForbidden())
+                .andExpect(status().isUnauthorized())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -270,7 +276,7 @@ public class JwtAuthFilterTest {
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
 
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());

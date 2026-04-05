@@ -20,12 +20,10 @@ import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.exception.ExceptionResponse;
-import com.vendo.security_lib.exception.InvalidTokenException;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
-import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +36,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -381,7 +380,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenThrow(new InvalidTokenException("Invalid token."));
+            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid or expired token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -394,7 +393,7 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
@@ -409,7 +408,7 @@ class AuthControllerIntegrationTest {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
             when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(ExpiredJwtException.class);
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid or expired token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -422,7 +421,7 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Token has expired.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 

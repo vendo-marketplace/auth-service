@@ -1,6 +1,7 @@
 package com.vendo.auth_service.adapter.server.in.exception;
 
 import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.core_lib.exception.InternalServerException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -46,11 +47,11 @@ public class ServerExceptionHandler {
         return ResponseEntity.badRequest().body(exceptionResponse);
     }
 
-    @ExceptionHandler(UnexpectedServerException.class)
-    protected ResponseEntity<ExceptionResponse> handleUnexpectedServerException(UnexpectedServerException e, HttpServletRequest request) {
+    @ExceptionHandler(InternalServerException.class)
+    protected ResponseEntity<ExceptionResponse> handleInternalServerException(InternalServerException e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message("Unexpected server error.")
+                .message("Internal server error.")
                 .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .path(request.getRequestURI())
                 .build();
