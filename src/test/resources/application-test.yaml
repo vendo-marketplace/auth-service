@@ -1,6 +1,9 @@
 server:
   url: server_test_url
 
+client:
+  local: client_test_local
+
 google:
   client_id: test_google_client_id
 
