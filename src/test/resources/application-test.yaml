@@ -1,8 +1,12 @@
 server:
   url: server_test_url
 
+gateway:
+  url: gateway_test_url
+
 client:
-  local: client_test_local
+  local:
+    url: client_local_test_url
 
 google:
   client_id: test_google_client_id
