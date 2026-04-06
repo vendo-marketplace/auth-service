@@ -8,13 +8,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${server.url}")
-    private String SERVER_URL;
+    @Value("${gateway.url}")
+    private String GATEWAY_URL;
+
+    @Value("${client.local}")
+    private String CLIENT_LOCAL;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(SERVER_URL)
+                .allowedOrigins(GATEWAY_URL, CLIENT_LOCAL)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
