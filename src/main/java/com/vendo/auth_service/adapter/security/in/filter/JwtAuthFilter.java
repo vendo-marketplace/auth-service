@@ -5,7 +5,7 @@ import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.security_lib.exception.FilterExceptionHandler;
+import com.vendo.security_lib.exception.ExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserQueryPort userQueryPort;
     private final UserMapper userMapper;
 
-    private final FilterExceptionHandler exceptionHandler;
+    private final ExceptionHandler exceptionHandler;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
