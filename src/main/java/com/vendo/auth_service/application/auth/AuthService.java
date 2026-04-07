@@ -65,7 +65,7 @@ public class AuthService {
                 .build());
     }
 
-    public void completeAuth(String email, CompleteAuthCommand command) {
+    public void complete(String email, CompleteAuthCommand command) {
         User user = userQueryPort.getByEmail(email);
         user.validateBeforeActivation();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
