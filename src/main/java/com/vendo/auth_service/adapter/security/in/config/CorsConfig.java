@@ -1,5 +1,6 @@
 package com.vendo.auth_service.adapter.security.in.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,13 @@ public class CorsConfig {
 
     @Value("${client.prod.url}")
     private String CLIENT_PROD_URL;
+
+    @PostConstruct
+    public void run() {
+        System.out.println("Server: " + SERVER_URL);
+        System.out.println("Client local: " + CLIENT_LOCAL_URL);
+        System.out.println("Client prod: " + CLIENT_PROD_URL);
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
