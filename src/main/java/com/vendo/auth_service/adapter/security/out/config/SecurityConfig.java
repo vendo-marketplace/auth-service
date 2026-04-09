@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .cors(configurer -> {})
                 .sessionManagement(sessionManager -> sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PERMITTED_PATHS).permitAll()
                         .anyRequest().authenticated())
                 .addFilterAfter(jwtAuthFilter, ExceptionTranslationFilter.class);
