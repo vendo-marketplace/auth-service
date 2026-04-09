@@ -1,10 +1,9 @@
 server:
   url: server_test_url
 
-gateway:
-  url: gateway_test_url
-
 client:
+  prod:
+    url: client_prod_test_url
   local:
     url: client_local_test_url
 

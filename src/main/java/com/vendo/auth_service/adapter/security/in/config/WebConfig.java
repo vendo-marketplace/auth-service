@@ -11,13 +11,16 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${server.url}")
     private String SERVER_URL;
 
-    @Value("${gateway.url}")
-    private String GATEWAY_URL;
+    @Value("${client.local.url}")
+    private String CLIENT_LOCAL_URL;
+
+    @Value("${client.prod.url}")
+    private String CLIENT_PROD_URL;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(SERVER_URL, GATEWAY_URL)
+                .allowedOrigins(SERVER_URL, CLIENT_LOCAL_URL, CLIENT_PROD_URL)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
