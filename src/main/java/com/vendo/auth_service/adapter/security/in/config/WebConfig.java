@@ -8,17 +8,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${gateway.url}")
-    private String GATEWAY_URL;
+    @Value("${server.url}")
+    private String SERVER_URL;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins(GATEWAY_URL)
+        registry.addMapping("/v3/api-docs/**")
+                .allowedOrigins(SERVER_URL)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
+                .allowCredentials(true);
 
+        registry.addMapping("/swagger-ui/**")
+                .allowedOrigins(SERVER_URL)
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
 }
