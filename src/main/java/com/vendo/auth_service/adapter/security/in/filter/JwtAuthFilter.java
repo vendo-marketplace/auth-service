@@ -44,13 +44,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        log.info("Filter");
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (securityContext.getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }
-        log.info("Not authorized");
 
         try {
             String jwtToken = getTokenFromRequest(request);
@@ -69,7 +67,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        log.info("Shouldn't filter");
         String requestURI = request.getRequestURI();
         return authAntPathResolver.isPermittedPath(requestURI);
     }
