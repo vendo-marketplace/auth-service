@@ -18,13 +18,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${client.prod.url}")
     private String CLIENT_PROD_URL;
 
-    @PostConstruct
-    public void run() {
-        System.out.println("Gateway: " + GATEWAY_URL);
-        System.out.println("Local: " + CLIENT_LOCAL_URL);
-        System.out.println("Prod: " + CLIENT_PROD_URL);
-    }
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
