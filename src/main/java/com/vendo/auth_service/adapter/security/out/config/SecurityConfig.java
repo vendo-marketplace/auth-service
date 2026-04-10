@@ -24,14 +24,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        http.csrf(AbstractHttpConfigurer::disable)
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
                 .anonymous(AbstractHttpConfigurer::disable)
-                .cors(configurer -> {})
-                .sessionManagement(sessionManager -> sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PERMITTED_PATHS).permitAll()
-                        .anyRequest().authenticated())
-                .addFilterAfter(jwtAuthFilter, ExceptionTranslationFilter.class);
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter, ExceptionTranslationFilter.class);
 
         return http.build();
     }
