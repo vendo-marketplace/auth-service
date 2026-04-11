@@ -32,7 +32,6 @@ public record User(
     public void validateBeforeActivation() {
         throwIfBlocked();
         throwIfUnverified();
-        throwIfActive();
     }
 
     public void validateActivity() {

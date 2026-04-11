@@ -16,7 +16,6 @@ public class AuthAntPathResolver implements AntPathResolver {
             "/auth/sign-up",
             "/auth/refresh",
             "/auth/google",
-            "/auth/complete",
             "/password/**",
             "/verification/**",
             "/swagger-ui/**",

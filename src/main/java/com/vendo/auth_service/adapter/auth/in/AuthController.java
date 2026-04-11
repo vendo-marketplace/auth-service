@@ -33,10 +33,9 @@ public class AuthController {
 
     @PatchMapping("/complete")
     void complete(
-            @RequestParam String email,
             @Valid @RequestBody CompleteAuthRequest request
     ) {
-        authService.complete(email, authMapper.toCompleteCommand(request));
+        authService.complete(authMapper.toCompleteCommand(request));
     }
 
     @PostMapping("/refresh")
