@@ -68,7 +68,7 @@ public class AuthService {
     public void complete(CompleteAuthCommand command) {
         AuthUserResponse authUserResponse = getAuthenticatedUserProfile();
         User user = userQueryPort.getByEmail(authUserResponse.email());
-        user.validateBeforeActivation();
+        user.validateCompletion();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
                 .fullName(command.fullName())

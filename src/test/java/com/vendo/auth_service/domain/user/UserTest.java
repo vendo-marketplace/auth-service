@@ -20,21 +20,21 @@ public class UserTest {
     void validateBeforeActivation_shouldSuccessfullyValidate_whenUserIsValid() {
         User user = UserDataBuilder.buildUserAllFields().status(UserStatus.INCOMPLETE).build();
 
-        assertThatCode(user::validateBeforeActivation).doesNotThrowAnyException();
+        assertThatCode(user::validateCompletion).doesNotThrowAnyException();
     }
 
     @Test
-    void validateBeforeActivation_shouldThrowUserBlockedException_whenUserBlocked() {
+    void validateCompletion_shouldThrowUserBlockedException_whenUserBlocked() {
         User user = UserDataBuilder.buildUserAllFields().status(UserStatus.BLOCKED).build();
 
-        assertThatThrownBy(user::validateBeforeActivation).isInstanceOf(UserBlockedException.class).hasMessage("User is blocked.");
+        assertThatThrownBy(user::validateCompletion).isInstanceOf(UserBlockedException.class).hasMessage("User is blocked.");
     }
 
     @Test
-     void validateBeforeActivation_shouldThrowUserAlreadyActivatedException_whenUserActive() {
+    void validateCompletion_shouldThrowUserAlreadyActivatedException_whenUserActive() {
         User user = UserDataBuilder.buildUserAllFields().status(UserStatus.ACTIVE).build();
 
-        assertThatThrownBy(user::validateBeforeActivation).isInstanceOf(UserAlreadyActivatedException.class).hasMessage("User account is already active.");
+        assertThatThrownBy(user::validateCompletion).isInstanceOf(UserAlreadyActivatedException.class).hasMessage("User account is already active.");
     }
 
     @Test

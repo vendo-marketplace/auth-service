@@ -1,10 +1,8 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
+import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
 import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
-import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
-import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
-import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.security_lib.exception.FilterExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,13 +32,9 @@ import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
-
     private final TokenClaimsParser tokenClaimsParser;
-
-    private final UserQueryPort userQueryPort;
-    private final UserMapper userMapper;
-
     private final FilterExceptionHandler exceptionHandler;
+    private final SecurityContextHelper securityContextHelper;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -53,8 +47,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             String jwtToken = getTokenFromRequest(request);
             String subject = tokenClaimsParser.extractSubject(jwtToken);
-
-            AuthUser authUser = validateUserAccessibility(subject);
+            AuthUser authUser = securityContextHelper.retrieveAuthUser(subject);
             addAuthenticationToContext(authUser);
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -81,12 +74,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         return authorization.substring(BEARER_PREFIX.length());
-    }
-
-    private AuthUser validateUserAccessibility(String email) {
-        User user = userQueryPort.getByEmail(email);
-        user.validateActivity();
-        return userMapper.toAuthUser(user);
     }
 
     private void addAuthenticationToContext(AuthUser authUser) {

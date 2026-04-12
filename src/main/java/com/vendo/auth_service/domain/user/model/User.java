@@ -1,6 +1,5 @@
 package com.vendo.auth_service.domain.user.model;
 
-import com.vendo.user_lib.exception.UserAlreadyActivatedException;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.exception.UserIsUnactiveException;
@@ -29,7 +28,7 @@ public record User(
 
 ) {
 
-    public void validateBeforeActivation() {
+    public void validateCompletion() {
         throwIfBlocked();
         throwIfUnverified();
     }
@@ -49,6 +48,7 @@ public record User(
             throw new UserEmailNotVerifiedException("User email is not verified.");
         }
     }
+
     private void throwIfBlocked() {
         if (status == UserStatus.BLOCKED) {
             throw new UserBlockedException("User is blocked.");
@@ -58,12 +58,6 @@ public record User(
     private void throwIfUnactive() {
         if (status != UserStatus.ACTIVE) {
             throw new UserIsUnactiveException("User is unactive.");
-        }
-    }
-
-    private void throwIfActive() {
-        if (status == UserStatus.ACTIVE) {
-            throw new UserAlreadyActivatedException("User account is already active.");
         }
     }
 
