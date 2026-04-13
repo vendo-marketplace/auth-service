@@ -7,7 +7,7 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;

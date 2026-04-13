@@ -1,9 +1,10 @@
 package com.vendo.auth_service.adapter.security.in.filter.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.adapter.spring.out.ObjectProviderUtil;
-import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.core_lib.exception.InternalServerException;
+import com.vendo.core_lib.util.Require;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
+import com.vendo.security_lib.filter.ExceptionWriter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -14,14 +15,14 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class FilterExceptionWriter {
+class FilterExceptionWriter implements ExceptionWriter<ExceptionResponse> {
 
     private final ObjectMapper mapper;
 
     private final ObjectProvider<HttpServletResponse> providerResponse;
 
     public void write(ExceptionResponse target) {
-        HttpServletResponse response = ObjectProviderUtil.getOrThrowIfNotHttpMethodCall(providerResponse);
+        HttpServletResponse response = Require.notNull(providerResponse::getIfAvailable, () -> new InternalServerException("Couldn't provide servlet response. Not http request."));
 
         response.setStatus(target.getCode());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
