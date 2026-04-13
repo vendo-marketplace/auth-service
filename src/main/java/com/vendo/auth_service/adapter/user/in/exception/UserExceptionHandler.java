@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.user.in.exception;
 
 import com.vendo.auth_service.adapter.user.out.exception.UserServiceUnavailableException;
-import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

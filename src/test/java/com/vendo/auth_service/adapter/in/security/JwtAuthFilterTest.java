@@ -7,7 +7,7 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
@@ -123,7 +123,7 @@ public class JwtAuthFilterTest {
         assertThat(content).isNotBlank();
 
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
     }
