@@ -1,12 +1,6 @@
 server:
   url: server_test_url
 
-client:
-  prod:
-    url: client_prod_test_url
-  local:
-    url: client_local_test_url
-
 google:
   client_id: test_google_client_id
 

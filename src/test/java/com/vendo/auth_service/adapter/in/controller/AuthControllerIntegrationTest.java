@@ -671,7 +671,7 @@ class AuthControllerIntegrationTest {
             AuthUserResponse authUserResponse = AuthUserResponseDataBuilder.buildWithAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
-            User user = User.builder().role(UserRole.USER).status(UserStatus.ACTIVE).emailVerified(true).build();
+            User user = UserDataBuilder.buildUserAllFields().build();
 
             SecurityContext securityContext = initializeSecurityContext(user);
 
