@@ -48,14 +48,14 @@ public class UserTest {
     void validateActivity_shouldThrowIllegalArgumentException_whenStatusNull() {
         User user = UserDataBuilder.buildUserAllFields().status(null).build();
 
-        assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification fields must not be null.");
+        assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification are required.");
     }
 
     @Test
     void validateActivity_shouldThrowIllegalArgumentException_whenEmailNull() {
         User user = UserDataBuilder.buildUserAllFields().emailVerified(null).build();
 
-        assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification fields must not be null.");
+        assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification are required.");
     }
 
     @Test

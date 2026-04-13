@@ -24,6 +24,7 @@ import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
+import com.vendo.utils_lib.AssertionUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,7 +48,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
-import static com.vendo.auth_service.adapter.common.SecurityContextService.initializeSecurityContext;
+import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
@@ -262,7 +263,7 @@ class AuthControllerIntegrationTest {
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
                     .getContentAsString();
@@ -271,7 +272,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
@@ -293,7 +294,7 @@ class AuthControllerIntegrationTest {
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
                     .getContentAsString();
@@ -302,7 +303,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
@@ -616,7 +617,7 @@ class AuthControllerIntegrationTest {
                             .param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(content).isNotNull();
@@ -624,7 +625,7 @@ class AuthControllerIntegrationTest {
 
             assertThat(exceptionResponse).isNotNull();
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
 
             verify(userQueryPort).getByEmail(user.email());
@@ -667,13 +668,14 @@ class AuthControllerIntegrationTest {
 
         @Test
         void getAuthenticatedUser_shouldReturnUserProfile() throws Exception {
-            AuthUserResponse authUser = AuthUserResponseDataBuilder.buildWithAllFields()
+            AuthUserResponse authUserResponse = AuthUserResponseDataBuilder.buildWithAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
+            User user = User.builder().role(UserRole.USER).status(UserStatus.ACTIVE).emailVerified(true).build();
 
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+            SecurityContext securityContext = initializeSecurityContext(user);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(securityContextHelper.getAuthUser()).thenReturn(authUserResponse);
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -686,14 +688,9 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotNull();
             UserProfileResponse responseDto = objectMapper.readValue(content, UserProfileResponse.class);
 
+            AssertionUtils.assertFrom(user, responseDto, "createdAt", "updatedAt");
+
             assertThat(content).doesNotContain("password");
-            assertThat(responseDto).isNotNull();
-            assertThat(responseDto.id()).isEqualTo(authUser.id());
-            assertThat(responseDto.email()).isEqualTo(authUser.email());
-            assertThat(responseDto.fullName()).isEqualTo(authUser.fullName());
-            assertThat(responseDto.role()).isEqualTo(authUser.role());
-            assertThat(responseDto.status()).isEqualTo(authUser.status());
-            assertThat(responseDto.providerType()).isEqualTo(authUser.providerType());
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 

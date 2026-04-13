@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
+import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import jakarta.servlet.FilterChain;
@@ -47,14 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             String jwtToken = getTokenFromRequest(request);
             String subject = tokenClaimsParser.extractSubject(jwtToken);
-            AuthUser authUser = userAuthenticationService.getAuthUser(subject);
-            addAuthenticationToContext(authUser);
+            User user = userAuthenticationService.getUser(subject);
+            addAuthenticationToContext(user);
         } catch (AuthenticationException e) {
             log.error(e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new AuthenticationServiceException("Internal authentication error.");
+            throw new AuthenticationServiceException(e.getMessage());
         }
 
         filterChain.doFilter(request, response);
@@ -78,11 +78,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return authorization.substring(BEARER_PREFIX.length());
     }
 
-    private void addAuthenticationToContext(AuthUser authUser) {
+    private void addAuthenticationToContext(User user) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                authUser,
+                user,
                 null,
-                Collections.singleton(new SimpleGrantedAuthority(authUser.role().name())));
+                Collections.singleton(new SimpleGrantedAuthority(user.role().name())));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }
