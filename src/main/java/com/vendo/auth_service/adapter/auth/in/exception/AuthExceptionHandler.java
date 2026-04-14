@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class AuthExceptionHandler {
 
     @ExceptionHandler(GoogleAuthException.class)
-    public ResponseEntity<ExceptionResponse> handleBadCredentialsException(GoogleAuthException e, HttpServletRequest request) {
+    public ResponseEntity<ExceptionResponse> handleGoogleAuthException(GoogleAuthException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
                 .code(HttpStatus.UNAUTHORIZED.value())
