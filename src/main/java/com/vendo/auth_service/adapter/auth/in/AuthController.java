@@ -10,6 +10,7 @@ import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -32,9 +33,8 @@ public class AuthController {
     }
 
     @PatchMapping("/complete")
-    void complete(
-            @Valid @RequestBody CompleteAuthRequest request
-    ) {
+    @PreAuthorize("@userSecurity.validateCompletion(authentication)")
+    void complete(@Valid @RequestBody CompleteAuthRequest request) {
         authService.complete(authMapper.toCompleteCommand(request));
     }
 
