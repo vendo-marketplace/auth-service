@@ -323,7 +323,6 @@ class AuthControllerIntegrationTest {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
 
-            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
             when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
@@ -343,7 +342,6 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.accessToken()).isNotBlank();
             assertThat(authResponse.refreshToken()).isNotBlank();
 
-            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
             verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
             verify(tokenGenerationService).generate(user);
@@ -354,7 +352,6 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
             when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -373,7 +370,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
             verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort).getByEmail(user.email());
             verify(tokenGenerationService, never()).generate(user);
@@ -383,7 +379,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid or expired token."));
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -396,12 +392,11 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
-            verify(tokenClaimsParser, never()).extractSubject(anyString());
+            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
             verify(tokenGenerationService, never()).generate(any(User.class));
         }
@@ -410,8 +405,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(bearerTokenExtractor.extract(refreshRequest.refreshToken())).thenReturn(refreshRequest.refreshToken());
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid or expired token."));
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -424,11 +418,10 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(bearerTokenExtractor).extract(refreshRequest.refreshToken());
             verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
             verify(tokenGenerationService, never()).generate(any(User.class));

@@ -7,7 +7,6 @@ import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
@@ -29,7 +28,6 @@ public class AuthService {
     private final UserAuthenticationService userAuthenticationService;
 
     private final TokenGenerationService tokenGenerationService;
-    private final BearerTokenExtractor bearerTokenExtractor;
     private final PasswordHashingPort passwordHashingPort;
     private final TokenClaimsParser tokenClaimsParser;
 
@@ -74,8 +72,7 @@ public class AuthService {
     }
 
     public AuthResponse refresh(RefreshCommand command) {
-        String token = bearerTokenExtractor.extract(command.refreshToken());
-        String email = tokenClaimsParser.extractSubject(token);
+        String email = tokenClaimsParser.extractSubject(command.refreshToken());
 
         User user = userQueryPort.getByEmail(email);
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
