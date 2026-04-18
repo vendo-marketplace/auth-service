@@ -1,14 +1,16 @@
-package com.vendo.auth_service.adapter.in.controller;
+package com.vendo.auth_service.test_utils;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/test")
-class TestController {
+@PreAuthorize("@userSecurity.validateAuthCompleted(authentication)")
+public class UserTestController {
 
-    @GetMapping("/ping")
+    @GetMapping("/user/ping")
     public String ping() {
         return "pong";
     }

@@ -42,9 +42,12 @@ public class JwtTokenService implements TokenGenerationService {
     public Claims extractAllClaims(String token, String secretKey) {
         try {
             return jwtUtils.parseSignedClaims(token, secretKey).getPayload();
-        } catch (JwtException e) {
+        } catch (ExpiredJwtException e) {
             log.error(e.getMessage());
-            throw new BadCredentialsException("Invalid or expired token.");
+            throw new BadCredentialsException("Token expired.");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new BadCredentialsException("Invalid token.");
         }
     }
 

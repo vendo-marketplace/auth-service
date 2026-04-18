@@ -7,17 +7,16 @@ import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
 
 public class AuthUserResponseDataBuilder {
 
     public static AuthUserResponse.AuthUserResponseBuilder buildWithAllFields() {
         return AuthUserResponse.builder()
-                .id(String.valueOf(UUID.randomUUID()))
+                .id("id")
                 .email("test@gmail.com")
                 .role(UserRole.USER)
-                .status(UserStatus.INCOMPLETE)
-                .birthDate(LocalDate.now())
+                .status(UserStatus.ACTIVE)
+                .birthDate(LocalDate.of(2000, 1, 1))
                 .fullName("Test Name")
                 .providerType(ProviderType.LOCAL)
                 .createdAt(Instant.now())

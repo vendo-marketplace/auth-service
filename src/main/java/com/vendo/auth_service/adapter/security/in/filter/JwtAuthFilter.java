@@ -1,11 +1,8 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
-import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
-import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.security_lib.exception.ExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,8 +11,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,13 +33,8 @@ import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
-
     private final TokenClaimsParser tokenClaimsParser;
-
-    private final UserQueryPort userQueryPort;
-    private final UserMapper userMapper;
-
-    private final ExceptionHandler exceptionHandler;
+    private final UserAuthenticationService userAuthenticationService;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -53,13 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             String jwtToken = getTokenFromRequest(request);
             String subject = tokenClaimsParser.extractSubject(jwtToken);
-
-            AuthUser authUser = validateUserAccessibility(subject);
-            addAuthenticationToContext(authUser);
+            User user = userAuthenticationService.getUser(subject);
+            addAuthenticationToContext(user);
+        } catch (AuthenticationException e) {
+            log.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
-            exceptionHandler.handle(e);
-            return;
+            throw new AuthenticationServiceException(e.getMessage());
         }
 
         filterChain.doFilter(request, response);
@@ -77,23 +72,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (authorization == null) {
             throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
         } else if (!authorization.startsWith(BEARER_PREFIX)) {
-            throw new BadCredentialsException("Invalid or expired token.");
+            throw new BadCredentialsException("Invalid token.");
         }
 
         return authorization.substring(BEARER_PREFIX.length());
     }
 
-    private AuthUser validateUserAccessibility(String email) {
-        User user = userQueryPort.getByEmail(email);
-        user.validateActivity();
-        return userMapper.toAuthUser(user);
-    }
-
-    private void addAuthenticationToContext(AuthUser authUser) {
+    private void addAuthenticationToContext(User user) {
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                authUser,
+                user,
                 null,
-                Collections.singleton(new SimpleGrantedAuthority(authUser.role().name())));
+                Collections.singleton(new SimpleGrantedAuthority(user.role().name())));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }

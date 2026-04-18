@@ -37,7 +37,7 @@ public record User(
 
     public void validateActivity() {
         if (status == null || emailVerified == null) {
-            throw new IllegalArgumentException("Status and email verification fields must not be null.");
+            throw new IllegalArgumentException("Status and email verification are required.");
         }
 
         throwIfBlocked();
