@@ -6,7 +6,10 @@ import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
-import com.vendo.auth_service.application.auth.dto.*;
+import com.vendo.auth_service.application.auth.dto.AuthResponse;
+import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
+import com.vendo.auth_service.application.auth.dto.TokenPayload;
+import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
@@ -440,11 +443,11 @@ class AuthControllerIntegrationTest {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(true)
                     .build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
             doNothing().when(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
@@ -471,7 +474,8 @@ class AuthControllerIntegrationTest {
                     .buildCompleteAuthRequestWithAllFields()
                     .fullName("Invalid_fullName")
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+            User user = UserDataBuilder.withUserRole().build();
+            SecurityContext securityContext = initializeSecurityContext(user);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -497,7 +501,8 @@ class AuthControllerIntegrationTest {
                     .buildCompleteAuthRequestWithAllFields()
                     .birthDate(LocalDate.now())
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+            User user = UserDataBuilder.withUserRole().build();
+            SecurityContext securityContext = initializeSecurityContext(user);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -524,7 +529,8 @@ class AuthControllerIntegrationTest {
                     .fullName("Invalid_fullName")
                     .birthDate(LocalDate.of(2025, 1, 1))
                     .build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+            User user = UserDataBuilder.withUserRole().build();
+            SecurityContext securityContext = initializeSecurityContext(user);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -549,10 +555,10 @@ class AuthControllerIntegrationTest {
         void complete_shouldReturnNotFound_whenUserNotFound() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .buildCompleteAuthRequestWithAllFields().build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.INCOMPLETE)
                     .build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
             doThrow(new UserNotFoundException("User not found."))
@@ -581,10 +587,10 @@ class AuthControllerIntegrationTest {
         void complete_shouldReturnForbidden_whenUserBlocked() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .buildCompleteAuthRequestWithAllFields().build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.BLOCKED)
                     .build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 
@@ -609,11 +615,11 @@ class AuthControllerIntegrationTest {
         void complete_shouldReturnForbidden_whenUserEmailNotVerified() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .buildCompleteAuthRequestWithAllFields().build();
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.INCOMPLETE)
                     .emailVerified(false)
                     .build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 

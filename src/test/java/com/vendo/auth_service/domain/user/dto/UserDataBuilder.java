@@ -25,4 +25,9 @@ public class UserDataBuilder {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
     }
+
+    public static User.UserBuilder withUserRole() {
+        return User.builder()
+                .role(UserRole.USER);
+    }
 }

@@ -54,7 +54,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new AuthenticationServiceException(e.getMessage());
+            throw new AuthenticationServiceException("Unauthorized.");
         }
 
         filterChain.doFilter(request, response);
