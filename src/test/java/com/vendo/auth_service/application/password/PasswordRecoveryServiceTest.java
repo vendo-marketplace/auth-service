@@ -51,7 +51,7 @@ public class PasswordRecoveryServiceTest {
 
     @Test
     void forgotPassword_shouldSendOtp_WhenUserValid() {
-        User user = UserDataBuilder.buildUserAllFields().email(TEST_EMAIL).build();
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
@@ -78,7 +78,7 @@ public class PasswordRecoveryServiceTest {
 
     @Test
     void forgotPassword_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.buildUserAllFields().email(TEST_EMAIL).build();
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(passwordRecoveryOtpNamespace));
@@ -100,7 +100,7 @@ public class PasswordRecoveryServiceTest {
     void resetPassword_shouldResetPassword_whenUserAndOtpAreValid() {
         String encodedPassword = "encodedPassword";
         ResetPasswordCommand resetPasswordCommand = new ResetPasswordCommand(TEST_PASSWORD);
-        User user = UserDataBuilder.buildUserAllFields().email(TEST_EMAIL).build();
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
         when(otpVerifier.verify(TEST_OTP, passwordRecoveryOtpNamespace)).thenReturn(TEST_EMAIL);
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
@@ -139,7 +139,7 @@ public class PasswordRecoveryServiceTest {
 
     @Test
     void resendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().email(TEST_EMAIL).build();
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
@@ -165,7 +165,7 @@ public class PasswordRecoveryServiceTest {
     }
     @Test
     void resendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.buildUserAllFields().email(TEST_EMAIL).build();
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).resendOtp(any(OtpCommand.class), eq(passwordRecoveryOtpNamespace));

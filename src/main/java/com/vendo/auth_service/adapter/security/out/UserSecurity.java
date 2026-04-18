@@ -1,24 +1,17 @@
 package com.vendo.auth_service.adapter.security.out;
 
-import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
-import com.vendo.user_lib.exception.UserBlockedException;
-import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
-import com.vendo.user_lib.type.UserStatus;
-import org.springframework.security.core.Authentication;
+import com.vendo.auth_service.domain.user.model.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-
 @Component
+@RequiredArgsConstructor
 public class UserSecurity {
 
-    public void validateCompletion(Authentication authentication) {
-        AuthUser user = (AuthUser) authentication.getPrincipal();
+    private final SecurityContextHelper contextHelper;
 
-        if (user.status() == UserStatus.BLOCKED) {
-            throw new UserBlockedException("User is blocked.");
-        }
-        if (!user.emailVerified()) {
-            throw new UserEmailNotVerifiedException("User email is not verified.");
-        }
+    public void validateCompletion() {
+        User authUser = contextHelper.getAuthUser();
+        authUser.validateCompletion();
     }
 }

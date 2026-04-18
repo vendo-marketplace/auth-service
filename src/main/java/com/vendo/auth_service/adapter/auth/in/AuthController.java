@@ -2,11 +2,13 @@ package com.vendo.auth_service.adapter.auth.in;
 
 import com.vendo.auth_service.adapter.auth.out.mapper.AuthMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
+import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.AuthService;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.application.auth.dto.UserResponse;
+import com.vendo.auth_service.domain.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ public class AuthController {
 
     private final AuthMapper authMapper;
 
+    private final UserMapper userMapper;
+
     @PostMapping("/sign-in")
     ResponseEntity<AuthResponse> signIn(@Valid @RequestBody AuthRequest request) {
         return ResponseEntity.ok(authService.signIn(authMapper.toCommand(request)));
@@ -33,7 +37,7 @@ public class AuthController {
     }
 
     @PatchMapping("/complete")
-    @PreAuthorize("@userSecurity.validateCompletion(authentication)")
+    @PreAuthorize("@userSecurity.validateCompletion()")
     void complete(@Valid @RequestBody CompleteAuthRequest request) {
         authService.complete(authMapper.toCompleteCommand(request));
     }
@@ -44,8 +48,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    ResponseEntity<AuthUserResponse> getAuthenticatedUserProfile() {
-        return ResponseEntity.ok(authService.getAuthenticatedUserProfile());
+    ResponseEntity<UserResponse> getAuthenticatedUserProfile() {
+        User user = authService.getAuthenticatedUserProfile();
+        return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
 }

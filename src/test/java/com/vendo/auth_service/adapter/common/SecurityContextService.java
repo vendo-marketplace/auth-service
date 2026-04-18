@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.common;
 
-import com.vendo.auth_service.adapter.security.out.dto.AuthUser;
+import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.user_lib.type.UserRole;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,7 +15,7 @@ public class SecurityContextService {
     public static SecurityContext initializeSecurityContext(UserRole role) {
         SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
         securityContext.setAuthentication(new UsernamePasswordAuthenticationToken(
-                AuthUser.builder().build(),
+                User.builder().build(),
                 null,
                 Collections.singletonList(new SimpleGrantedAuthority(role.name()))
         ));

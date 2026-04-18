@@ -58,5 +58,4 @@ public class ServerExceptionHandler {
 
         return ResponseEntity.badRequest().body(exceptionResponse);
     }
-
 }

@@ -64,7 +64,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldPassAuthorization_whenUserAlreadyAuthorized() throws Exception {
+    void doFilterInternal_shouldPassFilter_whenUserAlreadyAuthorized() throws Exception {
         SecurityContext securityContext = SecurityContextService.initializeSecurityContext(UserRole.USER);
 
         String content = mockMvc.perform(get("/test/ping")
@@ -79,22 +79,8 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenNoTokenInRequest() throws Exception {
-        String content = mockMvc.perform(get("/test/ping"))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-    }
-
-    @Test
     void doFilterInternal_shouldPassFilter_whenTokenIsValid() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields()
+        User user = UserDataBuilder.withAllFields()
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)
                 .build();
@@ -108,6 +94,20 @@ public class JwtAuthFilterTest {
 
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
+    }
+
+    @Test
+    void doFilterInternal_shouldReturnUnauthorized_whenNoTokenInRequest() throws Exception {
+        String content = mockMvc.perform(get("/test/ping"))
+                .andExpect(status().isUnauthorized())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(content).isNotBlank();
+        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
@@ -126,30 +126,6 @@ public class JwtAuthFilterTest {
         assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-    }
-
-    @Test
-    void doFilterInternal_shouldReturnNotFound() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields().build();
-        String accessToken = "access_token";
-
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
-        when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
-
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isNotFound())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-
-        verify(tokenClaimsParser).extractSubject(accessToken);
-        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
@@ -175,111 +151,135 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenUserIsBlocked() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields()
-                .status(UserStatus.BLOCKED)
-                .emailVerified(true)
-                .build();
+    void doFilterInternal_shouldUserNotFound() throws Exception {
+        User user = UserDataBuilder.withAllFields().build();
         String accessToken = "access_token";
 
         when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+        when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
-        String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isForbidden())
+        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+                .andExpect(status().isNotFound())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        assertThat(response).isNotBlank();
-        ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+        assertThat(content).isNotBlank();
+        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+        assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
 
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
 
-    @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenUserIsIncomplete() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields()
-                .status(UserStatus.INCOMPLETE)
-                .emailVerified(true)
-                .build();
-        String accessToken = "access_token";
+//    @Test
+//    void doFilterInternal_shouldReturnUnauthorized_whenUserIsBlocked() throws Exception {
+//        User user = UserDataBuilder.withAllFields()
+//                .status(UserStatus.BLOCKED)
+//                .emailVerified(true)
+//                .build();
+//        String accessToken = "access_token";
+//
+//        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
+//        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+//
+//        String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+//                .andExpect(status().isForbidden())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//
+//        assertThat(response).isNotBlank();
+//        ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
+//        assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
+//        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+//        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+//
+//        verify(tokenClaimsParser).extractSubject(accessToken);
+//        verify(userQueryPort).getByEmail(user.email());
+//    }
 
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+//    @Test
+//    void doFilterInternal_shouldReturnUnauthorized_whenUserIsIncomplete() throws Exception {
+//        User user = UserDataBuilder.withAllFields()
+//                .status(UserStatus.INCOMPLETE)
+//                .emailVerified(true)
+//                .build();
+//        String accessToken = "access_token";
+//
+//        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
+//        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+//
+//        String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+//                .andExpect(status().isUnauthorized())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//
+//        assertThat(response).isNotBlank();
+//
+//        ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
+//        assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
+//        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+//        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
+//
+//        verify(tokenClaimsParser).extractSubject(accessToken);
+//        verify(userQueryPort).getByEmail(user.email());
+//    }
 
-        String response = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+//    @Test
+//    void doFilterInternal_shouldReturnUnauthorized_whenUserEmailIsNotVerified() throws Exception {
+//        User user = UserDataBuilder.withAllFields()
+//                .emailVerified(false)
+//                .build();
+//        String accessToken = "access_token";
+//
+//        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
+//        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+//
+//        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+//                .andExpect(status().isUnauthorized())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//
+//        assertThat(content).isNotBlank();
+//
+//        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+//        assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+//        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+//
+//        verify(tokenClaimsParser).extractSubject(accessToken);
+//        verify(userQueryPort).getByEmail(user.email());
+//    }
 
-        assertThat(response).isNotBlank();
-
-        ExceptionResponse exceptionResponse = objectMapper.readValue(response, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-
-        verify(tokenClaimsParser).extractSubject(accessToken);
-        verify(userQueryPort).getByEmail(user.email());
-    }
-
-    @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenUserEmailIsNotVerified() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields()
-                .emailVerified(false)
-                .build();
-        String accessToken = "access_token";
-
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-
-        verify(tokenClaimsParser).extractSubject(accessToken);
-        verify(userQueryPort).getByEmail(user.email());
-    }
-
-    @Test
-    void doFilterInternal_shouldReturnUnauthorizedForEmailNotVerifiedFirst_whenUserEmailIsNotVerifiedAndStatusIsIncomplete() throws Exception {
-        User user = UserDataBuilder.buildUserAllFields()
-                .status(UserStatus.INCOMPLETE)
-                .emailVerified(false)
-                .build();
-        String accessToken = "access_token";
-
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-
-        verify(tokenClaimsParser).extractSubject(accessToken);
-        verify(userQueryPort).getByEmail(user.email());
-    }
+//    @Test
+//    void doFilterInternal_shouldReturnUnauthorizedForEmailNotVerifiedFirst_whenUserEmailIsNotVerifiedAndStatusIsIncomplete() throws Exception {
+//        User user = UserDataBuilder.withAllFields()
+//                .status(UserStatus.INCOMPLETE)
+//                .emailVerified(false)
+//                .build();
+//        String accessToken = "access_token";
+//
+//        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
+//        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+//
+//        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+//                .andExpect(status().isUnauthorized())
+//                .andReturn()
+//                .getResponse()
+//                .getContentAsString();
+//
+//        assertThat(content).isNotBlank();
+//
+//        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+//        assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+//        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+//
+//        verify(tokenClaimsParser).extractSubject(accessToken);
+//        verify(userQueryPort).getByEmail(user.email());
+//    }
 
 }

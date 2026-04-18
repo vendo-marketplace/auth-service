@@ -1,6 +1,6 @@
 package com.vendo.auth_service.domain.auth.dto;
 
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.application.auth.dto.UserResponse;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class AuthUserResponseDataBuilder {
 
-    public static AuthUserResponse.AuthUserResponseBuilder buildWithAllFields() {
-        return AuthUserResponse.builder()
+    public static UserResponse.UserResponseBuilder buildWithAllFields() {
+        return UserResponse.builder()
                 .id(String.valueOf(UUID.randomUUID()))
                 .email("test@gmail.com")
                 .role(UserRole.USER)

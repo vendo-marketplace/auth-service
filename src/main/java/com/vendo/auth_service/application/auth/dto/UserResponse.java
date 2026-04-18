@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.security.out.dto;
+package com.vendo.auth_service.application.auth.dto;
 
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Builder
-public record AuthUser(
+public record UserResponse(
 
         String id,
         String email,

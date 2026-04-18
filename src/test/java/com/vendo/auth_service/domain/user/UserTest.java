@@ -17,56 +17,56 @@ public class UserTest {
 
     @Test
     void validateBeforeActivation_shouldSuccessfullyValidate_whenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.INCOMPLETE).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.INCOMPLETE).build();
 
         assertThatCode(user::validateCompletion).doesNotThrowAnyException();
     }
 
     @Test
     void validateCompletion_shouldThrowUserBlockedException_whenUserBlocked() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.BLOCKED).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
 
         assertThatThrownBy(user::validateCompletion).isInstanceOf(UserBlockedException.class).hasMessage("User is blocked.");
     }
 
     @Test
     void validateActivity_shouldSuccessfullyValidate_whenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.ACTIVE).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).build();
 
         assertThatCode(user::validateActivity).doesNotThrowAnyException();
     }
 
     @Test
     void validateActivity_shouldThrowIllegalArgumentException_whenStatusNull() {
-        User user = UserDataBuilder.buildUserAllFields().status(null).build();
+        User user = UserDataBuilder.withAllFields().status(null).build();
 
         assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification fields must not be null.");
     }
 
     @Test
     void validateActivity_shouldThrowIllegalArgumentException_whenEmailNull() {
-        User user = UserDataBuilder.buildUserAllFields().emailVerified(null).build();
+        User user = UserDataBuilder.withAllFields().emailVerified(null).build();
 
         assertThatThrownBy(user::validateActivity).isInstanceOf(IllegalArgumentException.class).hasMessage("Status and email verification fields must not be null.");
     }
 
     @Test
     void validateActivity_shouldThrowUserBlockedException_whenUserBlocked() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.BLOCKED).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
 
         assertThatThrownBy(user::validateActivity).isInstanceOf(UserBlockedException.class).hasMessage("User is blocked.");
     }
 
     @Test
     void validateActivity_shouldThrowUserIsUnactiveException_whenUserUnactive() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.INCOMPLETE).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.INCOMPLETE).build();
 
         assertThatThrownBy(user::validateActivity).isInstanceOf(UserIsUnactiveException.class).hasMessage("User is unactive.");
     }
 
     @Test
     void validateActivity_shouldThrowUserEmailNotVerifiedException_whenEmailNotVerified() {
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.ACTIVE).emailVerified(false).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).emailVerified(false).build();
 
         assertThatThrownBy(user::validateActivity).isInstanceOf(UserEmailNotVerifiedException.class).hasMessage("User email is not verified.");
     }

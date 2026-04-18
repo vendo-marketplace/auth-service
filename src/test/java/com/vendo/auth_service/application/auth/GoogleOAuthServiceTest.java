@@ -47,7 +47,7 @@ class GoogleOAuthServiceTest {
     void googleAuth_shouldReturnTokenPayload() {
         TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
         String idToken = "test_id_token";
         String email = "test_email";
         GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
@@ -72,7 +72,7 @@ class GoogleOAuthServiceTest {
     void googleAuth_shouldActivateIncompletedUser_andReturnTokenPayload() {
         TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.INCOMPLETE).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.INCOMPLETE).build();
         String idToken = "test_id_token";
         String email = "test_email";
         GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
@@ -103,7 +103,7 @@ class GoogleOAuthServiceTest {
     void googleAuth_shouldNotUpdateProviderTypeToGoogle_whenUserIsActive() {
         TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.buildUserAllFields().status(UserStatus.ACTIVE).build();
+        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).build();
         String idToken = "test_id_token";
         String email = "test_email";
         GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
@@ -128,7 +128,7 @@ class GoogleOAuthServiceTest {
     @Test
     void googleAuth_shouldThrowException_whenIdTokenNotVerified() {
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
         String idToken = "test_id_token";
         String email = "test_email";
 

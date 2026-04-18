@@ -66,8 +66,8 @@ public class AuthService {
     }
 
     public void complete(CompleteAuthCommand command) {
-        AuthUserResponse authUserResponse = getAuthenticatedUserProfile();
-        userCommandPort.update(authUserResponse.id(), UpdateUserRequest.builder()
+        User user = getAuthenticatedUserProfile();
+        userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());
@@ -86,7 +86,7 @@ public class AuthService {
                 .build();
     }
 
-    public AuthUserResponse getAuthenticatedUserProfile() {
+    public User getAuthenticatedUserProfile() {
         return userAuthenticationService.getAuthUser();
     }
 
