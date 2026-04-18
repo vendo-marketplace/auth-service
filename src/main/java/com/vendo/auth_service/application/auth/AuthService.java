@@ -4,6 +4,7 @@ import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
 import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.*;
+import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
@@ -17,7 +18,6 @@ import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,7 +39,7 @@ public class AuthService {
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) {
-            throw new BadCredentialsException("Wrong credentials.");
+            throw new IncorrectPasswordException("Wrong credentials.");
         }
 
         TokenPayload tokenPayload = tokenGenerationService.generate(user);

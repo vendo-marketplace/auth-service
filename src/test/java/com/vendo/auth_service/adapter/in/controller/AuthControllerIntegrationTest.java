@@ -18,19 +18,20 @@ import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
+import com.vendo.utils_lib.AssertionUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -46,7 +47,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
-import static com.vendo.auth_service.adapter.common.SecurityContextService.initializeSecurityContext;
+import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
@@ -261,7 +262,7 @@ class AuthControllerIntegrationTest {
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
                     .getContentAsString();
@@ -270,7 +271,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
@@ -292,7 +293,7 @@ class AuthControllerIntegrationTest {
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
                     .getContentAsString();
@@ -301,7 +302,7 @@ class AuthControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
             assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
@@ -620,7 +621,7 @@ class AuthControllerIntegrationTest {
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isForbidden())
+                    .andExpect(status().isUnauthorized())
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(content).isNotNull();
@@ -628,7 +629,7 @@ class AuthControllerIntegrationTest {
 
             assertThat(exceptionResponse).isNotNull();
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
 
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
@@ -644,7 +645,7 @@ class AuthControllerIntegrationTest {
                     .status(UserStatus.ACTIVE)
                     .build();
 
-            SecurityContext securityContext = initializeSecurityContext(UserRole.USER);
+            SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 
@@ -659,14 +660,9 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotNull();
             UserProfileResponse responseDto = objectMapper.readValue(content, UserProfileResponse.class);
 
+            AssertionUtils.assertFrom(authUser, responseDto, "createdAt", "updatedAt");
+
             assertThat(content).doesNotContain("password");
-            assertThat(responseDto).isNotNull();
-            assertThat(responseDto.id()).isEqualTo(authUser.id());
-            assertThat(responseDto.email()).isEqualTo(authUser.email());
-            assertThat(responseDto.fullName()).isEqualTo(authUser.fullName());
-            assertThat(responseDto.role()).isEqualTo(authUser.role());
-            assertThat(responseDto.status()).isEqualTo(authUser.status());
-            assertThat(responseDto.providerType()).isEqualTo(authUser.providerType());
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 

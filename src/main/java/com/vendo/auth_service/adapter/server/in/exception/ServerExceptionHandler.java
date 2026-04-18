@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.server.in.exception;
 
-import com.vendo.core_lib.exception.ExceptionResponse;
 import com.vendo.core_lib.exception.InternalServerException;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

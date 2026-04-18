@@ -7,12 +7,13 @@ import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 public class UserDataBuilder {
 
     public static User.UserBuilder withAllFields() {
         return User.builder()
-                .id("1")
+                .id("id")
                 .email("test@gmail.com")
                 .password("Qwerty1234@")
                 .role(UserRole.USER)
@@ -24,5 +25,4 @@ public class UserDataBuilder {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
     }
-
 }

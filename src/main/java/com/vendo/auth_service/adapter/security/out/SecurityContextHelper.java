@@ -22,8 +22,5 @@ public class SecurityContextHelper implements UserAuthenticationService {
 
         return user;
     }
-
 }
-
-
 

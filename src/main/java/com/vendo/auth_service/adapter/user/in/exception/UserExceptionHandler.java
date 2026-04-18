@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.user.in.exception;
 
 import com.vendo.auth_service.adapter.user.out.exception.UserServiceUnavailableException;
-import com.vendo.core_lib.exception.ExceptionResponse;
+import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -58,20 +58,20 @@ public class UserExceptionHandler {
     public ResponseEntity<ExceptionResponse> handleUserEmailNotVerifiedException(UserEmailNotVerifiedException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
-                .code(HttpStatus.FORBIDDEN.value())
+                .code(HttpStatus.UNAUTHORIZED.value())
                 .path(request.getRequestURI())
                 .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
     }
 
     @ExceptionHandler(UserIsUnactiveException.class)
     public ResponseEntity<ExceptionResponse> handleUserIsUnactiveException(UserIsUnactiveException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
-                .code(HttpStatus.FORBIDDEN.value())
+                .code(HttpStatus.UNAUTHORIZED.value())
                 .path(request.getRequestURI())
                 .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
     }
 
     @ExceptionHandler(UserServiceUnavailableException.class)
