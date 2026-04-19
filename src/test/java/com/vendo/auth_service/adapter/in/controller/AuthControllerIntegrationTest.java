@@ -198,7 +198,7 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
-        void signIn_shouldReturnNotFound_whenUserNotFound() throws Exception {
+        void signIn_shouldReturnNotFound_whenNoUserByEmail() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenThrow(new UserNotFoundException("User not found."));

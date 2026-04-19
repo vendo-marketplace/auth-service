@@ -39,16 +39,16 @@ public class ServerExceptionHandler {
     protected ResponseEntity<ExceptionResponse> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message("Internal server error.")
-                .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .message(e.getMessage())
+                .code(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .build();
 
         return ResponseEntity.badRequest().body(exceptionResponse);
     }
 
-    @ExceptionHandler(InternalServerException.class)
-    protected ResponseEntity<ExceptionResponse> handleInternalServerException(InternalServerException e, HttpServletRequest request) {
+    @ExceptionHandler({InternalServerException.class, NullPointerException.class})
+    protected ResponseEntity<ExceptionResponse> handleInternalServerException(Exception e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message("Internal server error.")

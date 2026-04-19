@@ -129,7 +129,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenTokenIsNotValid() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
         String expiredToken = "access_token";
 
         when(tokenClaimsParser.extractSubject(expiredToken)).thenThrow(new BadCredentialsException("Token expired."));
@@ -151,7 +151,7 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldUserNotFound() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenUserNotFound() throws Exception {
         User user = UserDataBuilder.withAllFields().build();
         String accessToken = "access_token";
 
@@ -173,5 +173,4 @@ public class JwtAuthFilterTest {
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
-
 }

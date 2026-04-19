@@ -36,9 +36,7 @@ public class AuthService {
         user.validateActivity();
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
-        if (!matches) {
-            throw new IncorrectPasswordException("Wrong credentials.");
-        }
+        if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
 
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
@@ -48,9 +46,7 @@ public class AuthService {
     }
 
     public void signUp(AuthCommand command) {
-        if (userQueryPort.existsByEmail(command.email())) {
-            throw new UserAlreadyExistsException("User already exists.");
-        }
+        if (userQueryPort.existsByEmail(command.email())) throw new UserAlreadyExistsException("User already exists.");
 
         String hashedPassword = passwordHashingPort.hash(command.password());
 
