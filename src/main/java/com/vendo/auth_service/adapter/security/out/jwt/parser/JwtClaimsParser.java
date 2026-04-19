@@ -22,7 +22,7 @@ public class JwtClaimsParser implements TokenClaimsParser {
     public String extractSubject(String token) {
         String withoutBearer = token;
 
-        if (token.contains(BEARER_PREFIX)) {
+        if (token.startsWith(BEARER_PREFIX)) {
             withoutBearer = bearerTokenExtractor.extract(token);
         }
 
