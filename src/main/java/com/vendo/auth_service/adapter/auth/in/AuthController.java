@@ -2,14 +2,17 @@ package com.vendo.auth_service.adapter.auth.in;
 
 import com.vendo.auth_service.adapter.auth.out.mapper.AuthMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
+import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.AuthService;
-import com.vendo.auth_service.application.auth.dto.AuthUserResponse;
+import com.vendo.auth_service.application.auth.dto.UserResponse;
+import com.vendo.auth_service.domain.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +23,8 @@ public class AuthController {
     private final AuthService authService;
 
     private final AuthMapper authMapper;
+
+    private final UserMapper userMapper;
 
     @PostMapping("/sign-in")
     ResponseEntity<AuthResponse> signIn(@Valid @RequestBody AuthRequest request) {
@@ -32,11 +37,9 @@ public class AuthController {
     }
 
     @PatchMapping("/complete")
-    void complete(
-            @RequestParam String email,
-            @Valid @RequestBody CompleteAuthRequest request
-    ) {
-        authService.complete(email, authMapper.toCompleteCommand(request));
+    @PreAuthorize("@userSecurity.validateCompletion()")
+    void complete(@Valid @RequestBody CompleteAuthRequest request) {
+        authService.complete(authMapper.toCompleteCommand(request));
     }
 
     @PostMapping("/refresh")
@@ -45,8 +48,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    ResponseEntity<AuthUserResponse> getAuthenticatedUserProfile() {
-        return ResponseEntity.ok(authService.getAuthenticatedUserProfile());
+    ResponseEntity<UserResponse> getAuthenticatedUserProfile() {
+        User user = authService.getAuthenticatedUserProfile();
+        return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
 }

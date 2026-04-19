@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.user.UserQueryPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
     private final TokenClaimsParser tokenClaimsParser;
-    private final UserAuthenticationService userAuthenticationService;
+    private final UserQueryPort userQueryPort;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -47,14 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             String jwtToken = getTokenFromRequest(request);
             String subject = tokenClaimsParser.extractSubject(jwtToken);
-            User user = userAuthenticationService.getUser(subject);
+            User user = userQueryPort.getByEmail(subject);
             addAuthenticationToContext(user);
         } catch (AuthenticationException e) {
             log.error(e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new AuthenticationServiceException(e.getMessage());
+            throw new AuthenticationServiceException("Unauthorized.");
         }
 
         filterChain.doFilter(request, response);

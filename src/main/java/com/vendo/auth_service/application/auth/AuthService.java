@@ -7,7 +7,6 @@ import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
@@ -29,7 +28,6 @@ public class AuthService {
     private final UserAuthenticationService userAuthenticationService;
 
     private final TokenGenerationService tokenGenerationService;
-    private final BearerTokenExtractor bearerTokenExtractor;
     private final PasswordHashingPort passwordHashingPort;
     private final TokenClaimsParser tokenClaimsParser;
 
@@ -38,9 +36,7 @@ public class AuthService {
         user.validateActivity();
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
-        if (!matches) {
-            throw new IncorrectPasswordException("Wrong credentials.");
-        }
+        if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
 
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
@@ -50,9 +46,7 @@ public class AuthService {
     }
 
     public void signUp(AuthCommand command) {
-        if (userQueryPort.existsByEmail(command.email())) {
-            throw new UserAlreadyExistsException("User already exists.");
-        }
+        if (userQueryPort.existsByEmail(command.email())) throw new UserAlreadyExistsException("User already exists.");
 
         String hashedPassword = passwordHashingPort.hash(command.password());
 
@@ -65,9 +59,8 @@ public class AuthService {
                 .build());
     }
 
-    public void complete(String email, CompleteAuthCommand command) {
-        User user = userQueryPort.getByEmail(email);
-        user.validateBeforeActivation();
+    public void complete(CompleteAuthCommand command) {
+        User user = getAuthenticatedUserProfile();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .status(UserStatus.ACTIVE)
                 .fullName(command.fullName())
@@ -75,8 +68,7 @@ public class AuthService {
     }
 
     public AuthResponse refresh(RefreshCommand command) {
-        String token = bearerTokenExtractor.extract(command.refreshToken());
-        String email = tokenClaimsParser.extractSubject(token);
+        String email = tokenClaimsParser.extractSubject(command.refreshToken());
 
         User user = userQueryPort.getByEmail(email);
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
@@ -87,7 +79,7 @@ public class AuthService {
                 .build();
     }
 
-    public AuthUserResponse getAuthenticatedUserProfile() {
+    public User getAuthenticatedUserProfile() {
         return userAuthenticationService.getAuthUser();
     }
 

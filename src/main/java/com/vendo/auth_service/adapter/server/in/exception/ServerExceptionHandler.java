@@ -1,5 +1,6 @@
 package com.vendo.auth_service.adapter.server.in.exception;
 
+import com.vendo.core_lib.exception.InternalServerException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,18 @@ public class ServerExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     protected ResponseEntity<ExceptionResponse> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
+        log.error(e.getMessage());
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .message(e.getMessage())
+                .code(HttpStatus.BAD_REQUEST.value())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.badRequest().body(exceptionResponse);
+    }
+
+    @ExceptionHandler({InternalServerException.class, NullPointerException.class})
+    protected ResponseEntity<ExceptionResponse> handleInternalServerException(Exception e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message("Internal server error.")

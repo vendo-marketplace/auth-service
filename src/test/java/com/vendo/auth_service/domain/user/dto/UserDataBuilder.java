@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class UserDataBuilder {
 
-    public static User.UserBuilder buildUserAllFields() {
+    public static User.UserBuilder withAllFields() {
         return User.builder()
                 .id("id")
                 .email("test@gmail.com")
@@ -24,5 +24,10 @@ public class UserDataBuilder {
                 .emailVerified(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
+    }
+
+    public static User.UserBuilder withUserRole() {
+        return User.builder()
+                .role(UserRole.USER);
     }
 }

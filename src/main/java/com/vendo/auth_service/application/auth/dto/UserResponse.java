@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Builder
-public record AuthUserResponse(
+public record UserResponse(
 
         String id,
         String email,

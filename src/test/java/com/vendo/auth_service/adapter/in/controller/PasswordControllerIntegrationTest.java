@@ -71,7 +71,7 @@ class PasswordControllerIntegrationTest {
 
         @Test
         void forgotPassword_shouldSendForgotPasswordEventSuccessfully() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
@@ -91,7 +91,7 @@ class PasswordControllerIntegrationTest {
 
         @Test
         void forgotPassword_shouldReturnConflict_whenForgotPasswordEventHasAlreadySent() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doThrow(new OtpAlreadySentException("Otp already sent."))
@@ -124,7 +124,7 @@ class PasswordControllerIntegrationTest {
 
         @Test
         void forgotPassword_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             doThrow(new UserNotFoundException("User not found.")).when(userQueryPort).getByEmail(user.email());
 
@@ -153,7 +153,7 @@ class PasswordControllerIntegrationTest {
         void resetPassword_shouldResetPassword() throws Exception {
             String otp = "123456";
             String newPassword = "newTestPassword1234@";
-            User user = UserDataBuilder.buildUserAllFields()
+            User user = UserDataBuilder.withAllFields()
                     .password(newPassword)
                     .build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder()
@@ -215,7 +215,7 @@ class PasswordControllerIntegrationTest {
         void resetPassword_shouldReturnNotFound_whenUserNotFound() throws Exception {
             String otp = "123456";
             String newPassword = "newTestPassword1234@";
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
             when(otpVerifier.verify(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
@@ -248,7 +248,7 @@ class PasswordControllerIntegrationTest {
         @Test
         void resendOtp_shouldSuccessfullyResendOtp() throws Exception {
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doNothing().when(otpService).resendOtp(commandArgumentCaptor.capture(), any(PasswordRecoveryOtpNamespace.class));
@@ -268,7 +268,7 @@ class PasswordControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -292,7 +292,7 @@ class PasswordControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldReturnGone_whenOtpSessionExpired() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));

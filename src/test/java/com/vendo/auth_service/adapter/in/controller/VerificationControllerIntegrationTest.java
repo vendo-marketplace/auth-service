@@ -64,7 +64,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void sendOtp_shouldSendEmailVerificationEventSuccessfully() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
@@ -84,7 +84,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void sendOtp_shouldReturnConflict_whenEmailVerificationEventHasAlreadySent() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -117,7 +117,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void sendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -145,7 +145,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldSuccessfullyResendOtp() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
@@ -159,7 +159,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -183,7 +183,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldReturnTooManyRequests_whenTooManyAttempts() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doThrow(new TooManyOtpRequestsException("Reached maximum attempts."))
@@ -210,7 +210,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldReturnGone_whenOtpSessionExpired() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             doThrow(new OtpExpiredException("Otp session expired."))
@@ -239,7 +239,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void validate_shouldVerifyUser_whenOtpIsValid() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
             ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -262,7 +262,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void validate_shouldReturnGone_whenOtpDoesNotMatchEmail() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
             ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -291,7 +291,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void validate_shouldReturnGone_whenOtpExpired() throws Exception {
-            User user = UserDataBuilder.buildUserAllFields().build();
+            User user = UserDataBuilder.withAllFields().build();
             ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
 
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);

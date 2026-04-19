@@ -47,7 +47,7 @@ public class EmailVerificationServiceTest {
 
     @Test
     void sendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
@@ -75,7 +75,7 @@ public class EmailVerificationServiceTest {
 
     @Test
     void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
@@ -95,7 +95,7 @@ public class EmailVerificationServiceTest {
 
     @Test
     void resendOtp_shouldSuccessfullySendOtp_WhenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
@@ -123,7 +123,7 @@ public class EmailVerificationServiceTest {
 
     @Test
     void resendOtp_shouldThrowOtpExpiredException_whenOtpIsExpired() {
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
 
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).resendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
@@ -143,7 +143,7 @@ public class EmailVerificationServiceTest {
 
     @Test
     void validate_shouldUpdateUser_WhenUserIsValid() {
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
         ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
         when(userQueryPort.getByEmail(validateCommand.email())).thenReturn(user);
 
@@ -170,7 +170,7 @@ public class EmailVerificationServiceTest {
     @Test
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
         ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
-        User user = UserDataBuilder.buildUserAllFields().build();
+        User user = UserDataBuilder.withAllFields().build();
 
         when(userQueryPort.getByEmail(validateCommand.email())).thenReturn(user);
         doThrow(new InvalidOtpException("Invalid otp.")).when(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
