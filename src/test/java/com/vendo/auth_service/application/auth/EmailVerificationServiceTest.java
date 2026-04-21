@@ -169,13 +169,12 @@ public class EmailVerificationServiceTest {
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
         User user = UserDataBuilder.withAllFields().build();
 
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
         doThrow(new InvalidOtpException("Invalid otp.")).when(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
 
         verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
-        verify(userQueryPort).getByEmail(user.email());
+        verify(userQueryPort, never()).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }
 

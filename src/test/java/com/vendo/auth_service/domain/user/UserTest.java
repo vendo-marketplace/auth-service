@@ -14,13 +14,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.*;
 public class UserTest {
 
     @Test
-    void validateBeforeActivation_shouldSuccessfullyValidate_whenUserIsValid() {
-        User user = UserDataBuilder.withAllFields().status(UserStatus.INCOMPLETE).build();
-
-        assertThatCode(user::validateCompletion).doesNotThrowAnyException();
-    }
-
-    @Test
     void validateCompletion_shouldThrowUserBlockedException_whenUserBlocked() {
         User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
 

@@ -2,12 +2,10 @@ package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
-import com.vendo.auth_service.adapter.verification.in.dto.ValidateRequest;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
-import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
@@ -240,19 +238,18 @@ class VerificationControllerIntegrationTest {
         @Test
         void validate_shouldVerifyUser_whenOtpIsValid() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
-            ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
+            String otp = "123456";
 
+            when(otpVerifier.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-
-            mockMvc.perform(post("/verification/validate").param("otp", anyString())
-                            .content(objectMapper.writeValueAsString(validateRequest))
+            mockMvc.perform(post("/verification/validate").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
+            verify(otpVerifier).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
             verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
             UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
@@ -261,46 +258,13 @@ class VerificationControllerIntegrationTest {
         }
 
         @Test
-        void validate_shouldReturnGone_whenOtpDoesNotMatchEmail() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
-            ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
-
-            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doThrow(new InvalidOtpException("Invalid otp."))
-                    .when(otpVerifier)
-                    .verifyOtpEmail(anyString(), eq(validateRequest.email()), any(EmailVerificationOtpNamespace.class));
-
-            String responseContent = mockMvc.perform(post("/verification/validate").param("otp", anyString())
-                            .content(objectMapper.writeValueAsString(validateRequest))
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isGone())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            assertThat(responseContent).isNotNull();
-
-            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid otp.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
-
-            verify(userQueryPort).getByEmail(user.email());
-            verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
-            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
-        }
-
-        @Test
         void validate_shouldReturnGone_whenOtpExpired() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
-            ValidateRequest validateRequest = ValidateRequest.builder().email(user.email()).build();
+            String otp = "123456";
 
-            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doThrow(new OtpExpiredException("Otp session expired."))
-                    .when(otpVerifier)
-                    .verifyOtpEmail(anyString(), eq(validateRequest.email()), any(EmailVerificationOtpNamespace.class));
+            doThrow(new OtpExpiredException("Otp session expired.")).when(otpVerifier).verify(anyString(), any(EmailVerificationOtpNamespace.class));
 
-            String responseContent = mockMvc.perform(post("/verification/validate").param("otp", anyString())
-                            .content(objectMapper.writeValueAsString(validateRequest))
+            String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isGone())
                     .andReturn()
@@ -314,8 +278,8 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
 
-            verify(userQueryPort).getByEmail(user.email());
-            verify(otpVerifier).verifyOtpEmail(anyString(), anyString(), any(EmailVerificationOtpNamespace.class));
+            verify(otpVerifier).verify(anyString(), any(EmailVerificationOtpNamespace.class));
+            verify(userQueryPort, never()).getByEmail(user.email());
             verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
     }

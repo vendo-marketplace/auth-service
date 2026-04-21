@@ -16,13 +16,9 @@ public class EmailOtpVerifier implements OtpVerifier {
 
     @Override
     public String verify(String otp, OtpNamespace namespace) {
-        String email = null;
-        try {
-            email = getEmailByOtpOrThrow(otp, namespace);
-            return email;
-        } finally {
-            cleanUpOtpNamespaces(otp, email, namespace);
-        }
+        String email = getEmailByOtpOrThrow(otp, namespace);
+        cleanUpOtpNamespaces(otp, email, namespace);
+        return email;
     }
 
     private void cleanUpOtpNamespaces(String otp, String email, OtpNamespace namespace) {
