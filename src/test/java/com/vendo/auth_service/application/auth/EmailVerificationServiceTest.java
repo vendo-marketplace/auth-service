@@ -2,7 +2,6 @@ package com.vendo.auth_service.application.auth;
 
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
-import com.vendo.auth_service.application.auth.command.ValidateCommand;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
@@ -29,6 +28,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class EmailVerificationServiceTest {
 
+    private final String TEST_EMAIL = "email@gmail.com";
+    private final String TEST_OTP = "otp";
     @InjectMocks
     EmailVerificationService emailVerificationService;
     @Mock
@@ -41,9 +42,6 @@ public class EmailVerificationServiceTest {
     EmailVerificationOtpNamespace emailVerificationOtpNamespace;
     @Mock
     UserCommandPort userCommandPort;
-
-    private final String TEST_EMAIL = "email@gmail.com";
-    private final String TEST_OTP = "otp";
 
     @Test
     void sendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
@@ -144,41 +142,39 @@ public class EmailVerificationServiceTest {
     @Test
     void validate_shouldUpdateUser_WhenUserIsValid() {
         User user = UserDataBuilder.withAllFields().build();
-        ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
-        when(userQueryPort.getByEmail(validateCommand.email())).thenReturn(user);
 
-        emailVerificationService.validate(TEST_OTP, validateCommand);
+        when(otpVerifier.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
+        emailVerificationService.validate(TEST_OTP);
 
-        verify(userQueryPort).getByEmail(validateCommand.email());
-        verify(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
+        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(userQueryPort).getByEmail(user.email());
         verify(userCommandPort).update(eq(user.id()), argThat(updatedUser -> updatedUser.emailVerified() == true));
     }
 
     @Test
     void validate_shouldThrowUserNotFoundException_whenUserNotFound() {
-        ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
+        when(otpVerifier.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
+        when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
 
-        when(userQueryPort.getByEmail(validateCommand.email())).thenThrow(new UserNotFoundException("User not found."));
+        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP, validateCommand)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
-
-        verify(userQueryPort).getByEmail(validateCommand.email());
+        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(userQueryPort).getByEmail(TEST_EMAIL);
         verifyNoInteractions(otpService, userCommandPort);
     }
 
     @Test
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
-        ValidateCommand validateCommand = new ValidateCommand(TEST_EMAIL);
         User user = UserDataBuilder.withAllFields().build();
 
-        when(userQueryPort.getByEmail(validateCommand.email())).thenReturn(user);
-        doThrow(new InvalidOtpException("Invalid otp.")).when(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
+        doThrow(new InvalidOtpException("Invalid otp.")).when(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
 
-        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP, validateCommand)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
+        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
 
-        verify(userQueryPort).getByEmail(validateCommand.email());
-        verify(otpVerifier).verifyOtpEmail(TEST_OTP, validateCommand.email(), emailVerificationOtpNamespace);
+        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(userQueryPort, never()).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }
 

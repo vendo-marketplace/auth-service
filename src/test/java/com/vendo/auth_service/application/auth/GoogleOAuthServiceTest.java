@@ -45,7 +45,7 @@ class GoogleOAuthServiceTest {
 
     @Test
     void googleAuth_shouldReturnTokenPayload() {
-        TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
+        TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
         User user = UserDataBuilder.withAllFields().build();
         String idToken = "test_id_token";
@@ -69,10 +69,10 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
-    void googleAuth_shouldActivateIncompletedUser_andReturnTokenPayload() {
-        TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
+    void googleAuth_shouldActivateUser_whenFirstLogin_andReturnPairOfTokens() {
+        TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.withAllFields().status(UserStatus.INCOMPLETE).build();
+        User user = UserDataBuilder.withAllFields().providerType(null).status(null).build();
         String idToken = "test_id_token";
         String email = "test_email";
         GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);
@@ -101,9 +101,9 @@ class GoogleOAuthServiceTest {
 
     @Test
     void googleAuth_shouldNotUpdateProviderTypeToGoogle_whenUserIsActive() {
-        TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
+        TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
         GoogleAuthRequest googleAuthRequest = new GoogleAuthRequest("test_id_token");
-        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).build();
+        User user = UserDataBuilder.withAllFields().build();
         String idToken = "test_id_token";
         String email = "test_email";
         GoogleTokenPayload mockPayload = mock(GoogleTokenPayload.class);

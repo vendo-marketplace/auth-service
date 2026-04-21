@@ -6,6 +6,4 @@ public interface OtpVerifier {
 
     String verify(String otp, OtpNamespace namespace);
 
-    void verifyOtpEmail(String otp, String email, OtpNamespace namespace);
-
 }

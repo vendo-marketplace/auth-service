@@ -1,5 +1,6 @@
 package com.vendo.auth_service.adapter.in.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
@@ -129,7 +130,7 @@ class AuthControllerIntegrationTest {
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
             assertThat(saveUserRequestCaptor.password()).isEqualTo(encodedPassword);
             assertThat(saveUserRequestCaptor.role()).isEqualTo(UserRole.USER);
-            assertThat(saveUserRequestCaptor.status()).isEqualTo(UserStatus.INCOMPLETE);
+            assertThat(saveUserRequestCaptor.status()).isEqualTo(UserStatus.ACTIVE);
             assertThat(saveUserRequestCaptor.providerType()).isEqualTo(ProviderType.LOCAL);
         }
 
@@ -166,12 +167,8 @@ class AuthControllerIntegrationTest {
         @Test
         void signIn_shouldReturnPairOfTokens() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            User user = UserDataBuilder.withAllFields()
-                    .status(UserStatus.ACTIVE)
-                    .email(authRequest.email())
-                    .emailVerified(true)
-                    .build();
-            TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
+            User user = UserDataBuilder.withAllFields().email(authRequest.email()).build();
+            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
             when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(true);
@@ -252,15 +249,14 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
-        void signIn_shouldReturnForbidden_whenUserIncomplete() throws Exception {
+        void signIn_shouldReturnUnauthorized_whenWrongCredentials() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
             User user = UserDataBuilder.withAllFields()
-                    .status(UserStatus.INCOMPLETE)
-                    .emailVerified(true)
                     .email(authRequest.email())
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
+            when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(false);
 
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -273,20 +269,19 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User is unactive.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Wrong credentials.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
-            verify(tokenGenerationService, never()).generate(user);
+            verify(passwordHashingPort).matches(authRequest.password(), user.password());
+            verify(tokenGenerationService, never()).generate(any());
         }
 
         @Test
         void signIn_shouldReturnForbidden_whenUserEmailIsNotVerified() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
             User user = UserDataBuilder.withAllFields()
-                    .status(UserStatus.INCOMPLETE)
                     .emailVerified(false)
                     .email(authRequest.email())
                     .build();
@@ -321,7 +316,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnPairOfTokens() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
-            TokenPayload tokenPayload = TokenPayloadDataBuilder.buildTokenPayloadWithAllFields().build();
+            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
             when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
@@ -436,10 +431,7 @@ class AuthControllerIntegrationTest {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
-            User authUser = UserDataBuilder.withAllFields()
-                    .status(UserStatus.INCOMPLETE)
-                    .emailVerified(true)
-                    .build();
+            User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
@@ -456,7 +448,6 @@ class AuthControllerIntegrationTest {
             verifyNoInteractions(userQueryPort);
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
-            assertThat(updateUserArgumentCaptorValue.status()).isEqualTo(UserStatus.ACTIVE);
             assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
             assertThat(updateUserArgumentCaptorValue.birthDate()).isEqualTo(completeAuthRequest.birthDate());
         }
@@ -548,9 +539,7 @@ class AuthControllerIntegrationTest {
         void complete_shouldReturnNotFound_whenUserNotFound() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .buildCompleteAuthRequestWithAllFields().build();
-            User authUser = UserDataBuilder.withAllFields()
-                    .status(UserStatus.INCOMPLETE)
-                    .build();
+            User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(securityContextHelper.getAuthUser()).thenReturn(authUser);
@@ -609,7 +598,6 @@ class AuthControllerIntegrationTest {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .buildCompleteAuthRequestWithAllFields().build();
             User authUser = UserDataBuilder.withAllFields()
-                    .status(UserStatus.INCOMPLETE)
                     .emailVerified(false)
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);

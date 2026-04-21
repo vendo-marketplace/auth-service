@@ -33,7 +33,7 @@ public class AuthService {
 
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
-        user.validateActivity();
+        user.validateCompletion();
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
@@ -47,12 +47,11 @@ public class AuthService {
 
     public void signUp(AuthCommand command) {
         if (userQueryPort.existsByEmail(command.email())) throw new UserAlreadyExistsException("User already exists.");
-
         String hashedPassword = passwordHashingPort.hash(command.password());
 
         userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
-                .status(UserStatus.INCOMPLETE)
+                .status(UserStatus.ACTIVE)
                 .role(UserRole.USER)
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
@@ -62,14 +61,12 @@ public class AuthService {
     public void complete(CompleteAuthCommand command) {
         User user = getAuthenticatedUserProfile();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
-                .status(UserStatus.ACTIVE)
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());
     }
 
     public AuthResponse refresh(RefreshCommand command) {
         String email = tokenClaimsParser.extractSubject(command.refreshToken());
-
         User user = userQueryPort.getByEmail(email);
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
 

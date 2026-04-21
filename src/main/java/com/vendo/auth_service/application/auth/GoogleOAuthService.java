@@ -14,6 +14,8 @@ import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class GoogleOAuthService {
@@ -25,7 +27,7 @@ public class GoogleOAuthService {
     public AuthResponse googleAuth(GoogleAuthRequest googleAuthRequest) {
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
         User user = userCommandPort.ensureExists(payload.email());
-        updateIfIncomplete(user, payload);
+        updateIfFirstLogin(user, payload);
 
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
@@ -34,8 +36,8 @@ public class GoogleOAuthService {
                 .build();
     }
 
-    private void updateIfIncomplete(User user, GoogleTokenPayload payload) {
-        if (user.status() == UserStatus.INCOMPLETE) {
+    private void updateIfFirstLogin(User user, GoogleTokenPayload payload) {
+        if (Objects.isNull(user.providerType()) && Objects.isNull(user.status())) {
             userCommandPort.update(user.id(), UpdateUserRequest.builder()
                     .status(UserStatus.ACTIVE)
                     .fullName(payload.fullName())

@@ -64,16 +64,6 @@ public class UserExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
     }
 
-    @ExceptionHandler(UserIsUnactiveException.class)
-    public ResponseEntity<ExceptionResponse> handleUserIsUnactiveException(UserIsUnactiveException e, HttpServletRequest request) {
-        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message(e.getMessage())
-                .code(HttpStatus.UNAUTHORIZED.value())
-                .path(request.getRequestURI())
-                .build();
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
-    }
-
     @ExceptionHandler(UserServiceUnavailableException.class)
     public ResponseEntity<ExceptionResponse> handleUserServiceUnavailableException(UserServiceUnavailableException e, HttpServletRequest request) {
         log.error(e.getMessage());
