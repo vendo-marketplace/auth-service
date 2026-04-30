@@ -12,7 +12,7 @@ import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.event_lib.OtpEventType;
+import com.vendo.event_lib.otp.OtpEventType;
 import com.vendo.redis_lib.exception.OtpExpiredException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
