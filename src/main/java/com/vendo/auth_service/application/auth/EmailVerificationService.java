@@ -8,7 +8,7 @@ import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.event_lib.OtpEventType;
+import com.vendo.event_lib.otp.OtpEventType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

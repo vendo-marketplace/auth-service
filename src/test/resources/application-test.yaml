@@ -26,8 +26,9 @@ eureka:
 
 kafka:
   events:
-    email-otp-notification-event:
-      topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
+    notification:
+      email-otp-event:
+        topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
 
 spring:
   kafka:
