@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.otp.in.messaging.kafka.producer;
 
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
-import com.vendo.event_lib.EmailOtpEvent;
+import com.vendo.event_lib.otp.EmailOtpEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OtpEmailEventProducer implements OtpEmailNotificationPort {
 
-    @Value("${kafka.events.email-otp-notification-event.topic}")
+    @Value("${kafka.events.notification.email-otp-event.topic}")
     private String emailOtpEventTopic;
 
     private final KafkaTemplate<String, EmailOtpEvent> kafkaTemplate;

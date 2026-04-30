@@ -8,7 +8,7 @@ import com.vendo.auth_service.domain.otp.OtpPolicyService;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.event_lib.OtpEventType;
+import com.vendo.event_lib.otp.OtpEventType;
 import com.vendo.redis_lib.config.PrefixProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

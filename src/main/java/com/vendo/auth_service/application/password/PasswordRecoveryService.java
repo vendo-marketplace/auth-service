@@ -9,7 +9,7 @@ import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.event_lib.OtpEventType;
+import com.vendo.event_lib.otp.OtpEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
