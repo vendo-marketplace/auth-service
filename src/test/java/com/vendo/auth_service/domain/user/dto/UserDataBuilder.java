@@ -6,8 +6,6 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.UUID;
 
 public class UserDataBuilder {
 

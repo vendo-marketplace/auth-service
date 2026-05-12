@@ -1,6 +1,5 @@
 package com.vendo.auth_service.adapter.in.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
