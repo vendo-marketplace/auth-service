@@ -34,6 +34,7 @@ public record User(
 
         throwIfBlocked();
         throwIfUnverified();
+        throwIfAlreadyCompleted();
     }
 
     private void throwIfUnverified() {
@@ -45,6 +46,11 @@ public record User(
     private void throwIfBlocked() {
         if (status == UserStatus.BLOCKED) {
             throw new UserBlockedException("User is blocked.");
+        }
+    }
+    private void throwIfAlreadyCompleted() {
+        if (birthDate != null && fullName != null) {
+            throw new IllegalStateException("User profile is already completed.");
         }
     }
 }

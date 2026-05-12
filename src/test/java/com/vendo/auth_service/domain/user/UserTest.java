@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
+
 import static org.assertj.core.api.AssertionsForClassTypes.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -17,6 +19,21 @@ public class UserTest {
     void validateCompletion_shouldThrowUserBlockedException_whenUserBlocked() {
         User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
 
-        assertThatThrownBy(user::validateCompletion).isInstanceOf(UserBlockedException.class).hasMessage("User is blocked.");
+        assertThatThrownBy(user::validateCompletion)
+                .isInstanceOf(UserBlockedException.class)
+                .hasMessage("User is blocked.");
+    }
+
+    @Test
+    void validateCompletion_shouldThrowIllegalStateException_whenUserAlreadyCompleted() {
+        User user = UserDataBuilder.withAllFields()
+                .fullName("John Doe")
+                .birthDate(LocalDate.of(1991, 12, 12))
+                .build();
+
+        assertThatThrownBy(user::validateCompletion)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("User profile is already completed.");
+
     }
 }
