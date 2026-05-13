@@ -1,5 +1,6 @@
 package com.vendo.auth_service.domain.user.model;
 
+import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.type.ProviderType;
@@ -48,9 +49,10 @@ public record User(
             throw new UserBlockedException("User is blocked.");
         }
     }
+
     private void throwIfAlreadyCompleted() {
-        if (birthDate != null && fullName != null) {
-            throw new IllegalStateException("User profile is already completed.");
+        if (birthDate != null && fullName != null && !fullName.isBlank()) {
+            throw new UserAlreadyCompletedException("User profile is already completed.");
         }
     }
 }
