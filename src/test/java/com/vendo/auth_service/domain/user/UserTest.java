@@ -26,7 +26,7 @@ public class UserTest {
     }
 
     @Test
-    void validateCompletion_shouldThrowIllegalStateException_whenUserAlreadyCompleted() {
+    void validateCompletion_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
         User user = UserDataBuilder.withAllFields()
                 .fullName("John Doe")
                 .birthDate(LocalDate.of(1991, 12, 12))

@@ -6,6 +6,7 @@ import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
+import com.vendo.utils_lib.StringUtils;
 import lombok.Builder;
 
 import java.time.Instant;
@@ -51,7 +52,7 @@ public record User(
     }
 
     private void throwIfAlreadyCompleted() {
-        if (birthDate != null && fullName != null && !fullName.isBlank()) {
+        if (birthDate != null && fullName != null && !StringUtils.isEmpty(fullName)) {
             throw new UserAlreadyCompletedException("User profile is already completed.");
         }
     }
