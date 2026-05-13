@@ -1,6 +1,7 @@
 package com.vendo.auth_service.domain.user;
 
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.type.UserStatus;
@@ -32,7 +33,7 @@ public class UserTest {
                 .build();
 
         assertThatThrownBy(user::validateCompletion)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(UserAlreadyCompletedException.class)
                 .hasMessage("User profile is already completed.");
 
     }
