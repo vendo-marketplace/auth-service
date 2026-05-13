@@ -11,6 +11,7 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Builder
 public record User(
@@ -30,7 +31,7 @@ public record User(
 ) {
 
     public void validateCompletion() {
-        if (status == null || emailVerified == null) {
+        if (Objects.isNull(status)|| Objects.isNull(emailVerified)) {
             throw new IllegalArgumentException("Status and email verification are required.");
         }
 
@@ -52,7 +53,7 @@ public record User(
     }
 
     private void throwIfAlreadyCompleted() {
-        if (birthDate != null && fullName != null && !StringUtils.isEmpty(fullName)) {
+        if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
             throw new UserAlreadyCompletedException("User profile is already completed.");
         }
     }
