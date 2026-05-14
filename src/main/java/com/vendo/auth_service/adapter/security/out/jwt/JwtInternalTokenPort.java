@@ -15,7 +15,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
-public class JwtInternalTokenService implements InternalTokenGenerationService {
+public class JwtInternalTokenPort implements InternalTokenGenerationPort {
 
     private final JwtUtils jwtUtils;
 

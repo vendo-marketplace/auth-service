@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.user.in.interceptor;
 
-import com.vendo.auth_service.adapter.security.out.jwt.InternalTokenGenerationService;
+import com.vendo.auth_service.adapter.security.out.jwt.InternalTokenGenerationPort;
 import feign.RequestInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -13,11 +13,11 @@ import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 @RequiredArgsConstructor
 public class UserRequestInterceptor {
 
-    private final InternalTokenGenerationService internalTokenGenerationService;
+    private final InternalTokenGenerationPort internalTokenGenerationPort;
 
     @Bean
     RequestInterceptor internalUserInfoInterceptor() {
-        return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + internalTokenGenerationService.generateInternal());
+        return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + internalTokenGenerationPort.generateInternal());
     }
 
 }

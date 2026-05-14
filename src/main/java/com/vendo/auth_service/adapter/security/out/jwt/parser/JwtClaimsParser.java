@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.out.jwt.parser;
 
-import com.vendo.auth_service.adapter.security.out.jwt.JwtTokenService;
+import com.vendo.auth_service.adapter.security.out.jwt.JwtService;
 import com.vendo.auth_service.adapter.security.out.jwt.props.JwtProperties;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
@@ -14,7 +14,7 @@ import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 public class JwtClaimsParser implements TokenClaimsParser {
 
     private final JwtProperties jwtProperties;
-    private final JwtTokenService jwtTokenService;
+    private final JwtService jwtService;
 
     private final BearerTokenExtractor bearerTokenExtractor;
 
@@ -26,7 +26,7 @@ public class JwtClaimsParser implements TokenClaimsParser {
             withoutBearer = bearerTokenExtractor.extract(token);
         }
 
-        return jwtTokenService.extractAllClaims(withoutBearer, jwtProperties.getKey()).getSubject();
+        return jwtService.extractAllClaims(withoutBearer, jwtProperties.getKey()).getSubject();
     }
 
 }

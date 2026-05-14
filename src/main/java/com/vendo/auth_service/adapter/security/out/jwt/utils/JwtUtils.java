@@ -1,9 +1,8 @@
 package com.vendo.auth_service.adapter.security.out.jwt.utils;
 
+import com.vendo.utils_lib.StringUtils;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import org.springframework.stereotype.Component;
 
@@ -27,26 +26,22 @@ public final class JwtUtils {
                 .parseSignedClaims(token);
     }
 
-    public String buildToken(String secretKey, @Valid JwtPayload jwtPayload) {
+    public String buildToken(String secretKey, JwtPayload payload) {
+        if (payload == null || StringUtils.isEmpty(payload.subject)) throw new IllegalArgumentException("Invalid payload.");
+
         return Jwts.builder()
-                .subject(jwtPayload.subject())
-                .claims(jwtPayload.claims())
+                .subject(payload.subject())
+                .claims(payload.claims())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtPayload.expirationTime))
+                .expiration(new Date(System.currentTimeMillis() + payload.expirationTime))
                 .signWith(getSignInKey(secretKey), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     @Builder
     public record JwtPayload(
-
-            @NotBlank(message = "Subject is required")
             String subject,
-
             Map<String, Object> claims,
-            long expirationTime
-
-    ) {
+            long expirationTime) {
     }
-
 }

@@ -18,7 +18,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtTokenService implements TokenGenerationService {
+public class JwtService implements TokenGenerationService {
 
     private final JwtUtils jwtUtils;
 
