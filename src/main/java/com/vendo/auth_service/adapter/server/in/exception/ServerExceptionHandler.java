@@ -36,7 +36,7 @@ public class ServerExceptionHandler {
     }
 
     @ExceptionHandler({InternalServerException.class, NullPointerException.class, IllegalArgumentException.class})
-    protected ResponseEntity<ExceptionResponse> handleInternalServerException(Exception e, HttpServletRequest request) {
+    protected ResponseEntity<ExceptionResponse> handleCommonExceptions(Exception e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message("Internal server error.")
