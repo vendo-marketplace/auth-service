@@ -35,19 +35,7 @@ public class ServerExceptionHandler {
         return ResponseEntity.badRequest().body(exceptionResponse);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    protected ResponseEntity<ExceptionResponse> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
-        log.error(e.getMessage());
-        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message(e.getMessage())
-                .code(HttpStatus.BAD_REQUEST.value())
-                .path(request.getRequestURI())
-                .build();
-
-        return ResponseEntity.badRequest().body(exceptionResponse);
-    }
-
-    @ExceptionHandler({InternalServerException.class, NullPointerException.class})
+    @ExceptionHandler({InternalServerException.class, NullPointerException.class, IllegalArgumentException.class})
     protected ResponseEntity<ExceptionResponse> handleInternalServerException(Exception e, HttpServletRequest request) {
         log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
