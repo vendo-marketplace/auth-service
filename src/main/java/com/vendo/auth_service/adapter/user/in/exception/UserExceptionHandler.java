@@ -34,8 +34,8 @@ public class UserExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
     }
 
-    @ExceptionHandler(UserAlreadyActivatedException.class)
-    public ResponseEntity<ExceptionResponse> handleUserAlreadyActivatedException(UserAlreadyActivatedException e, HttpServletRequest request) {
+    @ExceptionHandler(UserAlreadyCompletedException.class)
+    public ResponseEntity<ExceptionResponse> handleUserAlreadyCompletedException(UserAlreadyCompletedException e, HttpServletRequest request) {
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
                 .message(e.getMessage())
                 .code(HttpStatus.CONFLICT.value())

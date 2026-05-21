@@ -1,8 +1,8 @@
 package com.vendo.auth_service.domain.user;
 
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
-import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.user_lib.exception.UserAlreadyCompletedException;
 import com.vendo.user_lib.exception.UserBlockedException;
 import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.Test;
