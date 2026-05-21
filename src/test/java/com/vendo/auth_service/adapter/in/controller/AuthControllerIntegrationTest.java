@@ -1,6 +1,5 @@
 package com.vendo.auth_service.adapter.in.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
@@ -50,6 +49,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
@@ -618,6 +618,36 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
+        void complete_shouldReturnConflict_whenUserAlreadyCompleted() throws Exception {
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
+                    .buildCompleteAuthRequestWithAllFields().build();
+            User authUser = UserDataBuilder.withAllFields()
+                    .status(UserStatus.ACTIVE)
+                    .fullName("John Doe")
+                    .birthDate(LocalDate.now().minusYears(20))
+                    .build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
+
+            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+
+            String content = mockMvc.perform(patch("/auth/complete")
+                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
+                    .andExpect(status().isConflict())
+                    .andReturn().getResponse().getContentAsString();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+
+            assertThat(exceptionResponse).isNotNull();
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User profile is already completed.");
 
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }

@@ -6,8 +6,6 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.UUID;
 
 public class UserDataBuilder {
 
@@ -17,8 +15,8 @@ public class UserDataBuilder {
                 .email("test@gmail.com")
                 .password("Qwerty1234@")
                 .role(UserRole.USER)
-                .fullName("Test Name")
-                .birthDate(LocalDate.of(2000, 1, 1))
+                .fullName(null)
+                .birthDate(null)
                 .providerType(ProviderType.LOCAL)
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)
