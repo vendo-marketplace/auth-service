@@ -10,8 +10,9 @@ public class UserSecurity {
 
     private final SecurityContextHelper contextHelper;
 
-    public void validateCompletion() {
+    public void validateComplete() {
         User authUser = contextHelper.getAuthUser();
-        authUser.validateCompletion();
+        authUser.validateAccess();
+        authUser.validateComplete();
     }
 }

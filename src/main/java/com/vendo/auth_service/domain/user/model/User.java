@@ -30,14 +30,19 @@ public record User(
 
 ) {
 
-    public void validateCompletion() {
+    public void validateAccess() {
         if (Objects.isNull(status)|| Objects.isNull(emailVerified)) {
             throw new IllegalArgumentException("Status and email verification are required.");
         }
 
         throwIfBlocked();
         throwIfUnverified();
-        throwIfAlreadyCompleted();
+    }
+
+    public void validateComplete() {
+        if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
+            throw new UserAlreadyCompletedException("User profile is already completed.");
+        }
     }
 
     private void throwIfUnverified() {
@@ -49,12 +54,6 @@ public record User(
     private void throwIfBlocked() {
         if (status == UserStatus.BLOCKED) {
             throw new UserBlockedException("User is blocked.");
-        }
-    }
-
-    private void throwIfAlreadyCompleted() {
-        if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
-            throw new UserAlreadyCompletedException("User profile is already completed.");
         }
     }
 }
