@@ -29,8 +29,9 @@ public final class JwtUtils {
     }
 
     public String buildToken(String secretKey, JwtPayload payload) {
-        if (payload == null || StringUtils.isEmpty(payload.subject()))
+        if (payload == null || StringUtils.isEmpty(payload.subject())) {
             throw new IllegalArgumentException("Invalid payload.");
+        }
 
         return Jwts.builder()
                 .subject(payload.subject())
