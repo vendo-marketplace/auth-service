@@ -1,6 +1,5 @@
 package com.vendo.auth_service.adapter.user.out.exception;
 
-import com.vendo.core_lib.exception.InternalServerException;
 import com.vendo.core_lib.type.ServiceName;
 import com.vendo.user_lib.exception.UserAlreadyExistsException;
 import com.vendo.user_lib.exception.UserNotFoundException;
@@ -30,7 +29,7 @@ public class UserServiceErrorDecoder implements ErrorDecoder {
         }
 
         log.error(response.toString());
-        return new InternalServerException("Internal server error.");
+        return new IllegalArgumentException("Internal server error.");
     }
 
 }

@@ -6,6 +6,7 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
+import com.vendo.auth_service.test_utils.PingRequest;
 import com.vendo.auth_service.test_utils.SecurityContextService;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.securityContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -94,6 +97,32 @@ public class JwtAuthFilterTest {
 
         verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
+    }
+
+    @Test
+    void doFilterInternal_shouldReturnUnsupportedMediaType_whenTypeIsNotJson() throws Exception {
+        PingRequest request = new PingRequest("content");
+        User user = UserDataBuilder.withAllFields()
+                .status(UserStatus.ACTIVE)
+                .emailVerified(true)
+                .build();
+        String accessToken = "access_token";
+
+        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
+        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+        String content = mockMvc.perform(post("/test/ping")
+                        .header(AUTHORIZATION, BEARER_PREFIX + accessToken)
+                        .contentType(MediaType.TEXT_PLAIN).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnsupportedMediaType())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertThat(content).isNotBlank();
+        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+        assertThat(exceptionResponse.getMessage()).isEqualTo("Unsupported media type.");
+        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value());
     }
 
     @Test

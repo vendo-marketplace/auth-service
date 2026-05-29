@@ -145,7 +145,7 @@
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>core-lib</artifactId>
-			<version>3.7.2</version>
+			<version>3.7.3</version>
 		</dependency>
 
 		<dependency>
