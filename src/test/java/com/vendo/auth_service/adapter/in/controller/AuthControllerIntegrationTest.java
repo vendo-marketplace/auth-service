@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
@@ -39,8 +38,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,7 +47,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
