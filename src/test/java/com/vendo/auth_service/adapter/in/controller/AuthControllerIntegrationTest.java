@@ -13,6 +13,7 @@ import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
+import com.vendo.auth_service.domain.security.exception.InvalidCredentialsException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.BearerTokenExtractor;
@@ -77,9 +78,6 @@ class AuthControllerIntegrationTest {
 
     @MockitoBean
     private UserCommandPort userCommandPort;
-
-    @MockitoBean
-    private SecurityContextHelper securityContextHelper;
 
     @MockitoBean
     private TokenClaimsParser tokenClaimsParser;
@@ -239,7 +237,7 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Resource is unreachable.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
@@ -374,7 +372,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new InvalidCredentialsException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -400,7 +398,7 @@ class AuthControllerIntegrationTest {
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
+            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new InvalidCredentialsException("Invalid token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -434,7 +432,6 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
             doNothing().when(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
 
             mockMvc.perform(patch("/auth/complete")
@@ -542,7 +539,6 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
             doThrow(new UserNotFoundException("User not found."))
                     .when(userCommandPort).update(eq(authUser.id()), any(UpdateUserRequest.class));
 
@@ -574,8 +570,6 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
-
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
                             .contentType(MediaType.APPLICATION_JSON)
@@ -588,7 +582,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse).isNotNull();
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Resource is unreachable.");
 
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
@@ -601,8 +595,6 @@ class AuthControllerIntegrationTest {
                     .emailVerified(false)
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
-
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -633,8 +625,6 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
-
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
                             .contentType(MediaType.APPLICATION_JSON)
@@ -664,8 +654,6 @@ class AuthControllerIntegrationTest {
 
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
-
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext)))
@@ -682,8 +670,6 @@ class AuthControllerIntegrationTest {
             assertThat(content).doesNotContain("password");
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
-
-            verify(securityContextHelper).getAuthUser();
         }
 
         @Test
@@ -693,8 +679,6 @@ class AuthControllerIntegrationTest {
                     null,
                     null);
             SecurityContext securityContext = initializeSecurityContext(authToken);
-
-            when(securityContextHelper.getAuthUser()).thenThrow(new AuthenticationCredentialsNotFoundException("Unauthorized."));
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -710,8 +694,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/me");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
-
-            verify(securityContextHelper).getAuthUser();
         }
     }
 }

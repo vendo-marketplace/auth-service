@@ -1,11 +1,7 @@
 package com.vendo.auth_service.domain.user.model;
 
-import com.vendo.user_lib.exception.UserAlreadyCompletedException;
-import com.vendo.user_lib.exception.UserBlockedException;
-import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
-import com.vendo.user_lib.type.ProviderType;
-import com.vendo.user_lib.type.UserRole;
-import com.vendo.user_lib.type.UserStatus;
+import com.vendo.user_lib.exception.*;
+import com.vendo.user_lib.type.*;
 import com.vendo.utils_lib.StringUtils;
 import lombok.Builder;
 

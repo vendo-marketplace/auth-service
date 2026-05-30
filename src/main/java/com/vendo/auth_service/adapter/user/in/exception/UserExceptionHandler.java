@@ -5,6 +5,8 @@ import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @Slf4j
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class UserExceptionHandler {
 
     @ExceptionHandler(UserAlreadyExistsException.class)
@@ -26,8 +29,9 @@ public class UserExceptionHandler {
 
     @ExceptionHandler(UserBlockedException.class)
     public ResponseEntity<ExceptionResponse> handleUserBlockedException(UserBlockedException e, HttpServletRequest request) {
+        log.error(e.getMessage());
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message(e.getMessage())
+                .message("Resource is unreachable.")
                 .code(HttpStatus.FORBIDDEN.value())
                 .path(request.getRequestURI())
                 .build();

@@ -4,6 +4,8 @@ import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @ControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class SpringExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -29,18 +32,6 @@ public class SpringExceptionHandler {
                 .message("Validation failed.")
                 .errors(errors)
                 .code(HttpStatus.BAD_REQUEST.value())
-                .path(request.getRequestURI())
-                .build();
-
-        return ResponseEntity.badRequest().body(exceptionResponse);
-    }
-
-    @ExceptionHandler({NullPointerException.class, IllegalArgumentException.class, Exception.class})
-    protected ResponseEntity<ExceptionResponse> handleCommonExceptions(Exception e, HttpServletRequest request) {
-        log.error(e.getMessage());
-        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message("Internal server error.")
-                .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .path(request.getRequestURI())
                 .build();
 

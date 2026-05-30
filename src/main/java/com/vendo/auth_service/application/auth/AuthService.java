@@ -4,7 +4,7 @@ import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
 import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.*;
-import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
+import com.vendo.auth_service.domain.security.exception.InvalidCredentialsException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.UserAuthenticationService;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
@@ -36,7 +36,7 @@ public class AuthService {
         user.validateAccess();
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
-        if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
+        if (!matches) throw new InvalidCredentialsException("Wrong credentials.");
 
         TokenPayload tokenPayload = tokenGenerationService.generate(user);
         return AuthResponse.builder()
