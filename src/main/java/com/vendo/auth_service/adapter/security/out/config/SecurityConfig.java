@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.security.out.config;
 
 import com.vendo.auth_service.adapter.security.in.filter.JwtAuthFilter;
-import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAccessDeniedHandler;
-import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAuthenticationEntryPoint;
+import com.vendo.auth_service.adapter.security.out.exception.JwtAccessDeniedHandler;
+import com.vendo.auth_service.adapter.security.out.exception.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

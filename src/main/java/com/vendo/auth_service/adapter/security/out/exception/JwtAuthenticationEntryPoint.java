@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.security.in.filter.exception;
+package com.vendo.auth_service.adapter.security.out.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -16,23 +16,24 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAccessDeniedHandler implements AccessDeniedHandler {
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception) throws IOException {
-        log.warn("Handling access denied exception: {}.", exception.getMessage());
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
+        log.warn("Handling authentication exception: {}", exception.getMessage());
 
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .code(HttpServletResponse.SC_FORBIDDEN)
+                .code(HttpServletResponse.SC_UNAUTHORIZED)
                 .path(request.getRequestURI())
-                .message("Resource is unreachable.")
+                .message(exception.getMessage())
                 .build();
 
         response.getWriter().write(objectMapper.writeValueAsString(exceptionResponse));
     }
+
 }
