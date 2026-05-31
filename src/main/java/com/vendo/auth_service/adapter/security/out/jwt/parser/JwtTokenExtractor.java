@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.security.out.jwt.parser;
 
 import com.vendo.auth_service.domain.security.exception.InvalidCredentialsException;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
+import com.vendo.auth_service.port.auth.BearerTokenExtractor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

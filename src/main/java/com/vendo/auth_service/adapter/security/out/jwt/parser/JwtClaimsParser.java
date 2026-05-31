@@ -2,8 +2,8 @@ package com.vendo.auth_service.adapter.security.out.jwt.parser;
 
 import com.vendo.auth_service.adapter.security.out.jwt.JwtService;
 import com.vendo.auth_service.adapter.security.out.jwt.props.JwtProperties;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.auth.BearerTokenExtractor;
+import com.vendo.auth_service.port.auth.TokenClaimsParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

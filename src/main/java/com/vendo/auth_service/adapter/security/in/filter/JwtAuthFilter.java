@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.auth.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

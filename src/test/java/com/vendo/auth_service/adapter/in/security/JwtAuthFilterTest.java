@@ -3,7 +3,7 @@ package com.vendo.auth_service.adapter.in.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
+import com.vendo.auth_service.port.auth.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.test_utils.PingRequest;

@@ -1,4 +1,4 @@
-package com.vendo.auth_service.port.security;
+package com.vendo.auth_service.port.auth;
 
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;

@@ -4,7 +4,7 @@ import com.vendo.auth_service.adapter.security.out.jwt.props.JwtProperties;
 import com.vendo.auth_service.adapter.security.out.jwt.utils.JwtUtils;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
-import com.vendo.auth_service.port.security.TokenGenerationService;
+import com.vendo.auth_service.port.auth.TokenGenerationService;
 import com.vendo.security_lib.type.UserTokenClaim;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
