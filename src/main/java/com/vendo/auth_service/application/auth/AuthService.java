@@ -60,6 +60,10 @@ public class AuthService {
 
     public void complete(CompleteAuthCommand command) {
         User user = getAuthenticatedUserProfile();
+
+        user.throwIfCompleted();
+        user.throwIfNotVerified();
+
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());

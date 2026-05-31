@@ -27,28 +27,24 @@ public record User(
 ) {
 
     public void validateAccess() {
-        if (Objects.isNull(status)|| Objects.isNull(emailVerified)) {
-            throw new IllegalArgumentException("Status and email verification are required.");
-        }
-
         throwIfBlocked();
-        throwIfUnverified();
+        throwIfNotVerified();
     }
 
-    public void validateComplete() {
+    public void throwIfCompleted() {
         if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
-            throw new UserAlreadyCompletedException("User profile is already completed.");
+            throw new UserAlreadyCompletedException("User is already completed.");
         }
     }
 
-    private void throwIfUnverified() {
-        if (!emailVerified) {
+    public void throwIfNotVerified() {
+        if (Objects.nonNull(emailVerified) && !emailVerified) {
             throw new UserEmailNotVerifiedException("User email is not verified.");
         }
     }
 
-    private void throwIfBlocked() {
-        if (status == UserStatus.BLOCKED) {
+    public void throwIfBlocked() {
+        if (Objects.nonNull(status) && status == UserStatus.BLOCKED) {
             throw new UserBlockedException("User is blocked.");
         }
     }

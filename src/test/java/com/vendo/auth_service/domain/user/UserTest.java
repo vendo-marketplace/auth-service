@@ -27,8 +27,8 @@ public class UserTest {
     }
 
     @Test
-    void validateAccess_shouldThrowUserEmailNotVerifiedException_whenUserNotVerified() {
-        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).emailVerified(false).build();
+    void throwIfNotVerified_shouldThrowUserEmailNotVerifiedException_whenUserNotVerified() {
+        User user = UserDataBuilder.withAllFields().emailVerified(false).build();
 
         assertThatThrownBy(user::validateAccess)
                 .isInstanceOf(UserEmailNotVerifiedException.class)
@@ -36,15 +36,24 @@ public class UserTest {
     }
 
     @Test
-    void validateComplete_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
+    void throwIfBlocked_UserBlockedException_whenUserBlocked() {
+        User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
+
+        assertThatThrownBy(user::validateAccess)
+                .isInstanceOf(UserBlockedException.class)
+                .hasMessage("User is blocked.");
+    }
+
+    @Test
+    void throwIfCompleted_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
         User user = UserDataBuilder.withAllFields()
                 .fullName("John Doe")
                 .birthDate(LocalDate.of(1991, 12, 12))
                 .build();
 
-        assertThatThrownBy(user::validateComplete)
+        assertThatThrownBy(user::throwIfCompleted)
                 .isInstanceOf(UserAlreadyCompletedException.class)
-                .hasMessage("User profile is already completed.");
+                .hasMessage("User is already completed.");
 
     }
 }

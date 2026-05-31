@@ -10,9 +10,13 @@ public class UserSecurity {
 
     private final SecurityContextHelper contextHelper;
 
-    public void validateCompletion() {
-        User authUser = contextHelper.getAuthUser();
-        authUser.validateAccess();
-        authUser.validateComplete();
+    public boolean hasAccess() {
+        try {
+            User authUser = contextHelper.getAuthUser();
+            authUser.throwIfBlocked();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

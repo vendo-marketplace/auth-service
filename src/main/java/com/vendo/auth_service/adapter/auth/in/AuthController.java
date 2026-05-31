@@ -37,7 +37,7 @@ public class AuthController {
     }
 
     @PatchMapping("/complete")
-    @PreAuthorize("@userSecurity.validateCompletion()")
+    @PreAuthorize("@userSecurity.hasAccess()")
     void complete(@Valid @RequestBody CompleteAuthRequest request) {
         authService.complete(authMapper.toCompleteCommand(request));
     }

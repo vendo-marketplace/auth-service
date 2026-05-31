@@ -633,7 +633,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse).isNotNull();
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User profile is already completed.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User is already completed.");
 
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
