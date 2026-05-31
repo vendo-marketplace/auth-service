@@ -1,7 +1,6 @@
 package com.vendo.auth_service.adapter.auth.in.exception;
 
 import com.vendo.auth_service.domain.security.exception.InvalidCredentialsException;
-import com.vendo.auth_service.domain.security.exception.UnauthorizedException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -31,17 +30,6 @@ public class AuthExceptionHandler {
                 .code(HttpStatus.UNAUTHORIZED.value())
                 .path(request.getRequestURI())
                 .build();
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
-    }
-
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ExceptionResponse> handleUnauthorizedException(UnauthorizedException e, HttpServletRequest request) {
-        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
-                .message(e.getMessage())
-                .code(HttpStatus.UNAUTHORIZED.value())
-                .path(request.getRequestURI())
-                .build();
-
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
     }
 }
