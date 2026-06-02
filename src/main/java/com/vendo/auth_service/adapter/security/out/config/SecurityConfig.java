@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.out.config;
 
-import com.vendo.auth_service.adapter.security.in.filter.GatewayAuthFilter;
+import com.vendo.auth_service.adapter.security.in.filter.AuthFilter;
 import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAccessDeniedHandler;
 import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -14,19 +14,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 
-import static com.vendo.auth_service.adapter.security.in.filter.AuthAntPathResolver.PERMITTED_PATHS;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final GatewayAuthFilter gatewayAuthFilter;
+    private final AuthFilter gatewayAuthFilter;
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
     private final JwtAccessDeniedHandler accessDeniedHandler;
+
+    private final GatewayProps permittedPaths;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,7 +40,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PERMITTED_PATHS).permitAll()
+                        .requestMatchers(permittedPaths.getAuth().toArray(String[]::new)).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterAfter(gatewayAuthFilter, ExceptionTranslationFilter.class);

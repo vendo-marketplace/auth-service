@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,13 +25,13 @@ import java.util.Collections;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GatewayAuthFilter extends OncePerRequestFilter {
+public class AuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
     private final UserQueryPort userQueryPort;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (securityContext.getAuthentication() != null) {
             filterChain.doFilter(request, response);
