@@ -4,7 +4,7 @@ import com.vendo.auth_service.adapter.security.out.jwt.props.InternalJwtProperti
 import com.vendo.auth_service.adapter.security.out.jwt.utils.JwtUtils;
 import com.vendo.core_lib.type.ServiceName;
 import com.vendo.core_lib.type.ServiceRole;
-import com.vendo.security_lib.type.InternalTokenClaim;
+import com.vendo.security_lib.type.InternalClaims;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,7 @@ public class JwtInternalTokenPort implements InternalTokenGenerationPort {
     @Override
     public String generateInternal() {
         Map<String, Object> claims = Map.of(
-                InternalTokenClaim.ROLES.getClaim(), List.of(ServiceRole.INTERNAL.toString()),
+                InternalClaims.ROLES.getClaim(), List.of(ServiceRole.INTERNAL.toString()),
                 Claims.AUDIENCE, Set.of(ServiceName.USER_SERVICE.toString())
         );
 

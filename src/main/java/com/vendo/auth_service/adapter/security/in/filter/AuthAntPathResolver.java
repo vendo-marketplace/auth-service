@@ -18,8 +18,6 @@ public class AuthAntPathResolver implements AntPathResolver {
             "/auth/google",
             "/password/**",
             "/verification/**",
-            "/swagger-ui/**",
-            "/v3/api-docs/**",
             "/actuator/health"
     };
 

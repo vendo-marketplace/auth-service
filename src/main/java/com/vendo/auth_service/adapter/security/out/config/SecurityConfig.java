@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.out.config;
 
-import com.vendo.auth_service.adapter.security.in.filter.JwtAuthFilter;
+import com.vendo.auth_service.adapter.security.in.filter.GatewayAuthFilter;
 import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAccessDeniedHandler;
 import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import static com.vendo.auth_service.adapter.security.in.filter.AuthAntPathResol
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    private final GatewayAuthFilter gatewayAuthFilter;
 
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(PERMITTED_PATHS).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterAfter(jwtAuthFilter, ExceptionTranslationFilter.class);
+                .addFilterAfter(gatewayAuthFilter, ExceptionTranslationFilter.class);
 
         return http.build();
     }

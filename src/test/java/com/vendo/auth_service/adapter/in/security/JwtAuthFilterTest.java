@@ -3,11 +3,11 @@ package com.vendo.auth_service.adapter.in.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.test_utils.SecurityContextService;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
+import com.vendo.security_lib.type.UserHeaders;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -17,17 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.securityContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,9 +39,6 @@ public class JwtAuthFilterTest {
 
     @MockitoBean
     private UserCommandPort userCommandPort;
-
-    @MockitoBean
-    private TokenClaimsParser tokenClaimsParser;
 
     @MockitoBean
     private UserQueryPort userQueryPort;
@@ -79,25 +73,22 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldPassFilter_whenTokenIsValid() throws Exception {
+    void doFilterInternal_shouldPassFilter_whenHeaderIsValid() throws Exception {
         User user = UserDataBuilder.withAllFields()
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)
                 .build();
-        String accessToken = "access_token";
 
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-        mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+        mockMvc.perform(get("/test/ping").header(UserHeaders.USER_EMAIL.getHeader(), user.email()))
                 .andExpect(status().isOk());
 
-        verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenNoTokenInRequest() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenNoUserEmailHeaderInRequest() throws Exception {
         String content = mockMvc.perform(get("/test/ping"))
                 .andExpect(status().isUnauthorized())
                 .andReturn()
@@ -111,54 +102,13 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
-        String accessToken = "access_token";
-
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, accessToken))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-    }
-
-    @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
-        String expiredToken = "access_token";
-
-        when(tokenClaimsParser.extractSubject(expiredToken)).thenThrow(new BadCredentialsException("Token expired."));
-
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + expiredToken))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Token expired.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-
-        verify(tokenClaimsParser).extractSubject(expiredToken);
-        verify(userQueryPort, never()).getByEmail(anyString());
-    }
-
-    @Test
     void doFilterInternal_shouldReturnUnauthorized_whenUserNotFound() throws Exception {
         User user = UserDataBuilder.withAllFields().build();
-        String accessToken = "access_token";
 
-        when(tokenClaimsParser.extractSubject(accessToken)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
-        String content = mockMvc.perform(get("/test/ping").header(AUTHORIZATION, BEARER_PREFIX + accessToken))
+        String content = mockMvc.perform(get("/test/ping")
+                        .header(UserHeaders.USER_EMAIL.getHeader(), user.email()))
                 .andExpect(status().isUnauthorized())
                 .andReturn()
                 .getResponse()
@@ -170,7 +120,6 @@ public class JwtAuthFilterTest {
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
 
-        verify(tokenClaimsParser).extractSubject(accessToken);
         verify(userQueryPort).getByEmail(user.email());
     }
 }

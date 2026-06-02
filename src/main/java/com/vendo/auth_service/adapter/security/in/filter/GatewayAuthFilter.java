@@ -1,18 +1,17 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.user.UserQueryPort;
+import com.vendo.security_lib.type.UserHeaders;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,16 +23,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-import static com.vendo.security_lib.constants.AuthConstants.AUTHORIZATION_HEADER;
-import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class GatewayAuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
-    private final TokenClaimsParser tokenClaimsParser;
     private final UserQueryPort userQueryPort;
 
     @Override
@@ -45,9 +40,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         try {
-            String jwtToken = getTokenFromRequest(request);
-            String subject = tokenClaimsParser.extractSubject(jwtToken);
-            User user = userQueryPort.getByEmail(subject);
+            String userEmailHeader = request.getHeader(UserHeaders.USER_EMAIL.getHeader());
+            if (userEmailHeader == null || userEmailHeader.isBlank()) {
+                throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
+            }
+
+            User user = userQueryPort.getByEmail(userEmailHeader);
             addAuthenticationToContext(user);
         } catch (AuthenticationException e) {
             log.error(e.getMessage());
@@ -64,18 +62,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         return authAntPathResolver.isPermittedPath(requestURI);
-    }
-
-    private String getTokenFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader(AUTHORIZATION_HEADER);
-
-        if (authorization == null) {
-            throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
-        } else if (!authorization.startsWith(BEARER_PREFIX)) {
-            throw new BadCredentialsException("Invalid token.");
-        }
-
-        return authorization.substring(BEARER_PREFIX.length());
     }
 
     private void addAuthenticationToContext(User user) {
