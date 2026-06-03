@@ -82,8 +82,8 @@ public class AuthFilter extends OncePerRequestFilter {
                 .split(COMMA_DELIMITER)).map(UserRole::valueOf).collect(Collectors.toSet());
 
         return User.builder()
-                .id(getRequiredHeader(request, UserHeaders.USER_ID))
-                .email(getRequiredHeader(request, UserHeaders.USER_EMAIL))
+                .id(getRequiredHeader(request, UserHeaders.ID))
+                .email(getRequiredHeader(request, UserHeaders.EMAIL))
                 .status(UserStatus.valueOf(getRequiredHeader(request, UserHeaders.STATUS)))
                 .roles(roles)
                 .emailVerified(Boolean.valueOf(getRequiredHeader(request, UserHeaders.EMAIL_VERIFIED)))
