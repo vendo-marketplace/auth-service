@@ -6,7 +6,7 @@ import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.auth.UserAuthenticationService;
+import com.vendo.auth_service.port.auth.CurrentUserPort;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
@@ -25,11 +25,12 @@ public class AuthService {
 
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
-    private final UserAuthenticationService userAuthenticationService;
 
     private final TokenGenerationService tokenGenerationService;
     private final PasswordHashingPort passwordHashingPort;
     private final TokenClaimsParser tokenClaimsParser;
+
+    private final CurrentUserPort currentUserPort;
 
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
@@ -59,7 +60,9 @@ public class AuthService {
     }
 
     public void complete(CompleteAuthCommand command) {
-        User user = getAuthenticatedUserProfile();
+        User user = getCurrentUser();
+        user.validateAccess();
+        user.validateComplete();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());
@@ -76,8 +79,8 @@ public class AuthService {
                 .build();
     }
 
-    public User getAuthenticatedUserProfile() {
-        return userAuthenticationService.getAuthUser();
+    public User getCurrentUser() {
+      return userQueryPort.getByEmail(currentUserPort.getCurrentUserEmail());
     }
 
 }

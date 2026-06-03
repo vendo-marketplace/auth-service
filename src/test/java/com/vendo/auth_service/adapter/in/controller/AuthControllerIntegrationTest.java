@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.security.out.SecurityContextHelper;
+import com.vendo.auth_service.adapter.security.out.CurrentUserProvider;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
@@ -49,7 +49,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
@@ -79,7 +78,7 @@ class AuthControllerIntegrationTest {
     private UserCommandPort userCommandPort;
 
     @MockitoBean
-    private SecurityContextHelper securityContextHelper;
+    private CurrentUserProvider currentUserProvider;
 
     @MockitoBean
     private TokenClaimsParser tokenClaimsParser;
@@ -434,7 +433,7 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
             doNothing().when(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
 
             mockMvc.perform(patch("/auth/complete")
@@ -542,7 +541,7 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
             doThrow(new UserNotFoundException("User not found."))
                     .when(userCommandPort).update(eq(authUser.id()), any(UpdateUserRequest.class));
 
@@ -574,7 +573,7 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -602,7 +601,7 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -633,7 +632,7 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -664,7 +663,7 @@ class AuthControllerIntegrationTest {
 
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(securityContextHelper.getAuthUser()).thenReturn(authUser);
+            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -683,7 +682,7 @@ class AuthControllerIntegrationTest {
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 
-            verify(securityContextHelper).getAuthUser();
+            verify(currentUserProvider).getAuthUser();
         }
 
         @Test
@@ -694,7 +693,7 @@ class AuthControllerIntegrationTest {
                     null);
             SecurityContext securityContext = initializeSecurityContext(authToken);
 
-            when(securityContextHelper.getAuthUser()).thenThrow(new AuthenticationCredentialsNotFoundException("Unauthorized."));
+            when(currentUserProvider.getAuthUser()).thenThrow(new AuthenticationCredentialsNotFoundException("Unauthorized."));
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -711,7 +710,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
 
-            verify(securityContextHelper).getAuthUser();
+            verify(currentUserProvider).getAuthUser();
         }
     }
 }

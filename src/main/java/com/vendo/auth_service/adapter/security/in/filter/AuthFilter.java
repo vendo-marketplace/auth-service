@@ -1,8 +1,9 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.security_lib.type.UserHeaders;
+import com.vendo.user_lib.type.UserRole;
+import com.vendo.user_lib.type.UserStatus;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,9 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +27,6 @@ import java.util.Collections;
 public class AuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
-    private final UserQueryPort userQueryPort;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -38,22 +36,8 @@ public class AuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        try {
-            String userEmailHeader = request.getHeader(UserHeaders.USER_EMAIL.getHeader());
-            if (userEmailHeader == null || userEmailHeader.isBlank()) {
-                throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
-            }
-
-            User user = userQueryPort.getByEmail(userEmailHeader);
-            addAuthenticationToContext(user);
-        } catch (AuthenticationException e) {
-            log.error(e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new AuthenticationServiceException("Unauthorized.");
-        }
-
+        User user = extractUserFromHeaders(request);
+        addAuthenticationToContext(user);
         filterChain.doFilter(request, response);
     }
 
@@ -70,6 +54,25 @@ public class AuthFilter extends OncePerRequestFilter {
                 Collections.singleton(new SimpleGrantedAuthority(user.role().name())));
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
+    }
+
+    private String getRequiredHeader(HttpServletRequest request, UserHeaders header) {
+        String value = request.getHeader(header.getHeader());
+
+        if (value == null || value.isBlank()) {
+            throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
+        }
+
+        return value;
+    }
+
+    private User extractUserFromHeaders(HttpServletRequest request) {
+        return User.builder()
+                .id(getRequiredHeader(request, UserHeaders.USER_ID))
+                .email(getRequiredHeader(request, UserHeaders.USER_EMAIL))
+                .status(UserStatus.valueOf(getRequiredHeader(request, UserHeaders.STATUS)))
+                .role(UserRole.valueOf(getRequiredHeader(request, UserHeaders.ROLES)))
+                .build();
     }
 
 }

@@ -12,7 +12,6 @@ import com.vendo.auth_service.domain.user.model.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,7 +36,6 @@ public class AuthController {
     }
 
     @PatchMapping("/complete")
-    @PreAuthorize("@userSecurity.validateComplete()")
     void complete(@Valid @RequestBody CompleteAuthRequest request) {
         authService.complete(authMapper.toCompleteCommand(request));
     }
@@ -49,7 +47,7 @@ public class AuthController {
 
     @GetMapping("/me")
     ResponseEntity<UserResponse> getAuthenticatedUserProfile() {
-        User user = authService.getAuthenticatedUserProfile();
+        User user = authService.getCurrentUser();
         return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
