@@ -6,6 +6,7 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 
 import java.time.Instant;
+import java.util.Set;
 
 public class UserDataBuilder {
 
@@ -14,7 +15,7 @@ public class UserDataBuilder {
                 .id("id")
                 .email("test@gmail.com")
                 .password("Qwerty1234@")
-                .role(UserRole.USER)
+                .roles(Set.of(UserRole.USER))
                 .fullName(null)
                 .birthDate(null)
                 .providerType(ProviderType.LOCAL)
@@ -26,6 +27,6 @@ public class UserDataBuilder {
 
     public static User.UserBuilder withUserRole() {
         return User.builder()
-                .role(UserRole.USER);
+                .roles(Set.of(UserRole.USER));
     }
 }

@@ -6,13 +6,13 @@ import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
 import com.vendo.security_lib.type.UserClaims;
+import com.vendo.user_lib.type.UserRole;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -56,7 +56,7 @@ public class JwtService implements TokenGenerationService {
                 UserClaims.ID.getClaim(), user.id(),
                 UserClaims.EMAIL.getClaim(), user.email(),
                 UserClaims.VERIFIED.getClaim(), user.emailVerified(),
-                UserClaims.ROLES.getClaim(), List.of(user.role().name()),
+                UserClaims.ROLES.getClaim(), user.roles().stream().map(UserRole::name).toList(),
                 UserClaims.STATUS.getClaim(), user.status()
         );
 

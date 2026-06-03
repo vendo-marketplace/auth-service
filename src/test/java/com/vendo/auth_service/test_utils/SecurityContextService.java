@@ -8,16 +8,21 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
+import java.util.List;
 
 public class SecurityContextService {
 
     public static SecurityContext initializeSecurityContext(User user) {
         SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        List<SimpleGrantedAuthority> authorities = user.roles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .toList();
+
         securityContext.setAuthentication(new UsernamePasswordAuthenticationToken(
                 user,
                 null,
-                Collections.singletonList(new SimpleGrantedAuthority(user.role().name()))
-        ));
+                authorities)
+        );
 
         return securityContext;
     }
