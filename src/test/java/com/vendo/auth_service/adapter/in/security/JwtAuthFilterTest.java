@@ -7,7 +7,6 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.test_utils.SecurityContextService;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
-import com.vendo.security_lib.type.UserHeaders;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.vendo.security_lib.type.UserHeaders.EMAIL;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.securityContext;
@@ -81,7 +81,7 @@ public class JwtAuthFilterTest {
 
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-        mockMvc.perform(get("/test/ping").header(UserHeaders.USER_EMAIL.getHeader(), user.email()))
+        mockMvc.perform(get("/test/ping").header(EMAIL.getHeader(), user.email()))
                 .andExpect(status().isOk());
 
         verify(userQueryPort).getByEmail(user.email());
@@ -108,7 +108,7 @@ public class JwtAuthFilterTest {
         when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
         String content = mockMvc.perform(get("/test/ping")
-                        .header(UserHeaders.USER_EMAIL.getHeader(), user.email()))
+                        .header(EMAIL.getHeader(), user.email()))
                 .andExpect(status().isUnauthorized())
                 .andReturn()
                 .getResponse()

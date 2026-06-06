@@ -46,8 +46,8 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    ResponseEntity<UserResponse> getAuthenticatedUserProfile() {
-        User user = authService.getCurrentUser();
+    ResponseEntity<UserResponse> getAuthenticatedUser() {
+        User user = authService.getAuthtUser();
         return ResponseEntity.ok(userMapper.toResponse(user));
     }
 

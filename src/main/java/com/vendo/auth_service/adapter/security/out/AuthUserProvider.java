@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.security.out;
 
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.auth.CurrentUserPort;
+import com.vendo.auth_service.port.auth.AuthUserPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -10,16 +10,15 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class CurrentUserProvider implements CurrentUserPort {
+public class AuthUserProvider implements AuthUserPort {
 
     @Override
-    public String getCurrentUserEmail() {
+    public User getAuthUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
         if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
             throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
         }
-        return user.email();
+        return user;
     }
 }
 

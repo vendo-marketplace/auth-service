@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.security.out.CurrentUserProvider;
+import com.vendo.auth_service.adapter.security.out.AuthUserProvider;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
@@ -78,7 +78,7 @@ class AuthControllerIntegrationTest {
     private UserCommandPort userCommandPort;
 
     @MockitoBean
-    private CurrentUserProvider currentUserProvider;
+    private AuthUserProvider currentUserProvider;
 
     @MockitoBean
     private TokenClaimsParser tokenClaimsParser;

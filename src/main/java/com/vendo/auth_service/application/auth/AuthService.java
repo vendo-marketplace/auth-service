@@ -6,7 +6,7 @@ import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.auth.CurrentUserPort;
+import com.vendo.auth_service.port.auth.AuthUserPort;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenClaimsParser;
 import com.vendo.auth_service.port.security.TokenGenerationService;
@@ -30,11 +30,10 @@ public class AuthService {
     private final PasswordHashingPort passwordHashingPort;
     private final TokenClaimsParser tokenClaimsParser;
 
-    private final CurrentUserPort currentUserPort;
+    private final AuthUserPort currentUserPort;
 
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
-        user.validateAccess();
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
@@ -60,8 +59,7 @@ public class AuthService {
     }
 
     public void complete(CompleteAuthCommand command) {
-        User user = getCurrentUser();
-        user.validateAccess();
+        User user = getAuthtUser();
         user.validateComplete();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName())
@@ -79,8 +77,9 @@ public class AuthService {
                 .build();
     }
 
-    public User getCurrentUser() {
-      return userQueryPort.getByEmail(currentUserPort.getCurrentUserEmail());
+    // TODO need to change email to id
+    public User getAuthtUser() {
+        return userQueryPort.getByEmail(currentUserPort.getAuthUser().email());
     }
 
 }

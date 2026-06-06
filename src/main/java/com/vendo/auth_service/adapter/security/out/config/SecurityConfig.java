@@ -26,7 +26,7 @@ public class SecurityConfig {
 
     private final JwtAccessDeniedHandler accessDeniedHandler;
 
-    private final GatewayProps permittedPaths;
+    private final GatewayProps props;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,7 +40,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(permittedPaths.getAuth().toArray(String[]::new)).permitAll()
+                        .requestMatchers(props.allPathsArray()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterAfter(gatewayAuthFilter, ExceptionTranslationFilter.class);

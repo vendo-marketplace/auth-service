@@ -1,20 +1,13 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
+import com.vendo.auth_service.adapter.security.in.filter.header.UserHeadersExtractor;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.security_lib.type.UserHeaders;
-
-import static com.vendo.core_lib.constants.Delimiters.COMMA_DELIMITER;
-
-import com.vendo.user_lib.type.UserRole;
-import com.vendo.user_lib.type.UserStatus;
-import com.vendo.utils_lib.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -23,10 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -34,6 +24,8 @@ import java.util.stream.Collectors;
 public class AuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
+
+    private final UserHeadersExtractor userHeadersExtractor;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -43,7 +35,7 @@ public class AuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        User user = extractUserFromHeaders(request);
+        User user = userHeadersExtractor.extract(request);
         addAuthenticationToContext(user);
         filterChain.doFilter(request, response);
     }
@@ -65,29 +57,6 @@ public class AuthFilter extends OncePerRequestFilter {
                 authorities);
 
         SecurityContextHolder.getContext().setAuthentication(authToken);
-    }
-
-    private String getRequiredHeader(HttpServletRequest request, UserHeaders header) {
-        String value = request.getHeader(header.getHeader());
-
-        if (StringUtils.isEmpty(value)) {
-            throw new AuthenticationCredentialsNotFoundException("Unauthorized.");
-        }
-
-        return value;
-    }
-
-    private User extractUserFromHeaders(HttpServletRequest request) {
-        Set<UserRole> roles = Arrays.stream(getRequiredHeader(request, UserHeaders.ROLES)
-                .split(COMMA_DELIMITER)).map(UserRole::valueOf).collect(Collectors.toSet());
-
-        return User.builder()
-                .id(getRequiredHeader(request, UserHeaders.ID))
-                .email(getRequiredHeader(request, UserHeaders.EMAIL))
-                .status(UserStatus.valueOf(getRequiredHeader(request, UserHeaders.STATUS)))
-                .roles(roles)
-                .emailVerified(Boolean.valueOf(getRequiredHeader(request, UserHeaders.EMAIL_VERIFIED)))
-                .build();
     }
 
 }
