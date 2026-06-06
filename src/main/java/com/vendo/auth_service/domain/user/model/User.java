@@ -9,8 +9,8 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Builder
 public record User(
@@ -19,7 +19,7 @@ public record User(
         String email,
         Boolean emailVerified,
         UserStatus status,
-        Set<UserRole> roles,
+        List<UserRole> roles,
         ProviderType providerType,
         String password,
         LocalDate birthDate,

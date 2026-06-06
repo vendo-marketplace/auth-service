@@ -14,8 +14,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import static com.vendo.core_lib.constants.Delimiters.COMMA_DELIMITER;
 
@@ -51,10 +50,14 @@ public class UserHeadersExtractor {
         }
     }
 
-    private Set<UserRole> extractRoles(String roles) {
-        if (StringUtils.isEmpty(roles)) return Set.of();
+    private List<UserRole> extractRoles(String roles) {
+        if (StringUtils.isEmpty(roles)) return List.of();
+
         return Arrays.stream(roles.split(COMMA_DELIMITER))
-                .map(UserRole::valueOf).collect(Collectors.toSet());
+                .map(String::trim)
+                .filter(role -> !role.isBlank())
+                .map(UserRole::valueOf)
+                .toList();
     }
 
 }
