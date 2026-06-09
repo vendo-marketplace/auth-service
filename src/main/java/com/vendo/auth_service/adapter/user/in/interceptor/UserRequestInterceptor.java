@@ -17,7 +17,10 @@ public class UserRequestInterceptor {
 
     @Bean
     RequestInterceptor internalUserInfoInterceptor() {
-        return request -> request.header(AUTHORIZATION_HEADER, BEARER_PREFIX + internalTokenGenerationPort.generateInternal());
+        return request -> request.header(
+                AUTHORIZATION_HEADER,
+                BEARER_PREFIX + internalTokenGenerationPort.generate()
+        );
     }
 
 }

@@ -29,7 +29,7 @@ public class UserServiceErrorDecoder implements ErrorDecoder {
         }
 
         log.error(response.toString());
-        return new RuntimeException("Internal server error.");
+        return new IllegalArgumentException("Unhandled user exception.");
     }
 
 }

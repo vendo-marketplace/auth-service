@@ -1,5 +1,6 @@
-server:
-  url: server_test_url
+spring:
+  kafka:
+    bootstrap-servers: test
 
 google:
   client_id: test_google_client_id
@@ -24,6 +25,16 @@ kafka:
       email-otp-event:
         topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
 
-spring:
-  kafka:
-    bootstrap-servers: test
+endpoints:
+  unauthenticated:
+    general:
+      - /actuator/health
+    internal:
+      - /internal/**
+    auth:
+      - /auth/sign-in
+      - /auth/sign-up
+      - /auth/refresh
+      - /auth/google
+      - /password/**
+      - /verification/**

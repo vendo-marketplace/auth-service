@@ -9,7 +9,7 @@ import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
-import com.vendo.auth_service.port.security.TokenGenerationService;
+import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserStatus;
@@ -38,7 +38,7 @@ class GoogleOAuthServiceTest {
     private UserCommandPort userCommandPort;
 
     @Mock
-    private TokenGenerationService tokenGenerationService;
+    private TokenGenerationPort tokenGenerationPort;
 
     @Mock
     private GoogleTokenVerifierPort googleTokenVerifierPort;
@@ -55,7 +55,7 @@ class GoogleOAuthServiceTest {
         when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
         when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
-        when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
+        when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
         AuthResponse authResponse = googleOAuthService.googleAuth(googleAuthRequest);
         assertThat(authResponse).isNotNull();
@@ -65,7 +65,7 @@ class GoogleOAuthServiceTest {
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
-        verify(tokenGenerationService).generate(user);
+        verify(tokenGenerationPort).generate(user);
     }
 
     @Test
@@ -80,7 +80,7 @@ class GoogleOAuthServiceTest {
         when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
         when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
-        when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
+        when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
         AuthResponse authResponse = googleOAuthService.googleAuth(googleAuthRequest);
 
@@ -92,7 +92,7 @@ class GoogleOAuthServiceTest {
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
         verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
-        verify(tokenGenerationService).generate(user);
+        verify(tokenGenerationPort).generate(user);
 
         UpdateUserRequest updateUser = updateUserArgumentCaptor.getValue();
         assertThat(updateUser.status()).isEqualTo(UserStatus.ACTIVE);
@@ -111,7 +111,7 @@ class GoogleOAuthServiceTest {
         when(googleTokenVerifierPort.verify(idToken)).thenReturn(mockPayload);
         when(mockPayload.email()).thenReturn(email);
         when(userCommandPort.ensureExists(email)).thenReturn(user);
-        when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
+        when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
         AuthResponse authResponse = googleOAuthService.googleAuth(googleAuthRequest);
 
@@ -121,7 +121,7 @@ class GoogleOAuthServiceTest {
 
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort).ensureExists(email);
-        verify(tokenGenerationService).generate(user);
+        verify(tokenGenerationPort).generate(user);
         verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
     }
 
@@ -139,7 +139,7 @@ class GoogleOAuthServiceTest {
 
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userCommandPort, never()).ensureExists(email);
-        verify(tokenGenerationService, never()).generate(user);
+        verify(tokenGenerationPort, never()).generate(user);
     }
 
 }

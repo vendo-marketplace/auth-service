@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 public interface UserClient {
 
     @GetMapping
+    User getById(@RequestParam("id") String id);
+
+    @GetMapping
     User getByEmail(@RequestParam("email") String email);
 
     @GetMapping("/exists")

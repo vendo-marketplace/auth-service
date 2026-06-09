@@ -7,6 +7,7 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Builder
 public record UserResponse(
@@ -15,7 +16,7 @@ public record UserResponse(
         String email,
         Boolean emailVerified,
         UserStatus status,
-        UserRole role,
+        Set<UserRole> roles,
         ProviderType providerType,
         LocalDate birthDate,
         String fullName,

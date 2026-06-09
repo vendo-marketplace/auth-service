@@ -12,6 +12,11 @@ public class UserQueryAdapter implements UserQueryPort {
     private final UserClient userClient;
 
     @Override
+    public User getById(String id) {
+        return userClient.getById(id);
+    }
+
+    @Override
     public User getByEmail(String email) {
         return userClient.getByEmail(email);
     }

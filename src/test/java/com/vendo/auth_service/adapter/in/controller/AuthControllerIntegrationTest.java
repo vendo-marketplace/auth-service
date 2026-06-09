@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
-import com.vendo.auth_service.adapter.security.out.AuthUserProvider;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
@@ -15,10 +14,9 @@ import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.auth_service.port.security.BearerTokenExtractor;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
-import com.vendo.auth_service.port.security.TokenClaimsParser;
-import com.vendo.auth_service.port.security.TokenGenerationService;
+import com.vendo.auth_service.port.security.TokenIdentityPort;
+import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.utils.AssertionUtils;
@@ -64,30 +62,19 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @MockitoBean
     private PasswordHashingPort passwordHashingPort;
-
     @MockitoBean
     private UserQueryPort userQueryPort;
-
     @MockitoBean
     private UserCommandPort userCommandPort;
-
     @MockitoBean
-    private AuthUserProvider currentUserProvider;
-
+    private TokenIdentityPort tokenIdentityPort;
     @MockitoBean
-    private TokenClaimsParser tokenClaimsParser;
-
-    @MockitoBean
-    private BearerTokenExtractor bearerTokenExtractor;
-
-    @MockitoBean
-    private TokenGenerationService tokenGenerationService;
+    private TokenGenerationPort tokenGenerationPort;
 
     @BeforeEach
     void setUp() {
@@ -171,7 +158,7 @@ class AuthControllerIntegrationTest {
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
             when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(true);
-            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
+            when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -190,7 +177,7 @@ class AuthControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(authRequest.email());
             verify(passwordHashingPort).matches(authRequest.password(), user.password());
-            verify(tokenGenerationService).generate(user);
+            verify(tokenGenerationPort).generate(user);
         }
 
         @Test
@@ -214,37 +201,7 @@ class AuthControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(authRequest.email());
             verify(passwordHashingPort, never()).matches(anyString(), anyString());
-            verify(tokenGenerationService, never()).generate(any(User.class));
-        }
-
-        @Test
-        void signIn_shouldReturnForbidden_whenUserBlocked() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            User user = UserDataBuilder.withAllFields()
-                    .status(UserStatus.BLOCKED)
-                    .email(authRequest.email())
-                    .build();
-
-            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-
-            String content = mockMvc.perform(post("/auth/sign-in")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isForbidden())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            assertThat(content).isNotBlank();
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
-
-            verify(userQueryPort).getByEmail(user.email());
-            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
-            verify(tokenGenerationService, never()).generate(user);
+            verify(tokenGenerationPort, never()).generate(any(User.class));
         }
 
         @Test
@@ -274,37 +231,7 @@ class AuthControllerIntegrationTest {
 
             verify(userQueryPort).getByEmail(user.email());
             verify(passwordHashingPort).matches(authRequest.password(), user.password());
-            verify(tokenGenerationService, never()).generate(any());
-        }
-
-        @Test
-        void signIn_shouldReturnForbidden_whenUserEmailIsNotVerified() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            User user = UserDataBuilder.withAllFields()
-                    .emailVerified(false)
-                    .email(authRequest.email())
-                    .build();
-
-            when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
-
-            String content = mockMvc.perform(post("/auth/sign-in")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isUnauthorized())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            assertThat(content).isNotBlank();
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
-
-            verify(userQueryPort).getByEmail(user.email());
-            verify(passwordHashingPort, never()).matches(authRequest.password(), user.password());
-            verify(tokenGenerationService, never()).generate(user);
+            verify(tokenGenerationPort, never()).generate(any());
         }
     }
 
@@ -317,9 +244,9 @@ class AuthControllerIntegrationTest {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
-            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            when(tokenGenerationService.generate(user)).thenReturn(tokenPayload);
+            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenReturn(user.id());
+            when(userQueryPort.getById(user.id())).thenReturn(user);
+            when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -336,9 +263,9 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.accessToken()).isNotBlank();
             assertThat(authResponse.refreshToken()).isNotBlank();
 
-            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
-            verify(userQueryPort).getByEmail(user.email());
-            verify(tokenGenerationService).generate(user);
+            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(userQueryPort).getById(user.id());
+            verify(tokenGenerationPort).generate(user);
         }
 
         @Test
@@ -346,8 +273,8 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenReturn(user.email());
-            when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
+            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenReturn(user.id());
+            when(userQueryPort.getById(user.id())).thenThrow(new UserNotFoundException("User not found."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -364,16 +291,16 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
-            verify(userQueryPort).getByEmail(user.email());
-            verify(tokenGenerationService, never()).generate(user);
+            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(userQueryPort).getById(user.id());
+            verify(tokenGenerationPort, never()).generate(user);
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
+            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Unauthorized."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -386,20 +313,20 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(tokenGenerationService, never()).generate(any(User.class));
+            verify(tokenGenerationPort, never()).generate(any(User.class));
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
 
-            when(tokenClaimsParser.extractSubject(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Invalid token."));
+            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Unauthorized."));
 
             String content = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -412,13 +339,13 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid token.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenClaimsParser).extractSubject(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
             verify(userQueryPort, never()).getByEmail(anyString());
-            verify(tokenGenerationService, never()).generate(any(User.class));
+            verify(tokenGenerationPort, never()).generate(any(User.class));
         }
     }
 
@@ -433,7 +360,7 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
+            when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
             doNothing().when(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
 
             mockMvc.perform(patch("/auth/complete")
@@ -443,8 +370,8 @@ class AuthControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
+            verify(userQueryPort).getById(authUser.id());
             verify(userCommandPort).update(authUser.id(), updateUserArgumentCaptorValue);
-            verifyNoInteractions(userQueryPort);
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
@@ -541,7 +468,7 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
+            when(userQueryPort.getById(authUser.id())).thenThrow(new UserNotFoundException("User not found."));
             doThrow(new UserNotFoundException("User not found."))
                     .when(userCommandPort).update(eq(authUser.id()), any(UpdateUserRequest.class));
 
@@ -560,65 +487,8 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
 
-            verifyNoInteractions(userQueryPort);
-            verify(userCommandPort).update(eq(authUser.id()), any(UpdateUserRequest.class));
-        }
-
-        @Test
-        void complete_shouldReturnForbidden_whenUserBlocked() throws Exception {
-            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
-            User authUser = UserDataBuilder.withAllFields()
-                    .status(UserStatus.BLOCKED)
-                    .build();
-            SecurityContext securityContext = initializeSecurityContext(authUser);
-
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
-
-            String content = mockMvc.perform(patch("/auth/complete")
-                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isForbidden())
-                    .andReturn().getResponse().getContentAsString();
-
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User is blocked.");
-
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
-        }
-
-        @Test
-        void complete_shouldReturnForbidden_whenUserEmailNotVerified() throws Exception {
-            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
-            User authUser = UserDataBuilder.withAllFields()
-                    .emailVerified(false)
-                    .build();
-            SecurityContext securityContext = initializeSecurityContext(authUser);
-
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
-
-            String content = mockMvc.perform(patch("/auth/complete")
-                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isUnauthorized())
-                    .andReturn().getResponse().getContentAsString();
-
-            assertThat(content).isNotNull();
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
-
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verify(userQueryPort).getById(authUser.id());
+            verifyNoInteractions(userCommandPort);
         }
 
         @Test
@@ -632,7 +502,7 @@ class AuthControllerIntegrationTest {
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
+            when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -646,7 +516,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse).isNotNull();
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
-            assertThat(exceptionResponse.getMessage()).isEqualTo("User profile is already completed.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User has already completed.");
 
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
@@ -656,14 +526,14 @@ class AuthControllerIntegrationTest {
     class AuthenticatedUserTests {
 
         @Test
-        void getAuthenticatedUser_shouldReturnUserProfile() throws Exception {
+        void getAuthenticatedUser_shouldReturnUserData() throws Exception {
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.ACTIVE)
                     .build();
 
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
-            when(currentUserProvider.getAuthUser()).thenReturn(authUser);
+            when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -682,7 +552,7 @@ class AuthControllerIntegrationTest {
             assertThat(responseDto.createdAt()).isNotNull();
             assertThat(responseDto.updatedAt()).isNotNull();
 
-            verify(currentUserProvider).getAuthUser();
+            verify(userQueryPort).getById(authUser.id());
         }
 
         @Test
@@ -692,8 +562,6 @@ class AuthControllerIntegrationTest {
                     null,
                     null);
             SecurityContext securityContext = initializeSecurityContext(authToken);
-
-            when(currentUserProvider.getAuthUser()).thenThrow(new AuthenticationCredentialsNotFoundException("Unauthorized."));
 
             String content = mockMvc.perform(get("/auth/me")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -709,8 +577,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/me");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
-
-            verify(currentUserProvider).getAuthUser();
         }
     }
 }

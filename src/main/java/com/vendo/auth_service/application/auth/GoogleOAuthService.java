@@ -7,7 +7,7 @@ import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
-import com.vendo.auth_service.port.security.TokenGenerationService;
+import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserStatus;
@@ -20,7 +20,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class GoogleOAuthService {
 
-    private final TokenGenerationService tokenGenerationService;
+    private final TokenGenerationPort tokenGenerationPort;
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
     private final UserCommandPort userCommandPort;
 
@@ -29,7 +29,7 @@ public class GoogleOAuthService {
         User user = userCommandPort.ensureExists(payload.email());
         updateIfFirstLogin(user, payload);
 
-        TokenPayload tokenPayload = tokenGenerationService.generate(user);
+        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())

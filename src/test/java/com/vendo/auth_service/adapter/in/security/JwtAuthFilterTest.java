@@ -7,8 +7,6 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.auth_service.test_utils.SecurityContextService;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
-import com.vendo.user_lib.exception.UserNotFoundException;
-import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,9 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.vendo.security_lib.type.UserHeader.EMAIL;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.securityContext;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,22 +69,14 @@ public class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_shouldPassFilter_whenHeaderIsValid() throws Exception {
-        User user = UserDataBuilder.withAllFields()
-                .status(UserStatus.ACTIVE)
-                .emailVerified(true)
-                .build();
-
-        when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-
-        mockMvc.perform(get("/test/ping").header(EMAIL.getHeader(), user.email()))
+    void doFilterInternal_shouldPassFilter_whenHeadersAreValid() throws Exception {
+        User user = UserDataBuilder.withAllFields().build();
+        mockMvc.perform(get("/test/ping").headers(SecurityContextService.extractHeaders(user)))
                 .andExpect(status().isOk());
-
-        verify(userQueryPort).getByEmail(user.email());
     }
 
     @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenNoUserEmailHeaderInRequest() throws Exception {
+    void doFilterInternal_shouldReturnUnauthorized_whenNoIdHeaderInRequest() throws Exception {
         String content = mockMvc.perform(get("/test/ping"))
                 .andExpect(status().isUnauthorized())
                 .andReturn()
@@ -99,27 +87,5 @@ public class JwtAuthFilterTest {
         ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
         assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
         assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-    }
-
-    @Test
-    void doFilterInternal_shouldReturnUnauthorized_whenUserNotFound() throws Exception {
-        User user = UserDataBuilder.withAllFields().build();
-
-        when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
-
-        String content = mockMvc.perform(get("/test/ping")
-                        .header(EMAIL.getHeader(), user.email()))
-                .andExpect(status().isUnauthorized())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(content).isNotBlank();
-        ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-        assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
-        assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
-        assertThat(exceptionResponse.getPath()).isEqualTo("/test/ping");
-
-        verify(userQueryPort).getByEmail(user.email());
     }
 }

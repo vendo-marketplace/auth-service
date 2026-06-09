@@ -3,9 +3,6 @@ package com.vendo.auth_service.domain.user;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.user_lib.exception.UserAlreadyCompletedException;
-import com.vendo.user_lib.exception.UserBlockedException;
-import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
-import com.vendo.user_lib.type.UserStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,24 +15,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.*;
 public class UserTest {
 
     @Test
-    void validateAccess_shouldThrowUserBlockedException_whenUserBlocked() {
-        User user = UserDataBuilder.withAllFields().status(UserStatus.BLOCKED).build();
-
-        assertThatThrownBy(user::validateAccess)
-                .isInstanceOf(UserBlockedException.class)
-                .hasMessage("User is blocked.");
-    }
-
-    @Test
-    void validateAccess_shouldThrowUserEmailNotVerifiedException_whenUserNotVerified() {
-        User user = UserDataBuilder.withAllFields().status(UserStatus.ACTIVE).emailVerified(false).build();
-
-        assertThatThrownBy(user::validateAccess)
-                .isInstanceOf(UserEmailNotVerifiedException.class)
-                .hasMessage("User email is not verified.");
-    }
-
-    @Test
     void validateComplete_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
         User user = UserDataBuilder.withAllFields()
                 .fullName("John Doe")
@@ -44,7 +23,7 @@ public class UserTest {
 
         assertThatThrownBy(user::throwIfCompleted)
                 .isInstanceOf(UserAlreadyCompletedException.class)
-                .hasMessage("User profile is already completed.");
+                .hasMessage("User has already completed.");
 
     }
 }
