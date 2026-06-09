@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
+import java.util.Arrays;
+
 @Component
 @RequiredArgsConstructor
 public class AuthAntPathResolver implements AntPathResolver {
@@ -16,7 +18,7 @@ public class AuthAntPathResolver implements AntPathResolver {
 
     @Override
     public boolean isPermittedPath(String path) {
-        return props.allPaths().stream()
+        return Arrays.stream(props.allPaths())
                 .anyMatch(pr -> antPathMatcher.match(pr, path));
     }
 

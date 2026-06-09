@@ -40,7 +40,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(props.allPathsArray()).permitAll()
+                        .requestMatchers(props.allPaths()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterAfter(gatewayAuthFilter, ExceptionTranslationFilter.class);

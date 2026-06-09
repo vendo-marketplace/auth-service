@@ -29,9 +29,9 @@ public record User(
 
 ) {
 
-    public void validateComplete() {
+    public void throwIfCompleted() {
         if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
-            throw new UserAlreadyCompletedException("User profile is already completed.");
+            throw new UserAlreadyCompletedException("User has already completed.");
         }
     }
 }

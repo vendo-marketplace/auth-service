@@ -60,7 +60,7 @@ public class AuthService {
 
     public void complete(CompleteAuthCommand command) {
         User user = getAuthtUser();
-        user.validateComplete();
+        user.throwIfCompleted();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName())
                 .birthDate(command.birthDate()).build());
