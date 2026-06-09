@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.out.jwt.utils;
 
-import com.vendo.utils_lib.StringUtils;
+import com.vendo.core_lib.utils.StringUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;

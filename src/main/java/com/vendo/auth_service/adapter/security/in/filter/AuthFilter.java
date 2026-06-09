@@ -1,22 +1,23 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.adapter.security.in.filter.header.UserHeadersExtractor;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.security_lib.type.UserHeader;
+import com.vendo.security_starter.filter.header.HeaderExtractor;
+import com.vendo.security_starter.filter.header.UserHeaderExtractor;
+import com.vendo.security_starter.filter.utils.FilterUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -25,7 +26,8 @@ public class AuthFilter extends OncePerRequestFilter {
 
     private final AuthAntPathResolver authAntPathResolver;
 
-    private final UserHeadersExtractor userHeadersExtractor;
+    private final UserHeaderExtractor userHeaderExtractor;
+    private final HeaderExtractor headerExtractor;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -35,9 +37,24 @@ public class AuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        User user = userHeadersExtractor.extract(request);
-        addAuthenticationToContext(user);
+        User user = parseUserFrom(request);
+        FilterUtils.addAuthToContext(user, user.toRoleNames());
+
         filterChain.doFilter(request, response);
+    }
+
+    private User parseUserFrom(HttpServletRequest request) {
+        String id = headerExtractor.require(UserHeader.ID.getHeader(), request);
+        String email = headerExtractor.require(UserHeader.EMAIL.getHeader(), request);
+        String emailVerified = headerExtractor.require(UserHeader.EMAIL_VERIFIED.getHeader(), request);
+
+        return User.builder()
+                .id(id)
+                .email(email)
+                .status(userHeaderExtractor.extractStatus(request))
+                .roles(userHeaderExtractor.extractRoles(request))
+                .emailVerified(Boolean.getBoolean(emailVerified))
+                .build();
     }
 
     @Override
@@ -45,18 +62,4 @@ public class AuthFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         return authAntPathResolver.isPermittedPath(requestURI);
     }
-
-    private void addAuthenticationToContext(User user) {
-        List<SimpleGrantedAuthority> authorities = user.roles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .toList();
-
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                user,
-                null,
-                authorities);
-
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-    }
-
 }

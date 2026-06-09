@@ -42,7 +42,7 @@ public class UserTest {
                 .birthDate(LocalDate.of(1991, 12, 12))
                 .build();
 
-        assertThatThrownBy(user::validateComplete)
+        assertThatThrownBy(user::throwIfCompleted)
                 .isInstanceOf(UserAlreadyCompletedException.class)
                 .hasMessage("User profile is already completed.");
 

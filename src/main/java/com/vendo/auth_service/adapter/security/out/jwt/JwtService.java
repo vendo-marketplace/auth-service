@@ -5,7 +5,7 @@ import com.vendo.auth_service.adapter.security.out.jwt.utils.JwtUtils;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.port.security.TokenGenerationService;
-import com.vendo.security_lib.type.UserClaims;
+import com.vendo.security_lib.type.UserClaim;
 import com.vendo.user_lib.type.UserRole;
 import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
@@ -53,11 +53,11 @@ public class JwtService implements TokenGenerationService {
 
     private String generateAccessToken(User user) {
         Map<String, Object> claims = Map.of(
-                UserClaims.ID.getClaim(), user.id(),
-                UserClaims.EMAIL.getClaim(), user.email(),
-                UserClaims.VERIFIED.getClaim(), user.emailVerified(),
-                UserClaims.ROLES.getClaim(), user.roles().stream().map(UserRole::name).toList(),
-                UserClaims.STATUS.getClaim(), user.status()
+                UserClaim.ID.getClaim(), user.id(),
+                UserClaim.EMAIL.getClaim(), user.email(),
+                UserClaim.VERIFIED.getClaim(), user.emailVerified(),
+                UserClaim.ROLES.getClaim(), user.roles().stream().map(UserRole::name).toList(),
+                UserClaim.STATUS.getClaim(), user.status()
         );
 
         JwtUtils.JwtPayload jwtPayload = JwtUtils.JwtPayload.builder()

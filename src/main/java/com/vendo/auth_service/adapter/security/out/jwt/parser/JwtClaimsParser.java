@@ -7,7 +7,7 @@ import com.vendo.auth_service.port.security.TokenClaimsParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import static com.vendo.security_lib.constants.AuthConstants.BEARER_PREFIX;
+import static com.vendo.security_lib.http.HttpUtils.BEARER_PREFIX;
 
 @Component
 @RequiredArgsConstructor

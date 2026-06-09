@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.adapter.security.out.config.GatewayProps;
+import com.vendo.auth_service.infrastructure.props.PathProps;
 import com.vendo.security_lib.resolver.AntPathResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ public class AuthAntPathResolver implements AntPathResolver {
 
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
-    private final GatewayProps props;
+    private final PathProps props;
 
     @Override
     public boolean isPermittedPath(String path) {
