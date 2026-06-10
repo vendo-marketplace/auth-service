@@ -10,9 +10,7 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -25,8 +23,8 @@ public class JwtInternalTokenAdapter implements InternalTokenGenerationPort {
         JwtProperties.Internal internal = props.getInternal();
 
         Map<String, Object> claims = Map.of(
-                TokenClaim.ROLES.getClaim(), List.of(ServiceRole.INTERNAL.toString()),
-                Claims.AUDIENCE, Set.of(ServiceName.USER_SERVICE.toString())
+                TokenClaim.ROLES.getClaim(), ServiceRole.INTERNAL.toString(),
+                Claims.AUDIENCE, ServiceName.USER_SERVICE.toString()
         );
 
         JwtPayload jwtPayload = JwtPayload.builder()

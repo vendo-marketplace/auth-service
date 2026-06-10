@@ -7,12 +7,13 @@ import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.security_lib.type.TokenClaim;
 import com.vendo.security_starter.jwt.JwtPayload;
 import com.vendo.security_starter.jwt.JwtService;
-import com.vendo.user_lib.type.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+
+import static com.vendo.core_lib.constants.Delimiters.COMMA_DELIMITER;
 
 @Slf4j
 @Component
@@ -43,7 +44,7 @@ public class TokenGenerationAdapter implements TokenGenerationPort {
                 TokenClaim.ID.getClaim(), user.id(),
                 TokenClaim.EMAIL.getClaim(), user.email(),
                 TokenClaim.VERIFIED.getClaim(), user.emailVerified(),
-                TokenClaim.ROLES.getClaim(), user.roles().stream().map(UserRole::name).toList(),
+                TokenClaim.ROLES.getClaim(), String.join(COMMA_DELIMITER, user.toRoleNames()),
                 TokenClaim.STATUS.getClaim(), user.status()
         );
 
