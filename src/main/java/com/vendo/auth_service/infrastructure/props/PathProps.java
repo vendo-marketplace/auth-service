@@ -18,10 +18,9 @@ public class PathProps {
 
     private Set<String> auth;
     private Set<String> general;
-    private Set<String> internal;
 
     public String[] allPaths() {
-        return Stream.of(general, internal, auth)
+        return Stream.of(general, auth)
                 .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
                 .toArray(String[]::new);

@@ -29,8 +29,6 @@ endpoints:
   unauthenticated:
     general:
       - /actuator/health
-    internal:
-      - /internal/**
     auth:
       - /auth/sign-in
       - /auth/sign-up
