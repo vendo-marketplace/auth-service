@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class JwtIdentityAdapter implements TokenIdentityPort {
+public class TokenIdentityAdapter implements TokenIdentityPort {
 
     private final JwtProperties jwtProperties;
 
