@@ -18,6 +18,7 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public void signUp(AuthCommand command) {
         if (userQueryPort.existsByEmail(command.email())) throw new UserAlreadyExistsException("User already exists.");
         String hashedPassword = passwordHashingPort.hash(command.password());
@@ -58,8 +60,9 @@ public class AuthService {
                 .build());
     }
 
+    @Transactional
     public void complete(CompleteAuthCommand command) {
-        User user = getAuthtUser();
+        User user = userQueryPort.getById(authUserPort.getAuthUser().id());
         user.throwIfCompleted();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName())

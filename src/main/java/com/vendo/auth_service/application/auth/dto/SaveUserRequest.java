@@ -8,6 +8,7 @@ import lombok.Builder;
 @Builder
 public record SaveUserRequest(
         String email,
+        String fullName,
         String password,
         UserRole role,
         UserStatus status,

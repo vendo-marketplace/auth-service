@@ -10,6 +10,4 @@ public interface UserCommandPort {
 
     void update(String id, UpdateUserRequest request);
 
-    User ensureExists(String email);
-
 }
