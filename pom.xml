@@ -109,7 +109,15 @@
 			<optional>true</optional>
 		</dependency>
 
-        <!-- vendo dependencies-->
+        <!-- vendo starters-->
+
+		<dependency>
+			<groupId>io.github.vendo-marketplace-be</groupId>
+			<artifactId>security-starter</artifactId>
+			<version>4.3.4</version>
+		</dependency>
+
+        <!-- vendo libs-->
 
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
@@ -121,12 +129,6 @@
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>event-lib</artifactId>
 			<version>5.2.5</version>
-		</dependency>
-
-		<dependency>
-			<groupId>io.github.vendo-marketplace-be</groupId>
-			<artifactId>security-starter</artifactId>
-			<version>4.2.4</version>
 		</dependency>
 
 		<!-- Test dependencies -->
