@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class GoogleOAuthService {
@@ -43,7 +45,7 @@ public class GoogleOAuthService {
             SaveUserRequest request = SaveUserRequest.builder()
                     .email(email)
                     .fullName(fullName)
-                    .role(UserRole.USER)
+                    .roles(Set.of(UserRole.USER))
                     .status(UserStatus.ACTIVE)
                     .providerType(ProviderType.GOOGLE)
                     .build();

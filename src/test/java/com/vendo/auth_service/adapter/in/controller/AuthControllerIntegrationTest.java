@@ -115,7 +115,7 @@ class AuthControllerIntegrationTest {
             SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
             assertThat(saveUserRequestCaptor.password()).isEqualTo(encodedPassword);
-            assertThat(saveUserRequestCaptor.role()).isEqualTo(UserRole.USER);
+            assertThat(saveUserRequestCaptor.roles().contains(UserRole.USER)).isTrue();
             assertThat(saveUserRequestCaptor.status()).isEqualTo(UserStatus.ACTIVE);
             assertThat(saveUserRequestCaptor.providerType()).isEqualTo(ProviderType.LOCAL);
         }

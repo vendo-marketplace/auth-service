@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -54,7 +56,7 @@ public class AuthService {
         userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.ACTIVE)
-                .role(UserRole.USER)
+                .roles(Set.of(UserRole.USER))
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
                 .build());
