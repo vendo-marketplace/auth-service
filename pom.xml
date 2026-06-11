@@ -116,6 +116,11 @@
 			<artifactId>security-starter</artifactId>
 			<version>4.4.4</version>
 		</dependency>
+		<dependency>
+			<groupId>io.github.vendo-marketplace-be</groupId>
+			<artifactId>web-starter</artifactId>
+			<version>1.0.1</version>
+		</dependency>
 
         <!-- vendo libs-->
 
@@ -124,7 +129,6 @@
 			<artifactId>redis-lib</artifactId>
 			<version>3.0.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>event-lib</artifactId>
