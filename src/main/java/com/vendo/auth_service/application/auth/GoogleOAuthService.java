@@ -13,7 +13,6 @@ import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -26,7 +25,6 @@ public class GoogleOAuthService {
     private final UserCommandPort userCommandPort;
     private final UserQueryPort userQueryPort;
 
-    @Transactional
     public AuthResponse googleAuth(GoogleAuthRequest googleAuthRequest) {
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
         User user = requireUser(payload.email(), payload.fullName());
