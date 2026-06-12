@@ -20,7 +20,6 @@ public class EmailOtpService implements OtpService {
     private final OtpStorage otpStorage;
     private final OtpGenerator otpGenerator;
     private final OtpEmailNotificationPort otpEmailNotificationPort;
-    private final OtpPolicyService otpPolicyService;
 
     @Override
     public void sendOtp(OtpCommand command, OtpNamespace namespace) {
@@ -63,7 +62,7 @@ public class EmailOtpService implements OtpService {
 
     private void increaseResendAttemptsOrThrow(String email, OtpNamespace otpNamespace) {
         Optional<String> attempts = otpStorage.getValue(otpNamespace.getAttempts().buildPrefix(email));
-        int attempt = otpPolicyService.throwOrIncreaseAttempts(attempts.map(Integer::parseInt).orElse(0));
+        int attempt = OtpPolicyService.throwOrIncreaseAttempts(attempts.map(Integer::parseInt).orElse(0));
 
         otpStorage.saveValue(
                 otpNamespace.getAttempts().buildPrefix(email),

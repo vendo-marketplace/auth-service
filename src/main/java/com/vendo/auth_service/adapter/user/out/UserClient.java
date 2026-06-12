@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.*;
         configuration = UserFeignConfig.class)
 public interface UserClient {
 
-    @GetMapping
+    @GetMapping(params = "id")
+    User getById(@RequestParam("id") String id);
+
+    @GetMapping(params = "email")
     User getByEmail(@RequestParam("email") String email);
 
     @GetMapping("/exists")

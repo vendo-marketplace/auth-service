@@ -1,8 +1,7 @@
 package com.vendo.auth_service.adapter.security.out.config;
 
-import com.vendo.auth_service.adapter.security.in.filter.JwtAuthFilter;
-import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAccessDeniedHandler;
-import com.vendo.auth_service.adapter.security.in.filter.exception.JwtAuthenticationEntryPoint;
+import com.vendo.auth_service.adapter.security.in.filter.AuthFilter;
+import com.vendo.auth_service.infrastructure.props.PathProps;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,10 +10,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
-
-import static com.vendo.auth_service.adapter.security.in.filter.AuthAntPathResolver.PERMITTED_PATHS;
 
 @Configuration
 @EnableWebSecurity
@@ -22,11 +21,12 @@ import static com.vendo.auth_service.adapter.security.in.filter.AuthAntPathResol
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    private final AuthFilter authFilter;
 
-    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
+    private final AccessDeniedHandler accessDeniedHandler;
 
-    private final JwtAccessDeniedHandler accessDeniedHandler;
+    private final PathProps props;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,10 +40,10 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PERMITTED_PATHS).permitAll()
+                        .requestMatchers(props.allPaths()).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterAfter(jwtAuthFilter, ExceptionTranslationFilter.class);
+                .addFilterAfter(authFilter, ExceptionTranslationFilter.class);
 
         return http.build();
     }
