@@ -21,7 +21,7 @@ import org.springframework.security.web.access.ExceptionTranslationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthFilter gatewayAuthFilter;
+    private final AuthFilter authFilter;
 
     private final AuthenticationEntryPoint authenticationEntryPoint;
     private final AccessDeniedHandler accessDeniedHandler;
@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(props.allPaths()).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterAfter(gatewayAuthFilter, ExceptionTranslationFilter.class);
+                .addFilterAfter(authFilter, ExceptionTranslationFilter.class);
 
         return http.build();
     }

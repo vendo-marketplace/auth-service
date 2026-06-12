@@ -12,13 +12,11 @@ import com.vendo.auth_service.port.security.TokenIdentityPort;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.user_lib.exception.UserAlreadyExistsException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -48,11 +46,8 @@ public class AuthService {
                 .build();
     }
 
-    @Transactional
     public void signUp(AuthCommand command) {
-        if (userQueryPort.existsByEmail(command.email())) throw new UserAlreadyExistsException("User already exists.");
         String hashedPassword = passwordHashingPort.hash(command.password());
-
         userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.ACTIVE)
@@ -62,7 +57,6 @@ public class AuthService {
                 .build());
     }
 
-    @Transactional
     public void complete(CompleteAuthCommand command) {
         User user = userQueryPort.getById(authUserPort.getAuthUser().id());
         user.throwIfCompleted();

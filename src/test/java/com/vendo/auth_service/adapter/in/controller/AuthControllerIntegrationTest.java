@@ -21,6 +21,7 @@ import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.utils.AssertionUtils;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
+import com.vendo.user_lib.exception.UserAlreadyExistsException;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -36,7 +37,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
@@ -64,9 +64,9 @@ class AuthControllerIntegrationTest {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
-
-    @MockitoBean
+    @Autowired
     private PasswordHashingPort passwordHashingPort;
+
     @MockitoBean
     private UserQueryPort userQueryPort;
     @MockitoBean
@@ -97,10 +97,6 @@ class AuthControllerIntegrationTest {
                     .build();
             SaveUserRequest request = SaveUserRequest.builder().build();
 
-            String encodedPassword = "encoded_password";
-
-            when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(false);
-            when(passwordHashingPort.hash(authRequest.password())).thenReturn(encodedPassword);
             when(userCommandPort.save(request)).thenReturn(user);
 
             mockMvc.perform(post("/auth/sign-up")
@@ -109,12 +105,11 @@ class AuthControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
-            verify(userQueryPort).existsByEmail(authRequest.email());
             verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
 
             SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
-            assertThat(saveUserRequestCaptor.password()).isEqualTo(encodedPassword);
+            assertThat(saveUserRequestCaptor.password()).isNotBlank();
             assertThat(saveUserRequestCaptor.roles().contains(UserRole.USER)).isTrue();
             assertThat(saveUserRequestCaptor.status()).isEqualTo(UserStatus.ACTIVE);
             assertThat(saveUserRequestCaptor.providerType()).isEqualTo(ProviderType.LOCAL);
@@ -124,7 +119,7 @@ class AuthControllerIntegrationTest {
         void signUp_shouldReturnConflict_whenUserAlreadyExists() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
 
-            when(userQueryPort.existsByEmail(authRequest.email())).thenReturn(true);
+            when(userCommandPort.save(any())).thenThrow(new UserAlreadyExistsException("User already exists."));
 
             String content = mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -141,9 +136,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-up");
 
-            verify(userQueryPort).existsByEmail(authRequest.email());
-            verify(passwordHashingPort, never()).hash(anyString());
-            verify(userCommandPort, never()).save(any(SaveUserRequest.class));
+            verify(userCommandPort).save(any(SaveUserRequest.class));
         }
     }
 
@@ -153,11 +146,13 @@ class AuthControllerIntegrationTest {
         @Test
         void signIn_shouldReturnPairOfTokens() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
-            User user = UserDataBuilder.withAllFields().email(authRequest.email()).build();
+            User user = UserDataBuilder.withAllFields()
+                    .password(passwordHashingPort.hash(authRequest.password()))
+                    .email(authRequest.email())
+                    .build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
-            when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(true);
             when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             String content = mockMvc.perform(post("/auth/sign-in")
@@ -176,7 +171,6 @@ class AuthControllerIntegrationTest {
             assertThat(authResponse.refreshToken()).isNotBlank();
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordHashingPort).matches(authRequest.password(), user.password());
             verify(tokenGenerationPort).generate(user);
         }
 
@@ -200,7 +194,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(authRequest.email());
-            verify(passwordHashingPort, never()).matches(anyString(), anyString());
             verify(tokenGenerationPort, never()).generate(any(User.class));
         }
 
@@ -212,7 +205,6 @@ class AuthControllerIntegrationTest {
                     .build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
-            when(passwordHashingPort.matches(authRequest.password(), user.password())).thenReturn(false);
 
             String content = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -230,7 +222,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/sign-in");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(passwordHashingPort).matches(authRequest.password(), user.password());
             verify(tokenGenerationPort, never()).generate(any());
         }
     }
