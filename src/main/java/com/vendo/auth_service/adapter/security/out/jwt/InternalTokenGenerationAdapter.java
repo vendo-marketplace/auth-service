@@ -23,12 +23,11 @@ public class InternalTokenGenerationAdapter implements InternalTokenGenerationPo
         JwtProperties.Internal internal = props.getInternal();
 
         JwtPayload jwtPayload = JwtPayload.builder()
-                .subject(ServiceName.AUTH_SERVICE.toString())
-                .audience(Set.of(ServiceName.USER_SERVICE.toString()))
-                .claims(Map.of(TokenClaim.ROLES.getClaim(), ServiceRole.INTERNAL.toString()))
+                .subject(ServiceName.AUTH_SERVICE.getServiceName())
+                .audience(Set.of(ServiceName.USER_SERVICE.getServiceName()))
+                .claims(Map.of(TokenClaim.ROLES.getClaim(), ServiceRole.INTERNAL.name()))
                 .expiration(internal.expirationTime())
                 .build();
-
         return JwtService.buildToken(jwtPayload, internal.key());
     }
 
