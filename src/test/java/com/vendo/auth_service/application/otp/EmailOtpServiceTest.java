@@ -4,6 +4,7 @@ import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
+import com.vendo.redis_lib.exception.OtpExpiredException;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
@@ -131,36 +132,20 @@ public class EmailOtpServiceTest {
     }
 
     @Test
-    void resendOtp_shouldSuccessfullyResendOtp_whenGenerateOtpAndNoAttempts() {
+    void resendOtp_shouldThrowOtpExpiredException_whenNoActiveOtpSession() {
         OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
 
         when(otpNamespace.getEmail()).thenReturn(emailPrefix);
-        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
         when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
-        when(otpPrefix.ttl()).thenReturn(TEST_TTL);
-        when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
-        when(attemptsPrefix.ttl()).thenReturn(TEST_TTL);
-
         when(otpStorage.getValue(TEST_EMAIL_BUILT_PREFIX)).thenReturn(Optional.empty());
-        when(otpStorage.getValue(TEST_ATTEMPTS_BUILT_PREFIX)).thenReturn(Optional.empty());
-        when(otpGenerator.generate()).thenReturn(TEST_OTP);
 
-        emailOtpService.resendOtp(otpCommand, otpNamespace);
+        assertThatThrownBy(() -> emailOtpService.resendOtp(otpCommand, otpNamespace))
+                .isInstanceOf(OtpExpiredException.class)
+                .hasMessage("No active OTP session found.");
 
         verify(otpStorage).getValue(TEST_EMAIL_BUILT_PREFIX);
-        verify(otpGenerator).generate();
-        verify(otpStorage).saveValue(TEST_EMAIL_BUILT_PREFIX, TEST_OTP, TEST_TTL);
-        verify(otpStorage).getValue(TEST_ATTEMPTS_BUILT_PREFIX);
-        verify(otpStorage).saveValue(TEST_ATTEMPTS_BUILT_PREFIX, "1", TEST_TTL);
-        verify(otpEmailNotificationPort).sendOtpEmailNotification(
-                argThat(event ->
-                        event.email().equals(TEST_EMAIL) &&
-                                event.otpEventType() == OtpEventType.EMAIL_VERIFICATION &&
-                                event.otp().equals(TEST_OTP)
-                )
-        );
+        verifyNoInteractions(otpGenerator, otpEmailNotificationPort);
+        verify(otpStorage, never()).saveValue(anyString(), anyString(), anyLong());
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentExc
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.event_lib.otp.OtpEventType;
 import com.vendo.redis_lib.exception.OtpExpiredException;
@@ -26,34 +27,33 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EmailVerificationServiceTest {
+class EmailVerificationServiceTest {
 
     private final String TEST_EMAIL = "email@gmail.com";
     private final String TEST_OTP = "otp";
     @InjectMocks
-    EmailVerificationService emailVerificationService;
+    private EmailVerificationService emailVerificationService;
+
     @Mock
-    UserQueryPort userQueryPort;
+    private UserQueryPort userQueryPort;
     @Mock
-    OtpService otpService;
+    private UserLookupPort userLookupPort;
     @Mock
-    OtpVerifier otpVerifier;
+    private OtpService otpService;
     @Mock
-    EmailVerificationOtpNamespace emailVerificationOtpNamespace;
+    private OtpVerifier otpVerifier;
     @Mock
-    UserCommandPort userCommandPort;
+    private EmailVerificationOtpNamespace emailVerificationOtpNamespace;
+    @Mock
+    private UserCommandPort userCommandPort;
 
     @Test
     void sendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
-        User user = UserDataBuilder.withAllFields().build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-
         emailVerificationService.sendOtp(TEST_EMAIL);
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
@@ -64,25 +64,22 @@ public class EmailVerificationServiceTest {
 
     @Test
     void sendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
+        doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(TEST_EMAIL);
 
         assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
     }
 
     @Test
     void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.withAllFields().build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
 
         assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
@@ -93,15 +90,11 @@ public class EmailVerificationServiceTest {
 
     @Test
     void resendOtp_shouldSuccessfullySendOtp_WhenUserIsValid() {
-        User user = UserDataBuilder.withAllFields().build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-
         emailVerificationService.resendOtp(TEST_EMAIL);
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
@@ -112,25 +105,22 @@ public class EmailVerificationServiceTest {
 
     @Test
     void resendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
+        doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(TEST_EMAIL);
 
         assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
     }
 
     @Test
     void resendOtp_shouldThrowOtpExpiredException_whenOtpIsExpired() {
-        User user = UserDataBuilder.withAllFields().build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).resendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
 
         assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();

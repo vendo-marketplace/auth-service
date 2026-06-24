@@ -7,11 +7,11 @@ import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.event_lib.otp.OtpEventType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,22 +19,22 @@ public class EmailVerificationService {
 
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
+    private final UserLookupPort userLookupPort;
 
     private final OtpVerifier otpVerifier;
     private final OtpService otpService;
     private final EmailVerificationOtpNamespace emailVerificationOtpNamespace;
 
     public void sendOtp(String email) {
-        userQueryPort.getByEmail(email);
+        userLookupPort.requireExistence(email);
         otpService.sendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
     public void resendOtp(String email) {
-        userQueryPort.getByEmail(email);
+        userLookupPort.requireExistence(email);
         otpService.resendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
-    @Transactional
     public void validate(String otp) {
         String email = otpVerifier.verify(otp, emailVerificationOtpNamespace);
         User user = userQueryPort.getByEmail(email);

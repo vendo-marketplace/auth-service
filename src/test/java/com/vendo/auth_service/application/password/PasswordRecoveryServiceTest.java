@@ -10,6 +10,7 @@ import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.event_lib.otp.OtpEventType;
 import com.vendo.user_lib.exception.UserNotFoundException;
@@ -31,6 +32,9 @@ public class PasswordRecoveryServiceTest {
 
     @InjectMocks
     PasswordRecoveryService passwordRecoveryService;
+
+    @Mock
+    private UserLookupPort userLookupPort;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
@@ -53,13 +57,11 @@ public class PasswordRecoveryServiceTest {
     void forgotPassword_shouldSendOtp_WhenUserValid() {
         User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
 
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-
         passwordRecoveryService.forgotPassword(TEST_EMAIL);
 
         ArgumentCaptor<OtpCommand> otpCommandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).sendOtp(otpCommandArgumentCaptor.capture(), eq(passwordRecoveryOtpNamespace));
 
         OtpCommand capturedCommand = otpCommandArgumentCaptor.getValue();
@@ -69,25 +71,22 @@ public class PasswordRecoveryServiceTest {
     }
     @Test
     void forgotPassword_shouldThrowUserNotFoundException_WhenUserNotFound() {
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
+        doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(TEST_EMAIL);
 
         assertThatThrownBy(() -> passwordRecoveryService.forgotPassword(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
     }
 
     @Test
     void forgotPassword_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(passwordRecoveryOtpNamespace));
 
         assertThatThrownBy(() -> passwordRecoveryService.forgotPassword(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         ArgumentCaptor<OtpCommand> otpCommandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).sendOtp(otpCommandArgumentCaptor.capture(), eq(passwordRecoveryOtpNamespace));
 
         OtpCommand capturedEvent = otpCommandArgumentCaptor.getValue();
@@ -139,15 +138,11 @@ public class PasswordRecoveryServiceTest {
 
     @Test
     void resendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
-        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-
         passwordRecoveryService.resendOtp(TEST_EMAIL);
 
         ArgumentCaptor<OtpCommand> otpCommandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).resendOtp(otpCommandArgumentCaptor.capture(), eq(passwordRecoveryOtpNamespace));
 
         OtpCommand capturedEvent = otpCommandArgumentCaptor.getValue();
@@ -157,24 +152,22 @@ public class PasswordRecoveryServiceTest {
     }
     @Test
     void resendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
+        doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(TEST_EMAIL);
 
         assertThatThrownBy(() -> passwordRecoveryService.resendOtp(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
     }
+
     @Test
     void resendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
-
-        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
         doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).resendOtp(any(OtpCommand.class), eq(passwordRecoveryOtpNamespace));
 
         assertThatThrownBy(() -> passwordRecoveryService.resendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         ArgumentCaptor<OtpCommand> otpCommandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
-        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(userLookupPort).requireExistence(TEST_EMAIL);
         verify(otpService).resendOtp(otpCommandArgumentCaptor.capture(), eq(passwordRecoveryOtpNamespace));
 
         OtpCommand capturedEvent = otpCommandArgumentCaptor.getValue();
