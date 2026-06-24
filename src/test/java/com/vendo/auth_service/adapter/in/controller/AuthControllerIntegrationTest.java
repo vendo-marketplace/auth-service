@@ -22,6 +22,7 @@ import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.utils.AssertionUtils;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserAlreadyExistsException;
+import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -348,7 +349,7 @@ class AuthControllerIntegrationTest {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
-            User authUser = UserDataBuilder.withAllFields().build();
+            User authUser = UserDataBuilder.withAllFields().emailVerified(true).build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
@@ -450,6 +451,34 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(2);
             assertThat(exceptionResponse.getErrors().get("birthDate")).isNotNull();
             assertThat(exceptionResponse.getErrors().get("fullName")).isNotNull();
+        }
+
+        @Test
+        void complete_shouldReturnForbidden_whenEmailNotVerified() throws Exception {
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
+                    .buildCompleteAuthRequestWithAllFields().build();
+            User authUser = UserDataBuilder.withAllFields().emailVerified(false).build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
+
+            when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
+
+            String content = mockMvc.perform(patch("/auth/complete")
+                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
+                    .andExpect(status().isForbidden())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(content).isNotNull();
+            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+
+            assertThat(exceptionResponse).isNotNull();
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+
+            verify(userQueryPort).getById(authUser.id());
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
 
         @Test

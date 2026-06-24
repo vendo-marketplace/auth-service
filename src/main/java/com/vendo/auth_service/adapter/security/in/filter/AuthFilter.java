@@ -64,7 +64,7 @@ public class AuthFilter extends OncePerRequestFilter {
                 .email(email)
                 .status(userHeaderExtractor.extractStatus(request))
                 .roles(userHeaderExtractor.extractRoles(request))
-                .emailVerified(Boolean.getBoolean(emailVerified))
+                .emailVerified(Boolean.parseBoolean(emailVerified))
                 .build();
     }
 
