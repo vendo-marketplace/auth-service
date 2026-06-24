@@ -8,6 +8,7 @@ import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
+import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.event_lib.otp.OtpEventType;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,13 @@ public class PasswordRecoveryService {
 
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
+    private final UserLookupPort userLookupPort;
 
     private final OtpService otpService;
     private final OtpVerifier otpVerifier;
 
     public void forgotPassword(String email) {
-        userQueryPort.getByEmail(email);
+        userLookupPort.requireExistence(email);
         otpService.sendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
     }
 
@@ -43,7 +45,7 @@ public class PasswordRecoveryService {
     }
 
     public void resendOtp(String email) {
-        userQueryPort.getByEmail(email);
+        userLookupPort.requireExistence(email);
         otpService.resendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
     }
 

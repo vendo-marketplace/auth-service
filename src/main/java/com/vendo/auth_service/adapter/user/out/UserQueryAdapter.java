@@ -21,9 +21,4 @@ public class UserQueryAdapter implements UserQueryPort {
         return userClient.getByEmail(email);
     }
 
-    @Override
-    public boolean existsByEmail(String email) {
-        return userClient.existsByEmail(email).exists();
-    }
-
 }
