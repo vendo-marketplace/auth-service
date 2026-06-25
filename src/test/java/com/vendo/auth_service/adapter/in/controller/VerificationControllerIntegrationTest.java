@@ -61,14 +61,16 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void sendOtp_shouldSendEmailVerificationEventSuccessfully() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             mockMvc.perform(MockMvcRequestBuilders.post("/verification/send-otp").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService).sendOtp(commandArgumentCaptor.capture(), any(EmailVerificationOtpNamespace.class));
 
             OtpCommand command = commandArgumentCaptor.getValue();
@@ -78,8 +80,34 @@ class VerificationControllerIntegrationTest {
         }
 
         @Test
+        void sendOtp_shouldReturnConflict_whenUserAlreadyVerified() throws Exception {
+            User user = UserDataBuilder.withAllFields().emailVerified(true).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+            String responseContent = mockMvc.perform(post("/verification/send-otp")
+                            .contentType(MediaType.APPLICATION_JSON).param("email", user.email()))
+                    .andExpect(status().isConflict())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotNull();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is already verified.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/verification/send-otp");
+
+            verify(userQueryPort).getByEmail(user.email());
+            verify(otpService, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+        }
+
+        @Test
         void sendOtp_shouldReturnConflict_whenEmailVerificationEventHasAlreadySent() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
             doThrow(new OtpAlreadySentException("Otp already sent."))
@@ -105,7 +133,7 @@ class VerificationControllerIntegrationTest {
             assertThat(command.email()).isEqualTo(user.email());
             assertThat(command.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService).sendOtp(eq(command), any(EmailVerificationOtpNamespace.class));
         }
 
@@ -113,7 +141,7 @@ class VerificationControllerIntegrationTest {
         void sendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
-            doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(user.email());
+            doThrow(new UserNotFoundException("User not found.")).when(userQueryPort).getByEmail(user.email());
 
             String responseContent = mockMvc.perform(post("/verification/send-otp")
                             .contentType(MediaType.APPLICATION_JSON).param("email", user.email()))
@@ -129,7 +157,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/send-otp");
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
     }
@@ -139,21 +167,47 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void resendOtp_shouldSuccessfullyResendOtp() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             mockMvc.perform(post("/verification/resend-otp").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+        }
+
+        @Test
+        void resendOtp_shouldReturnConflict_whenUserAlreadyVerified() throws Exception {
+            User user = UserDataBuilder.withAllFields().emailVerified(true).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+            String responseContent = mockMvc.perform(post("/verification/resend-otp").param("email", user.email())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isConflict())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotNull();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is already verified.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
+
+            verify(userQueryPort).getByEmail(user.email());
+            verify(otpService, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
         void resendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
-            doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(user.email());
+            doThrow(new UserNotFoundException("User not found.")).when(userQueryPort).getByEmail(user.email());
 
             String responseContent = mockMvc.perform(post("/verification/resend-otp").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
@@ -169,13 +223,15 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
         void resendOtp_shouldReturnTooManyRequests_whenTooManyAttempts() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             doThrow(new TooManyOtpRequestsException("Reached maximum attempts."))
                     .when(otpService)
@@ -195,13 +251,15 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
         void resendOtp_shouldReturnGone_whenOtpSessionExpired() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             doThrow(new OtpExpiredException("Otp session expired."))
                     .when(otpService)
@@ -222,7 +280,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
-            verify(userLookupPort).requireExistence(user.email());
+            verify(userQueryPort).getByEmail(user.email());
             verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
     }
@@ -232,7 +290,7 @@ class VerificationControllerIntegrationTest {
 
         @Test
         void validate_shouldVerifyUser_whenOtpIsValid() throws Exception {
-            User user = UserDataBuilder.withAllFields().build();
+            User user = UserDataBuilder.withAllFields().emailVerified(false).build();
             String otp = "123456";
 
             when(otpVerifier.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
@@ -250,6 +308,33 @@ class VerificationControllerIntegrationTest {
             UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.emailVerified()).isTrue();
+        }
+
+        @Test
+        void validate_shouldReturnConflict_whenUserAlreadyVerified() throws Exception {
+            User user = UserDataBuilder.withAllFields().emailVerified(true).build();
+            String otp = "123456";
+
+            when(otpVerifier.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+
+            String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isConflict())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotNull();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is already verified.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
+
+            verify(otpVerifier).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
+            verify(userQueryPort).getByEmail(user.email());
+            verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
 
         @Test
