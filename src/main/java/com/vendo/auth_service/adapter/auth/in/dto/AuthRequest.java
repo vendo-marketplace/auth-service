@@ -8,7 +8,7 @@ import lombok.Builder;
 public record AuthRequest(
 
         @NotNull(message = "Email is required.")
-        @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "Invalid email.")
+        @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "Invalid email. Example format: example@domain.com")
         String email,
 
         @NotNull(message = "Password is required.")
