@@ -6,7 +6,9 @@ import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
+import com.vendo.auth_service.domain.user.exception.SamePasswordException;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -27,6 +29,7 @@ public class PasswordRecoveryService {
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
     private final UserLookupPort userLookupPort;
+    private final PasswordHashingPort passwordHashingPort;
 
     private final OtpService otpService;
     private final OtpVerifier otpVerifier;
@@ -39,6 +42,11 @@ public class PasswordRecoveryService {
     public void resetPassword(String otp, ResetPasswordCommand command) {
         String email = otpVerifier.verify(otp, passwordRecoveryOtpNamespace);
         User user = userQueryPort.getByEmail(email);
+
+        if (passwordHashingPort.matches(command.password(), user.password())) {
+            throw new SamePasswordException("The new password cannot be the same as the current password.");
+        }
+
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .password(passwordEncoder.encode(command.password()))
                 .build());

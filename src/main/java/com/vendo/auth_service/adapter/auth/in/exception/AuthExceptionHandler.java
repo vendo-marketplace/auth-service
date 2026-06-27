@@ -1,6 +1,7 @@
 package com.vendo.auth_service.adapter.auth.in.exception;
 
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
+import com.vendo.auth_service.domain.user.exception.SamePasswordException;
 import com.vendo.auth_service.domain.user.exception.UnauthorizedException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,16 @@ public class AuthExceptionHandler {
                 .path(request.getRequestURI())
                 .build();
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(exceptionResponse);
+    }
+
+    @ExceptionHandler(SamePasswordException.class)
+    public ResponseEntity<ExceptionResponse> handleSamePasswordException(SamePasswordException e, HttpServletRequest request) {
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .message(e.getMessage())
+                .code(HttpStatus.CONFLICT.value())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
     }
 
     @ExceptionHandler(UnauthorizedException.class)

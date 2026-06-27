@@ -12,6 +12,7 @@ import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -50,6 +51,8 @@ class PasswordControllerIntegrationTest {
 
     @MockitoBean
     private PasswordRecoveryOtpNamespace passwordRecoveryOtpNamespace;
+    @MockitoBean
+    private PasswordHashingPort passwordHashingPort;
     @MockitoBean
     private AuthService authService;
     @MockitoBean
@@ -234,6 +237,38 @@ class PasswordControllerIntegrationTest {
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
+        void resetPassword_shouldReturnConflict_whenPasswordIsSame() throws Exception {
+            String otp = "123456";
+            String newPassword = "newTestPassword1234@";
+            User user = UserDataBuilder.withAllFields().build();
+            ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
+
+            when(otpVerifier.verify(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(userQueryPort.getByEmail(user.email())).thenReturn(user);
+            when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(true);
+
+            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resetPasswordRequest)))
+                    .andExpect(status().isConflict())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotBlank();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("The new password cannot be the same as the current password.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
+
+            verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(userQueryPort).getByEmail(user.email());
+            verify(passwordHashingPort).matches(newPassword, user.password());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
     }

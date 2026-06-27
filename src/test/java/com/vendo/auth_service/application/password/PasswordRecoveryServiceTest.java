@@ -8,7 +8,9 @@ import com.vendo.auth_service.application.otp.common.exception.InvalidOtpExcepti
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.SamePasswordException;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -37,6 +39,8 @@ public class PasswordRecoveryServiceTest {
     private UserLookupPort userLookupPort;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private PasswordHashingPort passwordHashingPort;
     @Mock
     private PasswordRecoveryOtpNamespace passwordRecoveryOtpNamespace;
     @Mock
@@ -134,6 +138,25 @@ public class PasswordRecoveryServiceTest {
 
         verify(otpVerifier).verify(TEST_OTP, passwordRecoveryOtpNamespace);
         verify(userQueryPort).getByEmail(TEST_EMAIL);
+    }
+
+    @Test
+    void resetPassword_shouldThrowSamePasswordException_whenPasswordIsSame() {
+        User user = UserDataBuilder.withAllFields().email(TEST_EMAIL).build();
+        ResetPasswordCommand resetPasswordCommand = new ResetPasswordCommand(TEST_PASSWORD);
+
+        when(otpVerifier.verify(TEST_OTP, passwordRecoveryOtpNamespace)).thenReturn(TEST_EMAIL);
+        when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
+        when(passwordHashingPort.matches(TEST_PASSWORD, user.password())).thenReturn(true);
+
+        assertThatThrownBy(() -> passwordRecoveryService.resetPassword(TEST_OTP, resetPasswordCommand)).isInstanceOf(SamePasswordException.class);
+
+        verify(otpVerifier).verify(TEST_OTP, passwordRecoveryOtpNamespace);
+        verify(userQueryPort).getByEmail(TEST_EMAIL);
+        verify(passwordHashingPort).matches(TEST_PASSWORD, user.password());
+
+        verifyNoInteractions(passwordEncoder);
+        verifyNoInteractions(userCommandPort);
     }
 
     @Test
