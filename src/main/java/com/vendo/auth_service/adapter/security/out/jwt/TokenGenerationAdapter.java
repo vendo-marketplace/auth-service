@@ -29,7 +29,7 @@ public class TokenGenerationAdapter implements TokenGenerationPort {
         }
 
         String accessToken = generateAccessToken(user);
-        String refreshToken = generateRefreshToken(user.email());
+        String refreshToken = generateRefreshToken(user);
 
         return TokenPayload.builder()
                 .accessToken(accessToken)
@@ -56,12 +56,12 @@ public class TokenGenerationAdapter implements TokenGenerationPort {
         return JwtService.buildToken(jwtPayload, secret.key());
     }
 
-    private String generateRefreshToken(String subject) {
+    private String generateRefreshToken(User user) {
         JwtProperties.Secret secret = jwtProperties.getSecret();
 
         JwtPayload jwtPayload = JwtPayload.builder()
-                .subject(subject)
-                .claims(Map.of())
+                .subject(user.email())
+                .claims(Map.of(TokenClaim.ID.getClaim(), user.id()))
                 .expiration(secret.refreshExpirationTime())
                 .build();
 
