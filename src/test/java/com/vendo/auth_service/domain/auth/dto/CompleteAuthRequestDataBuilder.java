@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 public class CompleteAuthRequestDataBuilder {
 
-    public static CompleteAuthRequest.CompleteAuthRequestBuilder buildCompleteAuthRequestWithAllFields() {
+    public static CompleteAuthRequest.CompleteAuthRequestBuilder withAllFields() {
         return CompleteAuthRequest.builder()
                 .fullName("Test Name")
                 .birthDate(LocalDate.of(2000, 1, 1));

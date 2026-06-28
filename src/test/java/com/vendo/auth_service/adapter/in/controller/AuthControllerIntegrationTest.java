@@ -22,7 +22,6 @@ import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.core_lib.utils.AssertionUtils;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.UserAlreadyExistsException;
-import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -92,7 +91,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signUp_shouldSuccessfullyRegisterUser() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
@@ -118,7 +117,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signUp_shouldReturnConflict_whenUserAlreadyExists() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
 
             when(userCommandPort.save(any())).thenThrow(new UserAlreadyExistsException("User already exists."));
 
@@ -146,7 +145,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnPairOfTokens() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .password(passwordHashingPort.hash(authRequest.password()))
                     .email(authRequest.email())
@@ -177,7 +176,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnNotFound_whenNoUserByEmail() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -200,7 +199,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnUnauthorized_whenWrongCredentials() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
@@ -346,7 +345,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void complete_shouldSuccessfullyCompleteRegistration() throws Exception {
-            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.withAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
             User authUser = UserDataBuilder.withAllFields().emailVerified(true).build();
@@ -373,7 +372,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenNotValidFullName() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .fullName("Invalid_fullName")
                     .build();
             User user = UserDataBuilder.withUserRole().build();
@@ -400,7 +399,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenNotAdult() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .birthDate(LocalDate.now())
                     .build();
             User user = UserDataBuilder.withUserRole().build();
@@ -427,7 +426,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenBothNotAdultAndInvalidFullName() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .fullName("Invalid_fullName")
                     .birthDate(LocalDate.of(2025, 1, 1))
                     .build();
@@ -456,7 +455,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnForbidden_whenEmailNotVerified() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
+                    .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields().emailVerified(false).build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
@@ -484,7 +483,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnNotFound_whenUserNotFound() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
+                    .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
@@ -514,7 +513,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnConflict_whenUserAlreadyCompleted() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
+                    .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.ACTIVE)
                     .fullName("John Doe")
