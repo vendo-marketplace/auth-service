@@ -9,6 +9,7 @@ import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.otp.OtpService;
 import com.vendo.auth_service.application.otp.OtpVerifier;
+import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
@@ -152,6 +153,7 @@ class PasswordControllerIntegrationTest {
         void resetPassword_shouldResetPassword() throws Exception {
             String otp = "123456";
             String newPassword = "newTestPassword1234@";
+            String hashedPassword = "hashedPassword123";
             User user = UserDataBuilder.withAllFields()
                     .password(newPassword)
                     .build();
@@ -160,7 +162,8 @@ class PasswordControllerIntegrationTest {
 
             when(otpVerifier.verify(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
-            doNothing().when(userCommandPort).update(user.id(), UpdateUserRequest.builder().password(newPassword).build());
+            when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(false);
+            when(passwordHashingPort.hash(newPassword)).thenReturn(hashedPassword);
 
             mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -170,11 +173,13 @@ class PasswordControllerIntegrationTest {
             ArgumentCaptor<UpdateUserRequest> usertArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
+            verify(passwordHashingPort).matches(newPassword, user.password());
+            verify(passwordHashingPort).hash(newPassword);
             verify(userCommandPort).update(eq(user.id()), usertArgumentCaptor.capture());
 
             UpdateUserRequest updateUserRequestCaptured = usertArgumentCaptor.getValue();
             assertThat(updateUserRequestCaptured).isNotNull();
-            assertThat(updateUserRequestCaptured.password()).isNotBlank();
+            assertThat(updateUserRequestCaptured.password()).isEqualTo(hashedPassword);
             assertThat(updateUserRequestCaptured.birthDate()).isNull();
             assertThat(updateUserRequestCaptured.fullName()).isNull();
         }
@@ -207,6 +212,36 @@ class PasswordControllerIntegrationTest {
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(email);
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
+        void resetPassword_shouldReturnGone_whenInvalidOtp() throws Exception {
+            String otp = "123456";
+            String newPassword = "newTestPassword1234@";
+            ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
+
+            doThrow(new InvalidOtpException("Invalid otp."))
+                    .when(otpVerifier)
+                    .verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+
+            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resetPasswordRequest)))
+                    .andExpect(status().isGone())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotBlank();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid otp.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
+
+            verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(userQueryPort, never()).getByEmail(anyString());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
 
@@ -339,6 +374,32 @@ class PasswordControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
             assertThat(exceptionResponse.getMessage()).isEqualTo("Otp session expired.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend-otp");
+
+            verify(userLookupPort).requireExistence(user.email());
+            verify(otpService).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+        }
+
+        @Test
+        void resendOtp_shouldReturnConflict_whenOtpAlreadySent() throws Exception {
+            User user = UserDataBuilder.withAllFields().build();
+
+            doThrow(new OtpAlreadySentException("Otp already sent."))
+                    .when(otpService)
+                    .resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+
+            String responseContent = mockMvc.perform(put("/password/resend-otp").param("email", user.email())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isConflict())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertThat(responseContent).isNotBlank();
+
+            ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp already sent.");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend-otp");
 
             verify(userLookupPort).requireExistence(user.email());

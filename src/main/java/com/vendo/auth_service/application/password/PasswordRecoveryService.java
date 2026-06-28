@@ -15,7 +15,6 @@ import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.event_lib.otp.OtpEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PasswordRecoveryService {
 
-    private final PasswordEncoder passwordEncoder;
     private final PasswordRecoveryOtpNamespace passwordRecoveryOtpNamespace;
 
     private final UserQueryPort userQueryPort;
@@ -43,13 +41,17 @@ public class PasswordRecoveryService {
         String email = otpVerifier.verify(otp, passwordRecoveryOtpNamespace);
         User user = userQueryPort.getByEmail(email);
 
-        if (passwordHashingPort.matches(command.password(), user.password())) {
-            throw new SamePasswordException("The new password cannot be the same as the current password.");
-        }
+        validateNotSamePassword(command.password(), user.password());
 
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
-                .password(passwordEncoder.encode(command.password()))
+                .password(passwordHashingPort.hash(command.password()))
                 .build());
+    }
+
+    private void validateNotSamePassword(String newPassword, String oldHashedPassword) {
+        if (passwordHashingPort.matches(newPassword, oldHashedPassword)) {
+            throw new SamePasswordException("The new password cannot be the same as the current password.");
+        }
     }
 
     public void resendOtp(String email) {
