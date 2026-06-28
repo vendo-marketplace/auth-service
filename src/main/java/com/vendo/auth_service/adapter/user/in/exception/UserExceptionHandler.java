@@ -2,6 +2,7 @@ package com.vendo.auth_service.adapter.user.in.exception;
 
 import com.vendo.auth_service.adapter.user.out.exception.UserServiceUnavailableException;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import com.vendo.user_lib.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,16 @@ public class UserExceptionHandler {
                 .path(request.getRequestURI())
                 .build();
         return ResponseEntity.status(HttpStatus.CONFLICT).body(exceptionResponse);
+    }
+
+    @ExceptionHandler(UserEmailNotVerifiedException.class)
+    public ResponseEntity<ExceptionResponse> handleUserEmailNotVerifiedException(UserEmailNotVerifiedException e, HttpServletRequest request) {
+        ExceptionResponse exceptionResponse = ExceptionResponse.builder()
+                .message(e.getMessage())
+                .code(HttpStatus.FORBIDDEN.value())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(exceptionResponse);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)

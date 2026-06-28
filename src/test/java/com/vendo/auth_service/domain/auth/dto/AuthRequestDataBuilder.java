@@ -4,7 +4,7 @@ import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 
 public class AuthRequestDataBuilder {
 
-    public static AuthRequest.AuthRequestBuilder buildUserWithAllFields() {
+    public static AuthRequest.AuthRequestBuilder withAllFields() {
         return AuthRequest.builder()
                 .email("test@gmail.com")
                 .password("Qwerty1234@");

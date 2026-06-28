@@ -91,7 +91,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signUp_shouldSuccessfullyRegisterUser() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
@@ -117,7 +117,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signUp_shouldReturnConflict_whenUserAlreadyExists() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
 
             when(userCommandPort.save(any())).thenThrow(new UserAlreadyExistsException("User already exists."));
 
@@ -145,7 +145,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnPairOfTokens() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .password(passwordHashingPort.hash(authRequest.password()))
                     .email(authRequest.email())
@@ -176,7 +176,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnNotFound_whenNoUserByEmail() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
 
             when(userQueryPort.getByEmail(authRequest.email())).thenThrow(new UserNotFoundException("User not found."));
 
@@ -199,7 +199,7 @@ class AuthControllerIntegrationTest {
 
         @Test
         void signIn_shouldReturnUnauthorized_whenWrongCredentials() throws Exception {
-            AuthRequest authRequest = AuthRequestDataBuilder.buildUserWithAllFields().build();
+            AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
@@ -345,10 +345,10 @@ class AuthControllerIntegrationTest {
 
         @Test
         void complete_shouldSuccessfullyCompleteRegistration() throws Exception {
-            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.buildCompleteAuthRequestWithAllFields().build();
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder.withAllFields().build();
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
-            User authUser = UserDataBuilder.withAllFields().build();
+            User authUser = UserDataBuilder.withAllFields().emailVerified(true).build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
@@ -372,7 +372,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenNotValidFullName() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .fullName("Invalid_fullName")
                     .build();
             User user = UserDataBuilder.withUserRole().build();
@@ -399,7 +399,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenNotAdult() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .birthDate(LocalDate.now())
                     .build();
             User user = UserDataBuilder.withUserRole().build();
@@ -426,7 +426,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnBadRequest_whenBothNotAdultAndInvalidFullName() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields()
+                    .withAllFields()
                     .fullName("Invalid_fullName")
                     .birthDate(LocalDate.of(2025, 1, 1))
                     .build();
@@ -453,9 +453,37 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
+        void complete_shouldReturnForbidden_whenEmailNotVerified() throws Exception {
+            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
+                    .withAllFields().build();
+            User authUser = UserDataBuilder.withAllFields().emailVerified(false).build();
+            SecurityContext securityContext = initializeSecurityContext(authUser);
+
+            when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
+
+            String content = mockMvc.perform(patch("/auth/complete")
+                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
+                    .andExpect(status().isForbidden())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(content).isNotNull();
+            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
+
+            assertThat(exceptionResponse).isNotNull();
+            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
+            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.FORBIDDEN.value());
+            assertThat(exceptionResponse.getMessage()).isEqualTo("User email is not verified.");
+
+            verify(userQueryPort).getById(authUser.id());
+            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        }
+
+        @Test
         void complete_shouldReturnNotFound_whenUserNotFound() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
+                    .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
@@ -485,7 +513,7 @@ class AuthControllerIntegrationTest {
         @Test
         void complete_shouldReturnConflict_whenUserAlreadyCompleted() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .buildCompleteAuthRequestWithAllFields().build();
+                    .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.ACTIVE)
                     .fullName("John Doe")
