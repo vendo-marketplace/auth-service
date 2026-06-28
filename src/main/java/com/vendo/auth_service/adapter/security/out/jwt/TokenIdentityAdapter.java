@@ -34,7 +34,7 @@ public class TokenIdentityAdapter implements TokenIdentityPort {
         String id = claims.get(TokenClaim.ID.getClaim(), String.class);
 
         if (StringUtils.isEmpty(id)) {
-            throw new UnauthorizedException("Invalid or expired refresh token.");
+            throw new UnauthorizedException("Invalid or expired token.");
         }
 
         return id;
