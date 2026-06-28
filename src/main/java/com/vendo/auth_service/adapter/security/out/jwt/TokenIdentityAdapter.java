@@ -24,7 +24,7 @@ public class TokenIdentityAdapter implements TokenIdentityPort {
         try {
             Claims claims = JwtService.extractAll(token, jwtProperties.getSecret().key());
             return parseId(claims);
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException e) {
             log.warn("Token parsing failed: {}", e.getMessage());
             throw new UnauthorizedException("Invalid or expired refresh token.");
         }
