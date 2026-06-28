@@ -185,10 +185,9 @@ class PasswordControllerIntegrationTest {
         }
 
         @Test
-        void resetPassword_shouldReturnGone_whenTokenExpired() throws Exception {
+        void resetPassword_shouldReturnGone_whenOtpExpired() throws Exception {
             String otp = "123456";
             String newPassword = "newTestPassword1234@";
-            String email = "test@gmail.com";
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
             doThrow(new OtpExpiredException("Otp session expired."))
@@ -211,8 +210,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
-            verify(userQueryPort, never()).getByEmail(email);
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
         @Test
@@ -241,8 +239,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
-            verify(userQueryPort, never()).getByEmail(anyString());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
         @Test
@@ -272,7 +269,7 @@ class PasswordControllerIntegrationTest {
 
             verify(otpVerifier).verify(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
-            verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+            verifyNoInteractions(passwordHashingPort, userCommandPort);
         }
 
         @Test
