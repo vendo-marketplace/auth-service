@@ -1,5 +1,6 @@
 package com.vendo.auth_service.domain.user.model;
 
+import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.user_lib.exception.UserAlreadyCompletedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.type.ProviderType;
@@ -40,6 +41,12 @@ public record User(
     public void throwIfCompleted() {
         if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
             throw new UserAlreadyCompletedException("User has already completed.");
+        }
+    }
+
+    public void throwIfVerified() {
+        if (emailVerified) {
+            throw new UserAlreadyVerifiedException("User email is already verified.");
         }
     }
 
