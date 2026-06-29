@@ -36,7 +36,7 @@ public class EmailVerificationService {
     }
 
     public void validate(String otp) {
-        String email = otpService.verify(otp, emailVerificationOtpNamespace);
+        String email = otpService.consume(otp, emailVerificationOtpNamespace);
         User user = userQueryPort.getByEmail(email);
         user.throwIfVerified();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()

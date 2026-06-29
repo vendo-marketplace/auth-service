@@ -293,7 +293,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().emailVerified(false).build();
             String otp = "123456";
 
-            when(otpService.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.consume(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             mockMvc.perform(post("/verification/validate").param("otp", otp)
@@ -301,7 +301,7 @@ class VerificationControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
-            verify(otpService).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).consume(eq(otp), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
@@ -315,7 +315,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().emailVerified(true).build();
             String otp = "123456";
 
-            when(otpService.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.consume(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
@@ -332,7 +332,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
 
-            verify(otpService).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).consume(eq(otp), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
@@ -342,7 +342,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             String otp = "123456";
 
-            doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).verify(anyString(), any(EmailVerificationOtpNamespace.class));
+            doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).consume(anyString(), any(EmailVerificationOtpNamespace.class));
 
             String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -358,7 +358,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
 
-            verify(otpService).verify(anyString(), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).consume(anyString(), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(user.email());
             verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }

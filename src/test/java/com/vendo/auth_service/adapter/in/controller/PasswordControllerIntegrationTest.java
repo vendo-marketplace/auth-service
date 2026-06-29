@@ -160,7 +160,7 @@ class PasswordControllerIntegrationTest {
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder()
                     .password(newPassword).build();
 
-            when(otpService.getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(false);
             when(passwordHashingPort.hash(newPassword)).thenReturn(hashedPassword);
@@ -171,7 +171,7 @@ class PasswordControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<UpdateUserRequest> usertArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
-            verify(otpService).getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(passwordHashingPort).matches(newPassword, user.password());
             verify(passwordHashingPort).hash(newPassword);
@@ -192,7 +192,7 @@ class PasswordControllerIntegrationTest {
 
             doThrow(new OtpExpiredException("Otp session expired."))
                     .when(otpService)
-                    .getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+                    .peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -209,7 +209,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
@@ -221,7 +221,7 @@ class PasswordControllerIntegrationTest {
 
             doThrow(new InvalidOtpException("Invalid otp."))
                     .when(otpService)
-                    .getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+                    .peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -238,7 +238,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
@@ -249,7 +249,7 @@ class PasswordControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            when(otpService.getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
             String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
@@ -267,7 +267,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verifyNoInteractions(passwordHashingPort, userCommandPort);
         }
@@ -279,7 +279,7 @@ class PasswordControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            when(otpService.getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(true);
 
@@ -298,7 +298,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).getValue(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(passwordHashingPort).matches(newPassword, user.password());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));

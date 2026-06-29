@@ -49,7 +49,7 @@ public class EmailOtpServiceTest {
 
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.of(TEST_EMAIL));
 
-        emailOtpVerifier.verify(TEST_OTP, otpNamespace);
+        emailOtpVerifier.consume(TEST_OTP, otpNamespace);
 
         verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
         verify(otpStorage).deleteValues(
@@ -65,7 +65,7 @@ public class EmailOtpServiceTest {
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
         when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> emailOtpVerifier.verify(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
+        assertThatThrownBy(() -> emailOtpVerifier.consume(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
         verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
         verify(otpStorage, never()).deleteValues(anyString(), anyString(), anyString());

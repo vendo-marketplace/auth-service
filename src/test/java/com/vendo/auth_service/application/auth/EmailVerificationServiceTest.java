@@ -167,12 +167,12 @@ class EmailVerificationServiceTest {
     void validate_shouldUpdateUser_WhenUserIsValid() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
 
-        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         emailVerificationService.validate(TEST_OTP);
 
-        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verify(userCommandPort).update(eq(user.id()), argThat(updatedUser -> updatedUser.emailVerified() == true));
     }
@@ -181,26 +181,26 @@ class EmailVerificationServiceTest {
     void validate_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
 
-        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP))
                 .isInstanceOf(UserAlreadyVerifiedException.class)
                 .hasMessage("User email is already verified.");
 
-        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }
 
     @Test
     void validate_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
+        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(TEST_EMAIL);
         verifyNoInteractions(userCommandPort);
     }
@@ -209,11 +209,11 @@ class EmailVerificationServiceTest {
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
         User user = UserDataBuilder.withAllFields().build();
 
-        doThrow(new InvalidOtpException("Invalid otp.")).when(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
+        doThrow(new InvalidOtpException("Invalid otp.")).when(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
 
-        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort, never()).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }

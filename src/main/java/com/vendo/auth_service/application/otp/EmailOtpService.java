@@ -14,16 +14,17 @@ public class EmailOtpService implements OtpService {
 
     private final OtpStorage otpStorage;
 
-    @Override
-    public String getValue(String otp, OtpNamespace namespace) {
-        return getEmailByOtpOrThrow(otp, namespace);
-    }
 
     @Override
-    public String verify(String otp, OtpNamespace namespace) {
+    public String consume(String otp, OtpNamespace namespace) {
         String email = getEmailByOtpOrThrow(otp, namespace);
         cleanUpOtpNamespaces(otp, email, namespace);
         return email;
+    }
+
+    @Override
+    public String peek(String otp, OtpNamespace namespace) {
+        return getEmailByOtpOrThrow(otp, namespace);
     }
 
     @Override
