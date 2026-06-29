@@ -3,8 +3,8 @@ package com.vendo.auth_service.application.password;
 import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
+import com.vendo.auth_service.application.otp.OtpSender;
 import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.password.command.ResetPasswordCommand;
 import com.vendo.auth_service.domain.user.exception.SamePasswordException;
 import com.vendo.auth_service.domain.user.model.User;
@@ -29,19 +29,20 @@ public class PasswordRecoveryService {
     private final UserLookupPort userLookupPort;
     private final PasswordHashingPort passwordHashingPort;
 
+    private final OtpSender otpSender;
     private final OtpService otpService;
-    private final OtpVerifier otpVerifier;
 
     public void forgotPassword(String email) {
         userLookupPort.requireExistence(email);
-        otpService.sendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
+        otpSender.sendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
     }
 
     public void resetPassword(String otp, ResetPasswordCommand command) {
-        String email = otpVerifier.verify(otp, passwordRecoveryOtpNamespace);
+        String email = otpService.getValue(otp, passwordRecoveryOtpNamespace);
         User user = userQueryPort.getByEmail(email);
 
         validateNotSamePassword(command.password(), user.password());
+        otpService.cleanUp(otp, passwordRecoveryOtpNamespace);
 
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .password(passwordHashingPort.hash(command.password()))
@@ -56,7 +57,7 @@ public class PasswordRecoveryService {
 
     public void resendOtp(String email) {
         userLookupPort.requireExistence(email);
-        otpService.resendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
+        otpSender.resendOtp(new OtpCommand(email, OtpEventType.PASSWORD_RECOVERY), passwordRecoveryOtpNamespace);
     }
 
 }

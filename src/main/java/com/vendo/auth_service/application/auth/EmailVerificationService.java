@@ -3,8 +3,8 @@ package com.vendo.auth_service.application.auth;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
-import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.OtpService;
+import com.vendo.auth_service.application.otp.OtpSender;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -19,24 +19,24 @@ public class EmailVerificationService {
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
 
-    private final OtpVerifier otpVerifier;
     private final OtpService otpService;
+    private final OtpSender otpSender;
     private final EmailVerificationOtpNamespace emailVerificationOtpNamespace;
 
     public void sendOtp(String email) {
         User user = userQueryPort.getByEmail(email);
         user.throwIfVerified();
-        otpService.sendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
+        otpSender.sendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
     public void resendOtp(String email) {
         User user = userQueryPort.getByEmail(email);
         user.throwIfVerified();
-        otpService.resendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
+        otpSender.resendOtp(new OtpCommand(email, OtpEventType.EMAIL_VERIFICATION), emailVerificationOtpNamespace);
     }
 
     public void validate(String otp) {
-        String email = otpVerifier.verify(otp, emailVerificationOtpNamespace);
+        String email = otpService.verify(otp, emailVerificationOtpNamespace);
         User user = userQueryPort.getByEmail(email);
         user.throwIfVerified();
         userCommandPort.update(user.id(), UpdateUserRequest.builder()

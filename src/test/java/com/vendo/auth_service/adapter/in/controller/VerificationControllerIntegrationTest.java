@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
+import com.vendo.auth_service.application.otp.OtpSender;
 import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
@@ -52,9 +52,9 @@ class VerificationControllerIntegrationTest {
     @MockitoBean
     private UserLookupPort userLookupPort;
     @MockitoBean
-    private OtpVerifier otpVerifier;
-    @MockitoBean
     private OtpService otpService;
+    @MockitoBean
+    private OtpSender otpSender;
 
     @Nested
     class SendOtpTests {
@@ -71,7 +71,7 @@ class VerificationControllerIntegrationTest {
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService).sendOtp(commandArgumentCaptor.capture(), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender).sendOtp(commandArgumentCaptor.capture(), any(EmailVerificationOtpNamespace.class));
 
             OtpCommand command = commandArgumentCaptor.getValue();
             assertThat(command).isNotNull();
@@ -100,7 +100,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/send-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -111,7 +111,7 @@ class VerificationControllerIntegrationTest {
 
             ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
             doThrow(new OtpAlreadySentException("Otp already sent."))
-                    .when(otpService)
+                    .when(otpSender)
                     .sendOtp(commandArgumentCaptor.capture(), any(EmailVerificationOtpNamespace.class));
 
             String responseContent = mockMvc.perform(post("/verification/send-otp")
@@ -134,7 +134,7 @@ class VerificationControllerIntegrationTest {
             assertThat(command.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService).sendOtp(eq(command), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender).sendOtp(eq(command), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -158,7 +158,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/send-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender, never()).sendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
     }
 
@@ -176,7 +176,7 @@ class VerificationControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -200,7 +200,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -224,7 +224,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender, never()).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -234,7 +234,7 @@ class VerificationControllerIntegrationTest {
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             doThrow(new TooManyOtpRequestsException("Reached maximum attempts."))
-                    .when(otpService)
+                    .when(otpSender)
                     .resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
 
             String responseContent = mockMvc.perform(post("/verification/resend-otp").param("email", user.email())
@@ -252,7 +252,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
 
         @Test
@@ -262,7 +262,7 @@ class VerificationControllerIntegrationTest {
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             doThrow(new OtpExpiredException("Otp session expired."))
-                    .when(otpService)
+                    .when(otpSender)
                     .resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
 
 
@@ -281,7 +281,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/resend-otp");
 
             verify(userQueryPort).getByEmail(user.email());
-            verify(otpService).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
+            verify(otpSender).resendOtp(any(OtpCommand.class), any(EmailVerificationOtpNamespace.class));
         }
     }
 
@@ -293,7 +293,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().emailVerified(false).build();
             String otp = "123456";
 
-            when(otpVerifier.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             mockMvc.perform(post("/verification/validate").param("otp", otp)
@@ -301,7 +301,7 @@ class VerificationControllerIntegrationTest {
                     .andExpect(status().isOk());
 
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
-            verify(otpVerifier).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort).update(eq(user.id()), updateUserArgumentCaptor.capture());
 
@@ -315,7 +315,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().emailVerified(true).build();
             String otp = "123456";
 
-            when(otpVerifier.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
+            when(otpService.verify(eq(otp), any(EmailVerificationOtpNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
             String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
@@ -332,7 +332,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
 
-            verify(otpVerifier).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).verify(eq(otp), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }
@@ -342,7 +342,7 @@ class VerificationControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields().build();
             String otp = "123456";
 
-            doThrow(new OtpExpiredException("Otp session expired.")).when(otpVerifier).verify(anyString(), any(EmailVerificationOtpNamespace.class));
+            doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).verify(anyString(), any(EmailVerificationOtpNamespace.class));
 
             String responseContent = mockMvc.perform(post("/verification/validate").param("otp", otp)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -358,7 +358,7 @@ class VerificationControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/verification/validate");
 
-            verify(otpVerifier).verify(anyString(), any(EmailVerificationOtpNamespace.class));
+            verify(otpService).verify(anyString(), any(EmailVerificationOtpNamespace.class));
             verify(userQueryPort, never()).getByEmail(user.email());
             verify(userCommandPort, never()).update(eq(user.id()), any(UpdateUserRequest.class));
         }

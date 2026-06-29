@@ -2,8 +2,8 @@ package com.vendo.auth_service.application.auth;
 
 import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
+import com.vendo.auth_service.application.otp.OtpSender;
 import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.application.otp.OtpVerifier;
 import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
 import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
@@ -37,9 +37,9 @@ class EmailVerificationServiceTest {
     @Mock
     private UserQueryPort userQueryPort;
     @Mock
-    private OtpService otpService;
+    private OtpSender otpSender;
     @Mock
-    private OtpVerifier otpVerifier;
+    private OtpService otpService;
     @Mock
     private EmailVerificationOtpNamespace emailVerificationOtpNamespace;
     @Mock
@@ -55,7 +55,7 @@ class EmailVerificationServiceTest {
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpService).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(otpSender).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
 
@@ -73,7 +73,7 @@ class EmailVerificationServiceTest {
                 .hasMessage("User email is already verified.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verifyNoInteractions(otpService);
+        verifyNoInteractions(otpSender);
     }
 
     @Test
@@ -89,14 +89,14 @@ class EmailVerificationServiceTest {
     void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpService).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
+        doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpSender).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
 
         assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpService).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(otpSender).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
 
@@ -114,7 +114,7 @@ class EmailVerificationServiceTest {
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpService).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(otpSender).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
 
@@ -132,7 +132,7 @@ class EmailVerificationServiceTest {
                 .hasMessage("User email is already verified.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verifyNoInteractions(otpService);
+        verifyNoInteractions(otpSender);
     }
 
     @Test
@@ -148,14 +148,14 @@ class EmailVerificationServiceTest {
     void resendOtp_shouldThrowOtpExpiredException_whenOtpIsExpired() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        doThrow(new OtpExpiredException("Otp session expired.")).when(otpService).resendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
+        doThrow(new OtpExpiredException("Otp session expired.")).when(otpSender).resendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
 
         assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
         ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpService).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(otpSender).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
 
         OtpCommand capturedEvent = OtpCommandCaptor.getValue();
 
@@ -167,12 +167,12 @@ class EmailVerificationServiceTest {
     void validate_shouldUpdateUser_WhenUserIsValid() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
 
-        when(otpVerifier.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         emailVerificationService.validate(TEST_OTP);
 
-        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verify(userCommandPort).update(eq(user.id()), argThat(updatedUser -> updatedUser.emailVerified() == true));
     }
@@ -181,26 +181,26 @@ class EmailVerificationServiceTest {
     void validate_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
 
-        when(otpVerifier.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP))
                 .isInstanceOf(UserAlreadyVerifiedException.class)
                 .hasMessage("User email is already verified.");
 
-        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }
 
     @Test
     void validate_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(otpVerifier.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
+        when(otpService.verify(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort).getByEmail(TEST_EMAIL);
         verifyNoInteractions(userCommandPort);
     }
@@ -209,11 +209,11 @@ class EmailVerificationServiceTest {
     void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
         User user = UserDataBuilder.withAllFields().build();
 
-        doThrow(new InvalidOtpException("Invalid otp.")).when(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        doThrow(new InvalidOtpException("Invalid otp.")).when(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
 
         assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
 
-        verify(otpVerifier).verify(TEST_OTP, emailVerificationOtpNamespace);
+        verify(otpService).verify(TEST_OTP, emailVerificationOtpNamespace);
         verify(userQueryPort, never()).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }

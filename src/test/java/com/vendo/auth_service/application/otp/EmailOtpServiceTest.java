@@ -1,15 +1,9 @@
 package com.vendo.auth_service.application.otp;
 
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
-import com.vendo.auth_service.application.auth.command.OtpCommand;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
-import com.vendo.redis_lib.exception.OtpExpiredException;
-import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
-import com.vendo.auth_service.port.otp.OtpGenerator;
 import com.vendo.auth_service.port.otp.OtpStorage;
-import com.vendo.event_lib.otp.OtpEventType;
 import com.vendo.redis_lib.config.PrefixProperties;
+import com.vendo.redis_lib.exception.OtpExpiredException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,18 +18,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class EmailOtpServiceTest {
 
-    @InjectMocks
-    EmailOtpService emailOtpService;
+    private static final String TEST_EMAIL = "email@gmail.com";
+    private static final String TEST_OTP = "otp";
+    private static final String TEST_OTP_BUILT_PREFIX = "otp:" + TEST_OTP;
+    private static final String TEST_EMAIL_BUILT_PREFIX = "email:" + TEST_EMAIL;
+    private static final String TEST_ATTEMPTS_BUILT_PREFIX = "attempts:" + TEST_EMAIL;
 
-    @Mock
-    private OtpGenerator otpGenerator;
+    @InjectMocks
+    private EmailOtpService emailOtpVerifier;
+
     @Mock
     private OtpStorage otpStorage;
     @Mock
-    private OtpEmailNotificationPort otpEmailNotificationPort;
-    @Mock
     private OtpNamespace otpNamespace;
-
     @Mock
     private PrefixProperties emailPrefix;
     @Mock
@@ -43,132 +38,36 @@ public class EmailOtpServiceTest {
     @Mock
     private PrefixProperties attemptsPrefix;
 
-    private static final String TEST_EMAIL = "email@gmail.com";
-    private static final String TEST_OLD_OTP = "old-otp";
-    private static final String TEST_OTP = "otp";
-    private static final long TEST_TTL = 300L;
-
-    private static final String TEST_OTP_BUILT_PREFIX = "otp:" + TEST_OTP;
-    private static final String TEST_EMAIL_BUILT_PREFIX = "email:" + TEST_EMAIL;
-    private static final String TEST_ATTEMPTS_BUILT_PREFIX = "attempts:" + TEST_EMAIL;
-
     @Test
-    void sendOtp_shouldSuccessfullySendOtp_whenOtpNotSentYet() {
-        OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
-
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
+    void verify_shouldReturnEmail_whenOtpValid() {
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
-
-        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-        when(emailPrefix.ttl()).thenReturn(TEST_TTL);
-
+        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
+        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
         when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
-        when(otpPrefix.ttl()).thenReturn(TEST_TTL);
+        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
+        when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
 
-        when(otpStorage.hasActiveKey(TEST_EMAIL_BUILT_PREFIX)).thenReturn(false);
-        when(otpGenerator.generate()).thenReturn(TEST_OTP);
+        when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.of(TEST_EMAIL));
 
-        emailOtpService.sendOtp(otpCommand, otpNamespace);
+        emailOtpVerifier.verify(TEST_OTP, otpNamespace);
 
-        verify(otpStorage).hasActiveKey(TEST_EMAIL_BUILT_PREFIX);
-        verify(otpGenerator).generate();
-        verify(otpStorage).saveValue(TEST_OTP_BUILT_PREFIX, TEST_EMAIL, TEST_TTL);
-        verify(otpStorage).saveValue(TEST_EMAIL_BUILT_PREFIX, TEST_OTP, TEST_TTL);
-        verify(otpEmailNotificationPort).sendOtpEmailNotification(
-                argThat(event ->
-                        event.email().equals(TEST_EMAIL) &&
-                                event.otpEventType() == OtpEventType.EMAIL_VERIFICATION &&
-                                event.otp().equals(TEST_OTP)
-                )
+        verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
+        verify(otpStorage).deleteValues(
+                TEST_OTP_BUILT_PREFIX,
+                TEST_EMAIL_BUILT_PREFIX,
+                TEST_ATTEMPTS_BUILT_PREFIX
         );
     }
 
     @Test
-    void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
-        OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
+    void verify_shouldThrowOtpExpiredException_whenOtpExpired() {
+        when(otpNamespace.getOtp()).thenReturn(otpPrefix);
+        when(otpPrefix.buildPrefix(TEST_OTP)).thenReturn(TEST_OTP_BUILT_PREFIX);
+        when(otpStorage.getValue(TEST_OTP_BUILT_PREFIX)).thenReturn(Optional.empty());
 
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
+        assertThatThrownBy(() -> emailOtpVerifier.verify(TEST_OTP, otpNamespace)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
 
-        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-
-        when(otpStorage.hasActiveKey(TEST_EMAIL_BUILT_PREFIX)).thenReturn(true);
-
-        assertThatThrownBy(() -> emailOtpService.sendOtp(otpCommand, otpNamespace)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
-
-        verify(otpStorage).hasActiveKey(TEST_EMAIL_BUILT_PREFIX);
-        verifyNoInteractions(otpGenerator, otpEmailNotificationPort);
-
-        verify(otpStorage, never()).saveValue(anyString(), anyString(), anyLong());
+        verify(otpStorage).getValue(TEST_OTP_BUILT_PREFIX);
+        verify(otpStorage, never()).deleteValues(anyString(), anyString(), anyString());
     }
-
-    @Test
-    void resendOtp_shouldSuccessfullyResendOtp_whenOldOtpValidAndNoAttempts() {
-        OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
-
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
-        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
-        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-        when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
-        when(attemptsPrefix.ttl()).thenReturn(TEST_TTL);
-
-        when(otpStorage.getValue(TEST_EMAIL_BUILT_PREFIX)).thenReturn(Optional.of(TEST_OLD_OTP));
-        when(otpStorage.getValue(TEST_ATTEMPTS_BUILT_PREFIX)).thenReturn(Optional.empty());
-
-        emailOtpService.resendOtp(otpCommand, otpNamespace);
-
-        verify(otpStorage).getValue(TEST_EMAIL_BUILT_PREFIX);
-        verify(otpGenerator, never()).generate();
-        verify(otpStorage, never()).saveValue(eq(TEST_EMAIL_BUILT_PREFIX), anyString(), anyLong());
-        verify(otpStorage).getValue(TEST_ATTEMPTS_BUILT_PREFIX);
-        verify(otpStorage).saveValue(TEST_ATTEMPTS_BUILT_PREFIX, "1", TEST_TTL);
-        verify(otpEmailNotificationPort).sendOtpEmailNotification(
-                argThat(event ->
-                        event.email().equals(TEST_EMAIL) &&
-                                event.otpEventType() == OtpEventType.EMAIL_VERIFICATION &&
-                                event.otp().equals(TEST_OLD_OTP)
-                )
-        );
-    }
-
-    @Test
-    void resendOtp_shouldThrowOtpExpiredException_whenNoActiveOtpSession() {
-        OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
-
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
-        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-        when(otpStorage.getValue(TEST_EMAIL_BUILT_PREFIX)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> emailOtpService.resendOtp(otpCommand, otpNamespace))
-                .isInstanceOf(OtpExpiredException.class)
-                .hasMessage("No active OTP session found.");
-
-        verify(otpStorage).getValue(TEST_EMAIL_BUILT_PREFIX);
-        verifyNoInteractions(otpGenerator, otpEmailNotificationPort);
-        verify(otpStorage, never()).saveValue(anyString(), anyString(), anyLong());
-    }
-
-    @Test
-    void resendOtp_shouldThrowTooManyOtpRequestsException_whenOtpValidAndExceededAttempts() {
-        OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
-
-        when(otpNamespace.getEmail()).thenReturn(emailPrefix);
-        when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
-        when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
-        when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
-
-        when(otpStorage.getValue(TEST_EMAIL_BUILT_PREFIX)).thenReturn(Optional.of(TEST_OTP));
-        when(otpStorage.getValue(TEST_ATTEMPTS_BUILT_PREFIX)).thenReturn(Optional.of("3"));
-
-        assertThatThrownBy(() -> emailOtpService.resendOtp(otpCommand, otpNamespace)).isInstanceOf(TooManyOtpRequestsException.class).hasMessage("Reached maximum attempts.");
-
-        verify(otpStorage).getValue(TEST_EMAIL_BUILT_PREFIX);
-        verify(otpGenerator, never()).generate();
-        verify(otpStorage).getValue(TEST_ATTEMPTS_BUILT_PREFIX);
-        verify(otpStorage, never()).saveValue(eq(TEST_ATTEMPTS_BUILT_PREFIX), anyString(), anyLong());
-        verify(otpEmailNotificationPort, never()).sendOtpEmailNotification(any());
-        verifyNoMoreInteractions(otpStorage, otpGenerator, otpEmailNotificationPort);
-    }
-
 }
