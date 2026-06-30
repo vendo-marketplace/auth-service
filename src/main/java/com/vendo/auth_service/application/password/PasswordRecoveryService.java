@@ -39,6 +39,7 @@ public class PasswordRecoveryService {
 
     public void resetPassword(String otp, ResetPasswordCommand command) {
         String email = otpService.peek(otp, passwordRecoveryOtpNamespace);
+        log.info("Reset password for user: {}.", email);
         User user = userQueryPort.getByEmail(email);
 
         validateNotSamePassword(command.password(), user.password());
