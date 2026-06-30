@@ -15,7 +15,7 @@ public class UserServiceErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String s, Response response) {
-        log.error("User service respond with status {} and message {}.", response.status(), response.body());
+        log.error("User service respond with status {} and message {}.", response.status(), response.reason());
 
         if (HttpStatus.valueOf(response.status()).is5xxServerError()) {
             return new UserServiceUnavailableException(ServiceName.USER_SERVICE + " is unavailable.");
