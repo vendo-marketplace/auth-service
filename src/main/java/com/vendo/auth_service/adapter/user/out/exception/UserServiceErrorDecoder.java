@@ -15,6 +15,7 @@ public class UserServiceErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String s, Response response) {
+        log.error("User service respond with status {} and message {}.", response.status(), response.body());
 
         if (HttpStatus.valueOf(response.status()).is5xxServerError()) {
             return new UserServiceUnavailableException(ServiceName.USER_SERVICE + " is unavailable.");
@@ -28,7 +29,6 @@ public class UserServiceErrorDecoder implements ErrorDecoder {
             return new UserAlreadyExistsException("User already exists.");
         }
 
-        log.error(response.toString());
         return new IllegalArgumentException("Unhandled user exception.");
     }
 
