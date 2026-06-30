@@ -1,8 +1,8 @@
 package com.vendo.auth_service.adapter.otp.in.exception;
 
-import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
+import com.vendo.auth_service.domain.otp.exception.InvalidOtpException;
+import com.vendo.auth_service.domain.otp.exception.OtpAlreadySentException;
+import com.vendo.auth_service.domain.otp.exception.TooManyOtpRequestsException;
 import com.vendo.redis_lib.exception.OtpExpiredException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
 import jakarta.servlet.http.HttpServletRequest;

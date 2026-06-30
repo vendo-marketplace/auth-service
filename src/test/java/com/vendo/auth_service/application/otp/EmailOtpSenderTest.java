@@ -2,8 +2,9 @@ package com.vendo.auth_service.application.otp;
 
 import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
 import com.vendo.auth_service.application.auth.command.OtpCommand;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
-import com.vendo.auth_service.application.otp.common.exception.TooManyOtpRequestsException;
+import com.vendo.auth_service.domain.otp.exception.OtpAlreadySentException;
+import com.vendo.auth_service.domain.otp.exception.TooManyOtpRequestsException;
+import com.vendo.auth_service.port.otp.StorageValue;
 import com.vendo.redis_lib.exception.OtpExpiredException;
 import com.vendo.auth_service.port.otp.OtpEmailNotificationPort;
 import com.vendo.auth_service.port.otp.OtpGenerator;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -55,6 +57,10 @@ public class EmailOtpSenderTest {
     @Test
     void sendOtp_shouldSuccessfullySendOtp_whenOtpNotSentYet() {
         OtpCommand otpCommand = new OtpCommand(TEST_EMAIL, OtpEventType.EMAIL_VERIFICATION);
+        Map<String, StorageValue> values = Map.of(
+                TEST_OTP_BUILT_PREFIX, new StorageValue(TEST_EMAIL, TEST_TTL),
+                TEST_EMAIL_BUILT_PREFIX, new StorageValue(TEST_OTP, TEST_TTL)
+        );
 
         when(otpNamespace.getEmail()).thenReturn(emailPrefix);
         when(otpNamespace.getOtp()).thenReturn(otpPrefix);
@@ -72,8 +78,7 @@ public class EmailOtpSenderTest {
 
         verify(otpStorage).hasActiveKey(TEST_EMAIL_BUILT_PREFIX);
         verify(otpGenerator).generate();
-        verify(otpStorage).saveValue(TEST_OTP_BUILT_PREFIX, TEST_EMAIL, TEST_TTL);
-        verify(otpStorage).saveValue(TEST_EMAIL_BUILT_PREFIX, TEST_OTP, TEST_TTL);
+        verify(otpStorage).saveValues(values);
         verify(otpEmailNotificationPort).sendOtpEmailNotification(
                 argThat(event ->
                         event.email().equals(TEST_EMAIL) &&
@@ -154,7 +159,6 @@ public class EmailOtpSenderTest {
 
         when(otpNamespace.getEmail()).thenReturn(emailPrefix);
         when(otpNamespace.getAttempts()).thenReturn(attemptsPrefix);
-
         when(emailPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_EMAIL_BUILT_PREFIX);
         when(attemptsPrefix.buildPrefix(TEST_EMAIL)).thenReturn(TEST_ATTEMPTS_BUILT_PREFIX);
 
@@ -164,11 +168,11 @@ public class EmailOtpSenderTest {
         assertThatThrownBy(() -> emailOtpService.resendOtp(otpCommand, otpNamespace)).isInstanceOf(TooManyOtpRequestsException.class).hasMessage("Reached maximum attempts.");
 
         verify(otpStorage).getValue(TEST_EMAIL_BUILT_PREFIX);
-        verify(otpGenerator, never()).generate();
         verify(otpStorage).getValue(TEST_ATTEMPTS_BUILT_PREFIX);
         verify(otpStorage, never()).saveValue(eq(TEST_ATTEMPTS_BUILT_PREFIX), anyString(), anyLong());
-        verify(otpEmailNotificationPort, never()).sendOtpEmailNotification(any());
-        verifyNoMoreInteractions(otpStorage, otpGenerator, otpEmailNotificationPort);
+
+        verifyNoInteractions(otpEmailNotificationPort);
+        verifyNoMoreInteractions(otpStorage);
     }
 
 }

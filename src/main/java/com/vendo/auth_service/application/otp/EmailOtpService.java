@@ -14,7 +14,6 @@ public class EmailOtpService implements OtpService {
 
     private final OtpStorage otpStorage;
 
-
     @Override
     public String consume(String otp, OtpNamespace namespace) {
         String email = getEmailByOtpOrThrow(otp, namespace);

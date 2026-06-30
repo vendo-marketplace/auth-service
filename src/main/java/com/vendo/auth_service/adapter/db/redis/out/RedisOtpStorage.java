@@ -1,9 +1,11 @@
 package com.vendo.auth_service.adapter.db.redis.out;
 
 import com.vendo.auth_service.port.otp.OtpStorage;
+import com.vendo.auth_service.port.otp.StorageValue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,6 +27,11 @@ public class RedisOtpStorage implements OtpStorage {
     @Override
     public void saveValue(String key, String value, long ttl) {
         redisService.saveValue(key, value, ttl);
+    }
+
+    @Override
+    public void saveValues(Map<String, StorageValue> values) {
+        redisService.saveValues(values);
     }
 
     @Override

@@ -4,8 +4,8 @@ import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespac
 import com.vendo.auth_service.application.auth.command.OtpCommand;
 import com.vendo.auth_service.application.otp.OtpSender;
 import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.application.otp.common.exception.InvalidOtpException;
-import com.vendo.auth_service.application.otp.common.exception.OtpAlreadySentException;
+import com.vendo.auth_service.domain.otp.exception.InvalidOtpException;
+import com.vendo.auth_service.domain.otp.exception.OtpAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.auth_service.domain.user.model.User;
