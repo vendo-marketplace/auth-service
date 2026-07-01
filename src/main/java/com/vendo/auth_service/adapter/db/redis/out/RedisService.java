@@ -35,7 +35,7 @@ public class RedisService {
                         key,
                         storageValue.payload(),
                         storageValue.ttl(),
-                        TimeUnit.MILLISECONDS)
+                        TimeUnit.SECONDS)
                 );
                 return ops.exec();
             }
