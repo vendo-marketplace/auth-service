@@ -48,9 +48,6 @@ public class EmailOtpSender implements OtpSender {
     }
 
     private void saveOtpNamespaces(String otp, String email, OtpNamespace namespace) {
-//        otpStorage.saveValue(namespace.getOtp().buildPrefix(otp), email, namespace.getOtp().ttl());
-//        otpStorage.saveValue(namespace.getEmail().buildPrefix(email), otp, namespace.getEmail().ttl());
-
         Map<String, StorageValue> values = Map.of(
                 namespace.getOtp().buildPrefix(otp), new StorageValue(email, namespace.getOtp().ttl()),
                 namespace.getEmail().buildPrefix(email), new StorageValue(otp, namespace.getEmail().ttl())
