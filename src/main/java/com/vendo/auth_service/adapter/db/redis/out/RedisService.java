@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,8 @@ public class RedisService {
                 values.forEach((key, storageValue) -> ops.opsForValue().set(
                         key,
                         storageValue.payload(),
-                        storageValue.ttl())
+                        storageValue.ttl(),
+                        TimeUnit.MILLISECONDS)
                 );
                 return ops.exec();
             }
