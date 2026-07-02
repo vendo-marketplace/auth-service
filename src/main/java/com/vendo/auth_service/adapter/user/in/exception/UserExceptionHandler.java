@@ -1,10 +1,12 @@
 package com.vendo.auth_service.adapter.user.in.exception;
 
 import com.vendo.auth_service.adapter.user.out.exception.UserServiceUnavailableException;
-import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.security_lib.exception.response.ExceptionResponse;
-import com.vendo.user_lib.exception.*;
+import com.vendo.user_lib.exception.UserAlreadyExistsException;
+import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
+import com.vendo.user_lib.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
