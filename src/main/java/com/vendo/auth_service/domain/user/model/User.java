@@ -1,7 +1,7 @@
 package com.vendo.auth_service.domain.user.model;
 
+import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
-import com.vendo.user_lib.exception.UserAlreadyCompletedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;

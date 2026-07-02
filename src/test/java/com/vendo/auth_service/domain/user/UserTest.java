@@ -1,8 +1,8 @@
 package com.vendo.auth_service.domain.user;
 
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.model.User;
-import com.vendo.user_lib.exception.UserAlreadyCompletedException;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
