@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PasswordRecoveryService implements PasswordRecoveryUseCase {
+class PasswordRecoveryService implements PasswordRecoveryUseCase {
 
     private final PasswordRecoveryCodeNamespace passwordRecoveryCodeNamespace;
 

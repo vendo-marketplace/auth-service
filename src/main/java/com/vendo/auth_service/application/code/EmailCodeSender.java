@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class EmailCodeSender implements CodeSender {
+class EmailCodeSender implements CodeSender {
 
     private final CodeStorage codeStorage;
     private final CodeGenerator codeGenerator;
