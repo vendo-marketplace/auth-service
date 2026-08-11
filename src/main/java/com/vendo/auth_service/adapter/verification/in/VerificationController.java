@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.verification.in;
 
-import com.vendo.auth_service.application.auth.EmailVerificationService;
+import com.vendo.auth_service.port.auth.usecase.EmailVerificationUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,21 +12,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/verification")
 public class VerificationController {
 
-    private final EmailVerificationService emailVerificationService;
+    private final EmailVerificationUseCase emailVerificationUseCase;
 
-    @PostMapping("/send-otp")
-    void sendOtp(@RequestParam String email) {
-        emailVerificationService.sendOtp(email);
+    @PostMapping("/send")
+    void send(@RequestParam String email) {
+        emailVerificationUseCase.send(email);
     }
 
-    @PostMapping("/resend-otp")
-    void resendOtp(@RequestParam String email) {
-        emailVerificationService.resendOtp(email);
+    @PostMapping("/resend")
+    void resend(@RequestParam String email) {
+        emailVerificationUseCase.resend(email);
     }
 
     @PostMapping("/validate")
-    void validate(@RequestParam String otp) {
-        emailVerificationService.validate(otp);
+    void validate(@RequestParam String code) {
+        emailVerificationUseCase.validate(code);
     }
 
 }

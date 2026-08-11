@@ -114,12 +114,12 @@
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>security-starter</artifactId>
-			<version>4.5.7</version>
+			<version>5.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>web-starter</artifactId>
-			<version>1.1.2</version>
+			<version>3.7.1</version>
 		</dependency>
 
         <!-- vendo libs-->
@@ -127,17 +127,17 @@
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>redis-lib</artifactId>
-			<version>3.0.1</version>
+			<version>4.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>event-lib</artifactId>
-			<version>5.2.5</version>
+			<version>8.3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>core-lib</artifactId>
-			<version>4.9.4</version>
+			<version>5.6.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
@@ -147,7 +147,7 @@
 		<dependency>
 			<groupId>io.github.vendo-marketplace-be</groupId>
 			<artifactId>security-lib</artifactId>
-			<version>8.3.2</version>
+			<version>8.6.2</version>
 		</dependency>
 
 		<!-- Test dependencies -->

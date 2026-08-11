@@ -1,18 +1,18 @@
 package com.vendo.auth_service.application.auth;
 
-import com.vendo.auth_service.adapter.otp.out.props.EmailVerificationOtpNamespace;
-import com.vendo.auth_service.application.auth.command.OtpCommand;
-import com.vendo.auth_service.application.otp.OtpSender;
-import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.domain.otp.exception.InvalidOtpException;
-import com.vendo.auth_service.domain.otp.exception.OtpAlreadySentException;
+import com.vendo.auth_service.adapter.code.out.props.EmailVerificationCodeNamespace;
+import com.vendo.auth_service.application.auth.command.CodeCommand;
+import com.vendo.auth_service.application.code.CodeSender;
+import com.vendo.auth_service.application.code.CodeService;
+import com.vendo.auth_service.domain.code.exception.InvalidCodeException;
+import com.vendo.auth_service.domain.code.exception.CodeAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.event_lib.otp.OtpEventType;
-import com.vendo.redis_lib.exception.OtpExpiredException;
+import com.vendo.event_lib.code.CodeEventType;
+import com.vendo.redis_lib.exception.CodeExpiredException;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,149 +30,149 @@ import static org.mockito.Mockito.*;
 class EmailVerificationServiceTest {
 
     private final String TEST_EMAIL = "email@gmail.com";
-    private final String TEST_OTP = "otp";
+    private final String TEST_CODE = "code";
     @InjectMocks
     private EmailVerificationService emailVerificationService;
 
     @Mock
     private UserQueryPort userQueryPort;
     @Mock
-    private OtpSender otpSender;
+    private CodeSender codeSender;
     @Mock
-    private OtpService otpService;
+    private CodeService codeService;
     @Mock
-    private EmailVerificationOtpNamespace emailVerificationOtpNamespace;
+    private EmailVerificationCodeNamespace emailVerificationCodeNamespace;
     @Mock
     private UserCommandPort userCommandPort;
 
     @Test
-    void sendOtp_shouldSuccessfullySendOtp_whenUserIsValid() {
+    void send_shouldSuccessfullySend_whenUserIsValid() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
-        emailVerificationService.sendOtp(TEST_EMAIL);
+        emailVerificationService.send(TEST_EMAIL);
 
-        ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+        ArgumentCaptor<CodeCommand> CodeCommandCaptor = ArgumentCaptor.forClass(CodeCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpSender).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(codeSender).send(CodeCommandCaptor.capture(), eq(emailVerificationCodeNamespace));
 
-        OtpCommand capturedEvent = OtpCommandCaptor.getValue();
+        CodeCommand capturedEvent = CodeCommandCaptor.getValue();
 
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
-        assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
+        assertThat(capturedEvent.type()).isEqualTo(CodeEventType.EMAIL_VERIFICATION);
     }
 
     @Test
-    void sendOtp_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
+    void send_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
-        assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL))
+        assertThatThrownBy(() -> emailVerificationService.send(TEST_EMAIL))
                 .isInstanceOf(UserAlreadyVerifiedException.class)
                 .hasMessage("User email is already verified.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verifyNoInteractions(otpSender);
+        verifyNoInteractions(codeSender);
     }
 
     @Test
-    void sendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
+    void send_shouldThrowUserNotFoundException_whenUserNotFound() {
         doThrow(new UserNotFoundException("User not found.")).when(userQueryPort).getByEmail(TEST_EMAIL);
 
-        assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
+        assertThatThrownBy(() -> emailVerificationService.send(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
     }
 
     @Test
-    void sendOtp_shouldThrowOtpAlreadySentException_whenOtpAlreadySent() {
+    void send_shouldThrowCodeAlreadySentException_whenCodeAlreadySent() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        doThrow(new OtpAlreadySentException("Otp already sent.")).when(otpSender).sendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
+        doThrow(new CodeAlreadySentException("Code already sent.")).when(codeSender).send(any(CodeCommand.class), eq(emailVerificationCodeNamespace));
 
-        assertThatThrownBy(() -> emailVerificationService.sendOtp(TEST_EMAIL)).isInstanceOf(OtpAlreadySentException.class).hasMessage("Otp already sent.");
+        assertThatThrownBy(() -> emailVerificationService.send(TEST_EMAIL)).isInstanceOf(CodeAlreadySentException.class).hasMessage("Code already sent.");
 
-        ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+        ArgumentCaptor<CodeCommand> argumentCaptor = ArgumentCaptor.forClass(CodeCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpSender).sendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(codeSender).send(argumentCaptor.capture(), eq(emailVerificationCodeNamespace));
 
-        OtpCommand capturedEvent = OtpCommandCaptor.getValue();
+        CodeCommand capturedEvent = argumentCaptor.getValue();
 
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
-        assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
+        assertThat(capturedEvent.type()).isEqualTo(CodeEventType.EMAIL_VERIFICATION);
     }
 
     @Test
-    void resendOtp_shouldSuccessfullySendOtp_WhenUserIsValid() {
+    void resend_shouldSuccessfullySend_WhenUserIsValid() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
-        emailVerificationService.resendOtp(TEST_EMAIL);
+        emailVerificationService.resend(TEST_EMAIL);
 
-        ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+        ArgumentCaptor<CodeCommand> CodeCommandCaptor = ArgumentCaptor.forClass(CodeCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpSender).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(codeSender).resend(CodeCommandCaptor.capture(), eq(emailVerificationCodeNamespace));
 
-        OtpCommand capturedEvent = OtpCommandCaptor.getValue();
+        CodeCommand capturedEvent = CodeCommandCaptor.getValue();
 
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
-        assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
+        assertThat(capturedEvent.type()).isEqualTo(CodeEventType.EMAIL_VERIFICATION);
     }
 
     @Test
-    void resendOtp_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
+    void resend_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
 
-        assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL))
+        assertThatThrownBy(() -> emailVerificationService.resend(TEST_EMAIL))
                 .isInstanceOf(UserAlreadyVerifiedException.class)
                 .hasMessage("User email is already verified.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verifyNoInteractions(otpSender);
+        verifyNoInteractions(codeSender);
     }
 
     @Test
-    void resendOtp_shouldThrowUserNotFoundException_whenUserNotFound() {
+    void resend_shouldThrowUserNotFoundException_whenUserNotFound() {
         doThrow(new UserNotFoundException("User not found.")).when(userQueryPort).getByEmail(TEST_EMAIL);
 
-        assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
+        assertThatThrownBy(() -> emailVerificationService.resend(TEST_EMAIL)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
     }
 
     @Test
-    void resendOtp_shouldThrowOtpExpiredException_whenOtpIsExpired() {
+    void resend_shouldThrowCodeExpiredException_whenCodeIsExpired() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenReturn(user);
-        doThrow(new OtpExpiredException("Otp session expired.")).when(otpSender).resendOtp(any(OtpCommand.class), eq(emailVerificationOtpNamespace));
+        doThrow(new CodeExpiredException("Code session expired.")).when(codeSender).resend(any(CodeCommand.class), eq(emailVerificationCodeNamespace));
 
-        assertThatThrownBy(() -> emailVerificationService.resendOtp(TEST_EMAIL)).isInstanceOf(OtpExpiredException.class).hasMessage("Otp session expired.");
+        assertThatThrownBy(() -> emailVerificationService.resend(TEST_EMAIL)).isInstanceOf(CodeExpiredException.class).hasMessage("Code session expired.");
 
-        ArgumentCaptor<OtpCommand> OtpCommandCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+        ArgumentCaptor<CodeCommand> CodeCommandCaptor = ArgumentCaptor.forClass(CodeCommand.class);
 
         verify(userQueryPort).getByEmail(TEST_EMAIL);
-        verify(otpSender).resendOtp(OtpCommandCaptor.capture(), eq(emailVerificationOtpNamespace));
+        verify(codeSender).resend(CodeCommandCaptor.capture(), eq(emailVerificationCodeNamespace));
 
-        OtpCommand capturedEvent = OtpCommandCaptor.getValue();
+        CodeCommand capturedEvent = CodeCommandCaptor.getValue();
 
         assertThat(capturedEvent.email()).isEqualTo(TEST_EMAIL);
-        assertThat(capturedEvent.type()).isEqualTo(OtpEventType.EMAIL_VERIFICATION);
+        assertThat(capturedEvent.type()).isEqualTo(CodeEventType.EMAIL_VERIFICATION);
     }
 
     @Test
     void validate_shouldUpdateUser_WhenUserIsValid() {
         User user = UserDataBuilder.withAllFields().emailVerified(false).build();
 
-        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(codeService.consume(TEST_CODE, emailVerificationCodeNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-        emailVerificationService.validate(TEST_OTP);
+        emailVerificationService.validate(TEST_CODE);
 
-        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
+        verify(codeService).consume(TEST_CODE, emailVerificationCodeNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verify(userCommandPort).update(eq(user.id()), argThat(updatedUser -> updatedUser.emailVerified() == true));
     }
@@ -181,39 +181,39 @@ class EmailVerificationServiceTest {
     void validate_shouldThrowUserAlreadyVerifiedException_whenUserAlreadyVerified() {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
 
-        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(user.email());
+        when(codeService.consume(TEST_CODE, emailVerificationCodeNamespace)).thenReturn(user.email());
         when(userQueryPort.getByEmail(user.email())).thenReturn(user);
 
-        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP))
+        assertThatThrownBy(() -> emailVerificationService.validate(TEST_CODE))
                 .isInstanceOf(UserAlreadyVerifiedException.class)
                 .hasMessage("User email is already verified.");
 
-        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
+        verify(codeService).consume(TEST_CODE, emailVerificationCodeNamespace);
         verify(userQueryPort).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }
 
     @Test
     void validate_shouldThrowUserNotFoundException_whenUserNotFound() {
-        when(otpService.consume(TEST_OTP, emailVerificationOtpNamespace)).thenReturn(TEST_EMAIL);
+        when(codeService.consume(TEST_CODE, emailVerificationCodeNamespace)).thenReturn(TEST_EMAIL);
         when(userQueryPort.getByEmail(TEST_EMAIL)).thenThrow(new UserNotFoundException("User not found."));
 
-        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
+        assertThatThrownBy(() -> emailVerificationService.validate(TEST_CODE)).isInstanceOf(UserNotFoundException.class).hasMessage("User not found.");
 
-        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
+        verify(codeService).consume(TEST_CODE, emailVerificationCodeNamespace);
         verify(userQueryPort).getByEmail(TEST_EMAIL);
         verifyNoInteractions(userCommandPort);
     }
 
     @Test
-    void validate_shouldThrowInvalidOtpException_whenInvalidOtp() {
+    void validate_shouldThrowInvalidCodeException_whenInvalidCode() {
         User user = UserDataBuilder.withAllFields().build();
 
-        doThrow(new InvalidOtpException("Invalid otp.")).when(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
+        doThrow(new InvalidCodeException("Invalid code.")).when(codeService).consume(TEST_CODE, emailVerificationCodeNamespace);
 
-        assertThatThrownBy(() -> emailVerificationService.validate(TEST_OTP)).isInstanceOf(InvalidOtpException.class).hasMessage("Invalid otp.");
+        assertThatThrownBy(() -> emailVerificationService.validate(TEST_CODE)).isInstanceOf(InvalidCodeException.class).hasMessage("Invalid code.");
 
-        verify(otpService).consume(TEST_OTP, emailVerificationOtpNamespace);
+        verify(codeService).consume(TEST_CODE, emailVerificationCodeNamespace);
         verify(userQueryPort, never()).getByEmail(user.email());
         verifyNoInteractions(userCommandPort);
     }

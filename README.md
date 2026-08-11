@@ -1,6 +1,6 @@
 # Auth Service
 
-The **Auth Service** is responsible for securing the Vendo platform. It handles user authentication, authorization, token generation (JWT), One-Time Password (OTP) validation, password recovery, and Google OAuth integration.
+The **Auth Service** is responsible for securing the Vendo platform. It handles user authentication, authorization, token generation (JWT), Code validation, password recovery, and Google OAuth integration.
 
 This service acts as the security backbone, providing authentication tokens that clients use to interact with other microservices in the platform.
 
@@ -64,7 +64,7 @@ src/main/java/com/vendo/auth_service
 │   │   ├── in
 │   │   └── out
 │   ├── db/redis/out
-│   ├── otp
+│   ├── code
 │   │   ├── in/messaging/kafka/producer
 │   │   └── out/props
 │   ├── password
@@ -82,17 +82,17 @@ src/main/java/com/vendo/auth_service
 │       └── out/mapper
 ├── application
 │   ├── auth
-│   ├── otp/common/exception
+│   ├── code/common/exception
 │   └── password/command
 ├── bootstrap
 ├── domain
-│   ├── otp
+│   ├── code
 │   └── user/model
 ├── infrastructure
 │   └── config
 └── port
     ├── auth
-    ├── otp
+    ├── code
     ├── security
     └── user
 ```
@@ -109,7 +109,7 @@ This service depends on:
 
 - **Config Server** – provides externalized configuration
 - **Service Registry (Eureka)** – for discovering `user-service`
-- **Redis** – for storing temporary OTPs
+- **Redis** – for storing temporary codes
 - **Kafka** – for publishing email notification events
 - **User Service** – requires synchronous communication via OpenFeign to fetch/verify user profiles
 

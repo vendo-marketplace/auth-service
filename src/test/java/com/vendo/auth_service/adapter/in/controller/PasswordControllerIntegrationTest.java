@@ -1,25 +1,25 @@
 package com.vendo.auth_service.adapter.in.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.adapter.otp.out.props.OtpNamespace;
-import com.vendo.auth_service.adapter.otp.out.props.PasswordRecoveryOtpNamespace;
+import com.vendo.auth_service.adapter.code.out.props.CodeNamespace;
+import com.vendo.auth_service.adapter.code.out.props.PasswordRecoveryCodeNamespace;
 import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
 import com.vendo.auth_service.application.auth.AuthService;
-import com.vendo.auth_service.application.auth.command.OtpCommand;
+import com.vendo.auth_service.application.auth.command.CodeCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
-import com.vendo.auth_service.application.otp.OtpSender;
-import com.vendo.auth_service.application.otp.OtpService;
-import com.vendo.auth_service.domain.otp.exception.InvalidOtpException;
-import com.vendo.auth_service.domain.otp.exception.OtpAlreadySentException;
+import com.vendo.auth_service.application.code.CodeSender;
+import com.vendo.auth_service.application.code.CodeService;
+import com.vendo.auth_service.domain.code.exception.InvalidCodeException;
+import com.vendo.auth_service.domain.code.exception.CodeAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserLookupPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.event_lib.otp.OtpEventType;
-import com.vendo.redis_lib.exception.OtpExpiredException;
-import com.vendo.security_lib.exception.response.ExceptionResponse;
+import com.vendo.event_lib.code.CodeEventType;
+import com.vendo.redis_lib.exception.CodeExpiredException;
+import com.vendo.security_lib.exception.ExceptionResponse;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class PasswordControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
-    private PasswordRecoveryOtpNamespace passwordRecoveryOtpNamespace;
+    private PasswordRecoveryCodeNamespace passwordRecoveryCodeNamespace;
     @MockitoBean
     private PasswordHashingPort passwordHashingPort;
     @MockitoBean
@@ -61,9 +61,9 @@ class PasswordControllerIntegrationTest {
     @MockitoBean
     private UserCommandPort userCommandPort;
     @MockitoBean
-    private OtpSender otpSender;
+    private CodeSender codeSender;
     @MockitoBean
-    private OtpService otpService;
+    private CodeService codeService;
     @MockitoBean
     private UserLookupPort userLookupPort;
 
@@ -78,24 +78,23 @@ class PasswordControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+            ArgumentCaptor<CodeCommand> commandArgumentCaptor = ArgumentCaptor.forClass(CodeCommand.class);
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender).sendOtp(commandArgumentCaptor.capture(), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeSender).send(commandArgumentCaptor.capture(), any(PasswordRecoveryCodeNamespace.class));
 
-            OtpCommand command = commandArgumentCaptor.getValue();
+            CodeCommand command = commandArgumentCaptor.getValue();
             assertThat(command).isNotNull();
-            assertThat(command.type()).isEqualTo(OtpEventType.PASSWORD_RECOVERY);
+            assertThat(command.type()).isEqualTo(CodeEventType.PASSWORD_RECOVERY);
             assertThat(command.email()).isEqualTo(user.email());
-
         }
 
         @Test
         void forgotPassword_shouldReturnConflict_whenForgotPasswordEventHasAlreadySent() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
-            doThrow(new OtpAlreadySentException("Otp already sent."))
-                    .when(otpSender)
-                    .sendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            doThrow(new CodeAlreadySentException("Code already sent."))
+                    .when(codeSender)
+                    .send(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
 
             String responseContent = mockMvc.perform(post("/password/forgot")
                             .contentType(MediaType.APPLICATION_JSON).param("email", user.email()))
@@ -107,18 +106,18 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotBlank();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp already sent.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Code already sent.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/forgot");
 
-            ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+            ArgumentCaptor<CodeCommand> commandArgumentCaptor = ArgumentCaptor.forClass(CodeCommand.class);
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender).sendOtp(commandArgumentCaptor.capture(), any(OtpNamespace.class));
+            verify(codeSender).send(commandArgumentCaptor.capture(), any(CodeNamespace.class));
 
-            OtpCommand command = commandArgumentCaptor.getValue();
+            CodeCommand command = commandArgumentCaptor.getValue();
             assertThat(command).isNotNull();
             assertThat(command.email()).isEqualTo(user.email());
-            assertThat(command.type()).isEqualTo(OtpEventType.PASSWORD_RECOVERY);
+            assertThat(command.type()).isEqualTo(CodeEventType.PASSWORD_RECOVERY);
 
         }
 
@@ -143,7 +142,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/forgot");
 
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender, never()).sendOtp(any(OtpCommand.class), any(OtpNamespace.class));
+            verify(codeSender, never()).send(any(CodeCommand.class), any(CodeNamespace.class));
         }
     }
 
@@ -151,7 +150,7 @@ class PasswordControllerIntegrationTest {
     class ResetPasswordTests {
         @Test
         void resetPassword_shouldResetPassword() throws Exception {
-            String otp = "123456";
+            String code = "123456";
             String newPassword = "newTestPassword1234@";
             String hashedPassword = "hashedPassword123";
             User user = UserDataBuilder.withAllFields()
@@ -160,18 +159,18 @@ class PasswordControllerIntegrationTest {
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder()
                     .password(newPassword).build();
 
-            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(codeService.peek(eq(code), any(PasswordRecoveryCodeNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(false);
             when(passwordHashingPort.hash(newPassword)).thenReturn(hashedPassword);
 
-            mockMvc.perform(put("/password/reset").param("otp", otp)
+            mockMvc.perform(put("/password/reset").param("code", code)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isOk());
 
             ArgumentCaptor<UpdateUserRequest> usertArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
-            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeService).peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(passwordHashingPort).matches(newPassword, user.password());
             verify(passwordHashingPort).hash(newPassword);
@@ -185,16 +184,16 @@ class PasswordControllerIntegrationTest {
         }
 
         @Test
-        void resetPassword_shouldReturnGone_whenOtpExpired() throws Exception {
-            String otp = "123456";
+        void resetPassword_shouldReturnGone_whenCodeExpired() throws Exception {
+            String code = "123456";
             String newPassword = "newTestPassword1234@";
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            doThrow(new OtpExpiredException("Otp session expired."))
-                    .when(otpService)
-                    .peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            doThrow(new CodeExpiredException("Code session expired."))
+                    .when(codeService)
+                    .peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
 
-            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+            String responseContent = mockMvc.perform(put("/password/reset").param("code", code)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isGone())
@@ -205,25 +204,25 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotBlank();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp session expired.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Code session expired.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeService).peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
             verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
         @Test
-        void resetPassword_shouldReturnGone_whenInvalidOtp() throws Exception {
-            String otp = "123456";
+        void resetPassword_shouldReturnGone_whenInvalidCode() throws Exception {
+            String code = "123456";
             String newPassword = "newTestPassword1234@";
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            doThrow(new InvalidOtpException("Invalid otp."))
-                    .when(otpService)
-                    .peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            doThrow(new InvalidCodeException("Invalid code."))
+                    .when(codeService)
+                    .peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
 
-            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+            String responseContent = mockMvc.perform(put("/password/reset").param("code", code)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isGone())
@@ -234,25 +233,25 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotBlank();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid otp.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid code.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeService).peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
             verifyNoInteractions(userQueryPort, passwordHashingPort, userCommandPort);
         }
 
         @Test
         void resetPassword_shouldReturnNotFound_whenUserNotFound() throws Exception {
-            String otp = "123456";
+            String code = "123456";
             String newPassword = "newTestPassword1234@";
             User user = UserDataBuilder.withAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(codeService.peek(eq(code), any(PasswordRecoveryCodeNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenThrow(new UserNotFoundException("User not found."));
 
-            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+            String responseContent = mockMvc.perform(put("/password/reset").param("code", code)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isNotFound())
@@ -267,23 +266,23 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeService).peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verifyNoInteractions(passwordHashingPort, userCommandPort);
         }
 
         @Test
         void resetPassword_shouldReturnConflict_whenPasswordIsSame() throws Exception {
-            String otp = "123456";
+            String code = "123456";
             String newPassword = "newTestPassword1234@";
             User user = UserDataBuilder.withAllFields().build();
             ResetPasswordRequest resetPasswordRequest = ResetPasswordRequest.builder().password(newPassword).build();
 
-            when(otpService.peek(eq(otp), any(PasswordRecoveryOtpNamespace.class))).thenReturn(user.email());
+            when(codeService.peek(eq(code), any(PasswordRecoveryCodeNamespace.class))).thenReturn(user.email());
             when(userQueryPort.getByEmail(user.email())).thenReturn(user);
             when(passwordHashingPort.matches(newPassword, user.password())).thenReturn(true);
 
-            String responseContent = mockMvc.perform(put("/password/reset").param("otp", otp)
+            String responseContent = mockMvc.perform(put("/password/reset").param("code", code)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(resetPasswordRequest)))
                     .andExpect(status().isConflict())
@@ -298,7 +297,7 @@ class PasswordControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/password/reset");
 
-            verify(otpService).peek(eq(otp), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeService).peek(eq(code), any(PasswordRecoveryCodeNamespace.class));
             verify(userQueryPort).getByEmail(user.email());
             verify(passwordHashingPort).matches(newPassword, user.password());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
@@ -306,36 +305,36 @@ class PasswordControllerIntegrationTest {
     }
 
     @Nested
-    class ResendOtpTests {
+    class ResendTests {
 
         @Test
-        void resendOtp_shouldSuccessfullyResendOtp() throws Exception {
-            ArgumentCaptor<OtpCommand> commandArgumentCaptor = ArgumentCaptor.forClass(OtpCommand.class);
+        void resend_shouldSuccessfullyResendCode() throws Exception {
+            ArgumentCaptor<CodeCommand> commandArgumentCaptor = ArgumentCaptor.forClass(CodeCommand.class);
             User user = UserDataBuilder.withAllFields().build();
 
-            doNothing().when(otpSender).resendOtp(commandArgumentCaptor.capture(), any(PasswordRecoveryOtpNamespace.class));
+            doNothing().when(codeSender).resend(commandArgumentCaptor.capture(), any(PasswordRecoveryCodeNamespace.class));
 
-            mockMvc.perform(put("/password/resend-otp").param("email", user.email())
+            mockMvc.perform(put("/password/resend").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            OtpCommand command = commandArgumentCaptor.getValue();
+            CodeCommand command = commandArgumentCaptor.getValue();
 
             assertThat(command).isNotNull();
-            assertThat(command.type()).isEqualTo(OtpEventType.PASSWORD_RECOVERY);
+            assertThat(command.type()).isEqualTo(CodeEventType.PASSWORD_RECOVERY);
             assertThat(command.email()).isEqualTo(user.email());
 
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender).resendOtp(eq(command), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeSender).resend(eq(command), any(PasswordRecoveryCodeNamespace.class));
         }
 
         @Test
-        void resendOtp_shouldReturnNotFound_whenUserNotFound() throws Exception {
+        void resend_shouldReturnNotFound_whenUserNotFound() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
             doThrow(new UserNotFoundException("User not found.")).when(userLookupPort).requireExistence(user.email());
 
-            String responseContent = mockMvc.perform(put("/password/resend-otp").param("email", user.email())
+            String responseContent = mockMvc.perform(put("/password/resend").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNotFound())
                     .andReturn()
@@ -347,19 +346,19 @@ class PasswordControllerIntegrationTest {
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
             assertThat(exceptionResponse.getMessage()).isEqualTo("User not found.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
-            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend-otp");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend");
 
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender, never()).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeSender, never()).resend(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
         }
 
         @Test
-        void resendOtp_shouldReturnGone_whenOtpSessionExpired() throws Exception {
+        void resend_shouldReturnGone_whenCodeSessionExpired() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
-            doThrow(new OtpExpiredException("Otp session expired.")).when(otpSender).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            doThrow(new CodeExpiredException("Code session expired.")).when(codeSender).resend(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
 
-            String responseContent = mockMvc.perform(put("/password/resend-otp").param("email", user.email())
+            String responseContent = mockMvc.perform(put("/password/resend").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isGone())
                     .andReturn()
@@ -369,23 +368,23 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotNull();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp session expired.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Code session expired.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.GONE.value());
-            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend-otp");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend");
 
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeSender).resend(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
         }
 
         @Test
-        void resendOtp_shouldReturnConflict_whenOtpAlreadySent() throws Exception {
+        void resend_shouldReturnConflict_whenCodeAlreadySent() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
 
-            doThrow(new OtpAlreadySentException("Otp already sent."))
-                    .when(otpSender)
-                    .resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            doThrow(new CodeAlreadySentException("Code already sent."))
+                    .when(codeSender)
+                    .resend(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
 
-            String responseContent = mockMvc.perform(put("/password/resend-otp").param("email", user.email())
+            String responseContent = mockMvc.perform(put("/password/resend").param("email", user.email())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isConflict())
                     .andReturn()
@@ -395,13 +394,12 @@ class PasswordControllerIntegrationTest {
             assertThat(responseContent).isNotBlank();
 
             ExceptionResponse exceptionResponse = objectMapper.readValue(responseContent, ExceptionResponse.class);
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Otp already sent.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Code already sent.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
-            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend-otp");
+            assertThat(exceptionResponse.getPath()).isEqualTo("/password/resend");
 
             verify(userLookupPort).requireExistence(user.email());
-            verify(otpSender).resendOtp(any(OtpCommand.class), any(PasswordRecoveryOtpNamespace.class));
+            verify(codeSender).resend(any(CodeCommand.class), any(PasswordRecoveryCodeNamespace.class));
         }
     }
-
 }
