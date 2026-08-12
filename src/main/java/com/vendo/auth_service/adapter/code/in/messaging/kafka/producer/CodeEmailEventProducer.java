@@ -13,15 +13,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 class CodeEmailEventProducer implements CodeEmailNotificationPort {
 
-    @Value("${kafka.events.notification.email-event.topic}")
-    private String emailEventTopic;
+    @Value("${kafka.events.notification.code-email-event.topic}")
+    private String codeEmailEventTopic;
 
     private final KafkaTemplate<String, EmailCodeEvent> kafkaTemplate;
 
     @Override
     public void sendEmailNotification(EmailCodeEvent event) {
         log.info("Sent event for email code notification: {}", event);
-        kafkaTemplate.send(emailEventTopic, event);
+        kafkaTemplate.send(codeEmailEventTopic, event);
     }
 
 }
