@@ -95,17 +95,26 @@ class AuthControllerIntegrationTest {
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
-            SaveUserRequest request = SaveUserRequest.builder().build();
+            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
-            when(userCommandPort.save(request)).thenReturn(user);
+            when(userCommandPort.save(any())).thenReturn(user);
+            when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-            mockMvc.perform(post("/auth/sign-up")
+            String content = mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+            assertThat(content).isNotBlank();
+            AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
+
+            assertThat(authResponse).isNotNull();
+            assertThat(authResponse.accessToken()).isNotBlank();
+            assertThat(authResponse.refreshToken()).isNotBlank();
 
             ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
             verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
+            verify(tokenGenerationPort).generate(user);
 
             SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());

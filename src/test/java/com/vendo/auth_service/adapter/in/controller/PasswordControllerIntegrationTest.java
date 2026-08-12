@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.code.out.props.CodeNamespace;
 import com.vendo.auth_service.adapter.code.out.props.PasswordRecoveryCodeNamespace;
 import com.vendo.auth_service.adapter.password.in.dto.ResetPasswordRequest;
-import com.vendo.auth_service.application.auth.AuthService;
 import com.vendo.auth_service.application.auth.command.CodeCommand;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
 import com.vendo.auth_service.application.code.CodeSender;
@@ -13,6 +12,7 @@ import com.vendo.auth_service.domain.code.exception.InvalidCodeException;
 import com.vendo.auth_service.domain.code.exception.CodeAlreadySentException;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserLookupPort;
@@ -55,7 +55,7 @@ class PasswordControllerIntegrationTest {
     @MockitoBean
     private PasswordHashingPort passwordHashingPort;
     @MockitoBean
-    private AuthService authService;
+    private AuthUseCase authUseCase;
     @MockitoBean
     private UserQueryPort userQueryPort;
     @MockitoBean

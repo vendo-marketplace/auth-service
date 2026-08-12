@@ -6,9 +6,8 @@ import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
-import com.vendo.auth_service.application.auth.AuthService;
 import com.vendo.auth_service.application.auth.dto.UserResponse;
-import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthUseCase authUseCase;
 
     private final AuthMapper authMapper;
 
@@ -27,28 +26,27 @@ public class AuthController {
 
     @PostMapping("/sign-in")
     ResponseEntity<AuthResponse> signIn(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authService.signIn(authMapper.toCommand(request)));
+        return ResponseEntity.ok(authUseCase.signIn(authMapper.toCommand(request)));
     }
 
     @PostMapping("/sign-up")
-    void signUp(@Valid @RequestBody AuthRequest request) {
-        authService.signUp(authMapper.toCommand(request));
+    ResponseEntity<AuthResponse> signUp(@Valid @RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authUseCase.signUp(authMapper.toCommand(request)));
     }
 
     @PatchMapping("/complete")
     void complete(@Valid @RequestBody CompleteAuthRequest request) {
-        authService.complete(authMapper.toCompleteCommand(request));
+        authUseCase.complete(authMapper.toCompleteCommand(request));
     }
 
     @PostMapping("/refresh")
     ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
-        return ResponseEntity.ok(authService.refresh(authMapper.toRefreshCommand(refreshRequest)));
+        return ResponseEntity.ok(authUseCase.refresh(authMapper.toRefreshCommand(refreshRequest)));
     }
 
     @GetMapping("/me")
     ResponseEntity<UserResponse> getAuthenticatedUser() {
-        User user = authService.getAuthtUser();
-        return ResponseEntity.ok(userMapper.toResponse(user));
+        return ResponseEntity.ok(userMapper.toResponse(authUseCase.me()));
     }
 
 }

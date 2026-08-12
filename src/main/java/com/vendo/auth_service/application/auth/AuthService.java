@@ -7,6 +7,7 @@ import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.AuthUserPort;
+import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenIdentityPort;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
@@ -22,7 +23,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+class AuthService implements AuthUseCase {
 
     private final UserQueryPort userQueryPort;
     private final UserCommandPort userCommandPort;
@@ -33,30 +34,31 @@ public class AuthService {
 
     private final AuthUserPort authUserPort;
 
+    @Override
     public AuthResponse signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
 
-        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-        return AuthResponse.builder()
-                .accessToken(tokenPayload.accessToken())
-                .refreshToken(tokenPayload.refreshToken())
-                .build();
+        return buildAuthResponse(user);
     }
 
-    public void signUp(AuthCommand command) {
+    @Override
+    public AuthResponse signUp(AuthCommand command) {
         String hashedPassword = passwordHashingPort.hash(command.password());
-        userCommandPort.save(SaveUserRequest.builder()
+        User user = userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(UserRole.USER))
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
                 .build());
+
+        return buildAuthResponse(user);
     }
 
+    @Override
     public void complete(CompleteAuthCommand command) {
         User user = userQueryPort.getById(authUserPort.getAuthUser().id());
         user.throwIfEmailNotVerified();
@@ -66,6 +68,7 @@ public class AuthService {
                 .birthDate(command.birthDate()).build());
     }
 
+    @Override
     public AuthResponse refresh(RefreshCommand command) {
         User user = userQueryPort.getById(tokenIdentityPort.extractId(command.refreshToken()));
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
@@ -76,8 +79,16 @@ public class AuthService {
                 .build();
     }
 
-    public User getAuthtUser() {
+    @Override
+    public User me() {
         return userQueryPort.getById(authUserPort.getAuthUser().id());
     }
 
+    private AuthResponse buildAuthResponse(User user) {
+        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
+        return AuthResponse.builder()
+                .accessToken(tokenPayload.accessToken())
+                .refreshToken(tokenPayload.refreshToken())
+                .build();
+    }
 }
