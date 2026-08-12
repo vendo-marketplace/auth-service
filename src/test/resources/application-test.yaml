@@ -22,8 +22,8 @@ eureka:
 kafka:
   events:
     notification:
-      email-otp-event:
-        topic: "EMAIL_OTP_NOTIFICATION_TEST_TOPIC"
+      code-email-event:
+        topic: "CODE_EMAIL_NOTIFICATION_TEST_TOPIC"
 
 endpoints:
   unauthenticated:
