@@ -58,7 +58,7 @@ class GoogleOAuthServiceTest {
         when(userQueryPort.getByEmail(email)).thenReturn(user);
         when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-        AuthResponse authResponse = googleOAuthService.googleAuth(googleAuthRequest);
+        AuthResponse authResponse = googleOAuthService.auth(googleAuthRequest);
         assertThat(authResponse).isNotNull();
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
         assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
@@ -86,7 +86,7 @@ class GoogleOAuthServiceTest {
         when(userCommandPort.save(captor.capture())).thenReturn(user);
         when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-        AuthResponse authResponse = googleOAuthService.googleAuth(googleAuthRequest);
+        AuthResponse authResponse = googleOAuthService.auth(googleAuthRequest);
 
         assertThat(authResponse).isNotNull();
         assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
@@ -109,7 +109,7 @@ class GoogleOAuthServiceTest {
 
         when(googleTokenVerifierPort.verify(idToken)).thenThrow(BadCredentialsException.class);
 
-        assertThatThrownBy(() -> googleOAuthService.googleAuth(googleAuthRequest))
+        assertThatThrownBy(() -> googleOAuthService.auth(googleAuthRequest))
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(googleTokenVerifierPort).verify(idToken);
