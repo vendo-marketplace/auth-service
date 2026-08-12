@@ -170,12 +170,6 @@ Swagger UI:
 http://localhost:8050/swagger-ui.html
 ```
 
-OpenAPI specification:
-
-```
-http://localhost:8050/v3/api-docs
-```
-
 ---
 
 # Running Tests
