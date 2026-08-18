@@ -12,11 +12,10 @@ import java.util.Collections;
 @Configuration
 public class GoogleIdTokenVerifierConfig {
 
-    @Value("${google.client_id}")
+    @Value("${google.oauth.client-id}")
     private String GOOGLE_CLIENT_ID;
 
     private final NetHttpTransport netHttpTransport = new NetHttpTransport();
-
     private final GsonFactory gsonFactory = new GsonFactory();
 
     @Bean
