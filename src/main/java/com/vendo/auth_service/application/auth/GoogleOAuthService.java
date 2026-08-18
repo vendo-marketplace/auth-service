@@ -1,8 +1,8 @@
 package com.vendo.auth_service.application.auth;
 
-import com.vendo.auth_service.adapter.auth.in.dto.GoogleAuthRequest;
 import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.model.User;
+import com.vendo.auth_service.port.auth.GoogleAuthCodePort;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import com.vendo.auth_service.port.auth.usecase.GoogleAuthUseCase;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
@@ -21,17 +21,21 @@ import java.util.Set;
 @RequiredArgsConstructor
 class GoogleOAuthService implements GoogleAuthUseCase {
 
-    private final TokenGenerationPort tokenGenerationPort;
+    private final GoogleAuthCodePort googleAuthCodePort;
     private final GoogleTokenVerifierPort googleTokenVerifierPort;
+
+    private final TokenGenerationPort tokenGenerationPort;
     private final UserCommandPort userCommandPort;
     private final UserQueryPort userQueryPort;
 
     @Override
-    public AuthResponse auth(GoogleAuthRequest googleAuthRequest) {
-        GoogleTokenPayload payload = googleTokenVerifierPort.verify(googleAuthRequest.idToken());
-        User user = requireUser(payload.email(), payload.fullName());
+    public AuthResponse auth(String authCode) {
+        String idToken = googleAuthCodePort.exchange(authCode);
+        GoogleTokenPayload payload = googleTokenVerifierPort.verify(idToken);
 
+        User user = requireUser(payload.email(), payload.fullName());
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
+
         return AuthResponse.builder()
                 .accessToken(tokenPayload.accessToken())
                 .refreshToken(tokenPayload.refreshToken())
