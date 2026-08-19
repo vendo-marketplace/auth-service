@@ -2,7 +2,7 @@ package com.vendo.auth_service.adapter.auth.out;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.vendo.auth_service.adapter.auth.in.exception.GoogleAuthException;
+import com.vendo.auth_service.domain.user.exception.GoogleAuthException;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
 import lombok.RequiredArgsConstructor;

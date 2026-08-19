@@ -1,4 +1,4 @@
-package com.vendo.auth_service.adapter.auth.in.exception;
+package com.vendo.auth_service.domain.user.exception;
 
 public class GoogleAuthException extends RuntimeException {
     public GoogleAuthException(String message) {
