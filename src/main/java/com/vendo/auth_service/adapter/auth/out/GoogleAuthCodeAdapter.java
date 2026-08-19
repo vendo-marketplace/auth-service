@@ -2,48 +2,53 @@ package com.vendo.auth_service.adapter.auth.out;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.vendo.auth_service.adapter.auth.out.props.GoogleOauthProps;
 import com.vendo.auth_service.domain.user.exception.GoogleAuthException;
 import com.vendo.auth_service.port.auth.GoogleAuthCodePort;
+import com.vendo.core_lib.utils.ObjectUtils;
+import com.vendo.core_lib.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GoogleAuthCodeAdapter implements GoogleAuthCodePort {
 
-    @Value("${google.oauth.client-id}")
-    private String clientId;
-
-    @Value("${google.oauth.client-secret}")
-    private String clientSecret;
-
-    @Value("${google.oauth.redirect-uri}")
-    private String redirectUri;
+    private final GoogleOauthProps props;
+    private final NetHttpTransport transport;
 
     @Override
     public String exchange(String authorizationCode) {
         try {
             GoogleTokenResponse response =
                     new GoogleAuthorizationCodeTokenRequest(
-                            GoogleNetHttpTransport.newTrustedTransport(),
+                            transport,
                             GsonFactory.getDefaultInstance(),
-                            clientId,
-                            clientSecret,
+                            props.getClientId(),
+                            props.getClientSecret(),
                             authorizationCode,
-                            redirectUri
+                            props.getRedirectUri()
                     ).execute();
 
+            throwIfNotValidResponse(response);
             return response.getIdToken();
 
-        } catch (IOException | GeneralSecurityException e) {
-            throw new GoogleAuthException("Failed to exchange Google authorization code.");
+        } catch (Exception e) {
+            log.error("Unable to exchange authCode: ", e);
+            throw new GoogleAuthException("Google authorization failed.");
         }
     }
+
+    private void throwIfNotValidResponse(GoogleTokenResponse response) {
+        if (ObjectUtils.isNull(response) || StringUtils.isEmpty(response.getIdToken())) {
+            throw new IllegalStateException("Invalid google oauth response.");
+        }
+
+    }
+
 
 }
