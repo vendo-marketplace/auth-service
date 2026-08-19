@@ -47,8 +47,5 @@ public class GoogleAuthCodeAdapter implements GoogleAuthCodePort {
         if (ObjectUtils.isNull(response) || StringUtils.isEmpty(response.getIdToken())) {
             throw new IllegalStateException("Invalid google oauth response.");
         }
-
     }
-
-
 }
