@@ -1,6 +1,6 @@
 package com.vendo.auth_service.adapter.security.in.filter;
 
-import com.vendo.auth_service.infrastructure.props.PathProps;
+import com.vendo.security_starter.path.PathProps;
 import com.vendo.security_lib.resolver.AntPathResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

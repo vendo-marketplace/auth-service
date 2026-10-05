@@ -6,3 +6,6 @@ spring:
     include: kafka,redis
   config:
     import: "optional:configserver:${CONFIG_SERVER_URL}"
+
+endpoints:
+  enabled-groups: general, auth
