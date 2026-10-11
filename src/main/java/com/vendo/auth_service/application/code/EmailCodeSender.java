@@ -8,7 +8,7 @@ import com.vendo.auth_service.port.code.CodeEmailNotificationPort;
 import com.vendo.auth_service.port.code.CodeGenerator;
 import com.vendo.auth_service.port.code.CodeStorage;
 import com.vendo.auth_service.port.code.StorageValue;
-import com.vendo.event_lib.code.EmailCodeEvent;
+import com.vendo.event_lib.code.CodeEmailEvent;
 import com.vendo.redis_lib.exception.CodeExpiredException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,14 +29,14 @@ class EmailCodeSender implements CodeSender {
         throwIfCodeAlreadySent(command.email(), namespace);
         String code = codeGenerator.generate();
         saveCodeNamespaces(code, command.email(), namespace);
-        codeEmailNotificationPort.sendEmailNotification(new EmailCodeEvent(code, command.email(), command.type()));
+        codeEmailNotificationPort.sendEmailNotification(new CodeEmailEvent(code, command.email(), command.type()));
     }
 
     @Override
     public void resend(CodeCommand command, CodeNamespace codeNamespace) {
         String code = getCodeOrThrow(command.email(), codeNamespace);
         int attempts = getAttemptsOrThrow(command.email(), codeNamespace);
-        codeEmailNotificationPort.sendEmailNotification(new EmailCodeEvent(code, command.email(), command.type()));
+        codeEmailNotificationPort.sendEmailNotification(new CodeEmailEvent(code, command.email(), command.type()));
         increaseAttempts(attempts, command.email(), codeNamespace);
     }
 

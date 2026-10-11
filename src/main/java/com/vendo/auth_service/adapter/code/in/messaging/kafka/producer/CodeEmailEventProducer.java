@@ -1,7 +1,7 @@
 package com.vendo.auth_service.adapter.code.in.messaging.kafka.producer;
 
 import com.vendo.auth_service.port.code.CodeEmailNotificationPort;
-import com.vendo.event_lib.code.EmailCodeEvent;
+import com.vendo.event_lib.code.CodeEmailEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,10 +16,10 @@ class CodeEmailEventProducer implements CodeEmailNotificationPort {
     @Value("${kafka.events.notification.code-email-event.topic}")
     private String codeEmailEventTopic;
 
-    private final KafkaTemplate<String, EmailCodeEvent> kafkaTemplate;
+    private final KafkaTemplate<String, CodeEmailEvent> kafkaTemplate;
 
     @Override
-    public void sendEmailNotification(EmailCodeEvent event) {
+    public void sendEmailNotification(CodeEmailEvent event) {
         log.info("Sent event for email code notification: {}", event);
         kafkaTemplate.send(codeEmailEventTopic, event);
     }
