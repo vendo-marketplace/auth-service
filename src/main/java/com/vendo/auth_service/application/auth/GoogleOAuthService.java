@@ -50,6 +50,7 @@ class GoogleOAuthService implements GoogleAuthUseCase {
                     .email(email)
                     .fullName(fullName)
                     .roles(Set.of(UserRole.USER))
+                    .emailVerified(true)
                     .status(UserStatus.ACTIVE)
                     .providerType(ProviderType.GOOGLE)
                     .build();

@@ -12,6 +12,7 @@ public record SaveUserRequest(
         String email,
         String fullName,
         String password,
+        boolean emailVerified,
         Set<UserRole> roles,
         UserStatus status,
         ProviderType providerType
