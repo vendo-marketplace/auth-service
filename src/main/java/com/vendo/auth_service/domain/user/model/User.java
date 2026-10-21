@@ -10,8 +10,6 @@ import com.vendo.core_lib.utils.StringUtils;
 import lombok.Builder;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,7 +23,6 @@ public record User(
         Set<UserRole> roles,
         ProviderType providerType,
         String password,
-        LocalDate birthDate,
         String fullName,
         Instant createdAt,
         Instant updatedAt
@@ -39,7 +36,7 @@ public record User(
     }
 
     public void throwIfCompleted() {
-        if (Objects.nonNull(birthDate) && !StringUtils.isEmpty(fullName)) {
+        if (!StringUtils.isEmpty(fullName)) {
             throw new UserAlreadyCompletedException("User has already completed.");
         }
     }

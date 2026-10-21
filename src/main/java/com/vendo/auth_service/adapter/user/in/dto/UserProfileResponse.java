@@ -6,7 +6,6 @@ import com.vendo.user_lib.type.UserStatus;
 import lombok.Builder;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Set;
 
 @Builder(toBuilder = true)
@@ -17,7 +16,6 @@ public record UserProfileResponse(
         Set<UserRole> roles,
         UserStatus status,
         ProviderType providerType,
-        LocalDate birthDate,
         String fullName,
         Instant createdAt,
         Instant updatedAt

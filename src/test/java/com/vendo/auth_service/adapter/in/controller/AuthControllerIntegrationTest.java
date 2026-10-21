@@ -46,8 +46,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
-
 import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
 import static com.vendo.security_lib.http.HttpUtils.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -375,7 +373,6 @@ class AuthControllerIntegrationTest {
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
-            assertThat(updateUserArgumentCaptorValue.birthDate()).isEqualTo(completeAuthRequest.birthDate());
         }
 
         @Test
@@ -406,10 +403,10 @@ class AuthControllerIntegrationTest {
         }
 
         @Test
-        void complete_shouldReturnBadRequest_whenNotAdult() throws Exception {
+        void complete_shouldReturnBadRequest_whenBothNotAdultAndInvalidFullName() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .withAllFields()
-                    .birthDate(LocalDate.now())
+                    .fullName("Invalid_fullName")
                     .build();
             User user = UserDataBuilder.withUserRole().build();
             SecurityContext securityContext = initializeSecurityContext(user);
@@ -429,35 +426,6 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(1);
-            assertThat(exceptionResponse.getErrors().get("birthDate")).isNotNull();
-        }
-
-        @Test
-        void complete_shouldReturnBadRequest_whenBothNotAdultAndInvalidFullName() throws Exception {
-            CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
-                    .withAllFields()
-                    .fullName("Invalid_fullName")
-                    .birthDate(LocalDate.of(2025, 1, 1))
-                    .build();
-            User user = UserDataBuilder.withUserRole().build();
-            SecurityContext securityContext = initializeSecurityContext(user);
-
-            String content = mockMvc.perform(patch("/auth/complete")
-                            .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isBadRequest())
-                    .andReturn().getResponse().getContentAsString();
-
-            assertThat(content).isNotNull();
-            ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
-
-            assertThat(exceptionResponse).isNotNull();
-            assertThat(exceptionResponse.getPath()).isEqualTo("/auth/complete");
-            assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.BAD_REQUEST.value());
-            assertThat(exceptionResponse.getErrors()).isNotNull();
-            assertThat(exceptionResponse.getErrors().size()).isEqualTo(2);
-            assertThat(exceptionResponse.getErrors().get("birthDate")).isNotNull();
             assertThat(exceptionResponse.getErrors().get("fullName")).isNotNull();
         }
 
@@ -526,7 +494,6 @@ class AuthControllerIntegrationTest {
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.ACTIVE)
                     .fullName("John Doe")
-                    .birthDate(LocalDate.now().minusYears(20))
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 

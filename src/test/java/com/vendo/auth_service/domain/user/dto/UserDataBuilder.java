@@ -17,7 +17,6 @@ public class UserDataBuilder {
                 .password("Qwerty1234@")
                 .roles(Set.of(UserRole.USER))
                 .fullName(null)
-                .birthDate(null)
                 .providerType(ProviderType.LOCAL)
                 .status(UserStatus.ACTIVE)
                 .emailVerified(true)

@@ -179,7 +179,6 @@ class PasswordControllerIntegrationTest {
             UpdateUserRequest updateUserRequestCaptured = usertArgumentCaptor.getValue();
             assertThat(updateUserRequestCaptured).isNotNull();
             assertThat(updateUserRequestCaptured.password()).isEqualTo(hashedPassword);
-            assertThat(updateUserRequestCaptured.birthDate()).isNull();
             assertThat(updateUserRequestCaptured.fullName()).isNull();
         }
 
