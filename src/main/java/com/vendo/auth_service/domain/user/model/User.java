@@ -2,6 +2,7 @@ package com.vendo.auth_service.domain.user.model;
 
 import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
+import com.vendo.auth_service.domain.user.pattern.UserRegexPatterns;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -11,6 +12,7 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Builder
@@ -29,6 +31,20 @@ public record User(
 
 ) {
 
+    private static final Pattern FULL_NAME_PATTERN = Pattern.compile(UserRegexPatterns.FULL_NAME);
+
+    public static boolean isValidFullName(String fullName) {
+        return !StringUtils.isEmpty(fullName) && FULL_NAME_PATTERN.matcher(fullName).matches();
+    }
+
+    public boolean isCompleted() {
+        return !StringUtils.isEmpty(fullName);
+    }
+
+    public User withFullName(String fullName) {
+        return new User(id, email, emailVerified, status, roles, providerType, password, fullName, createdAt, updatedAt);
+    }
+
     public void throwIfEmailNotVerified() {
         if (!emailVerified) {
             throw new UserEmailNotVerifiedException("User email is not verified.");
@@ -36,7 +52,7 @@ public record User(
     }
 
     public void throwIfCompleted() {
-        if (!StringUtils.isEmpty(fullName)) {
+        if (isCompleted()) {
             throw new UserAlreadyCompletedException("User has already completed.");
         }
     }

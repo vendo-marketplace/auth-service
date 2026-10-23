@@ -103,7 +103,7 @@ class GoogleAuthControllerIntegrationTest {
         String authCode = "test_auth_code";
         String idToken = "test_id_token";
         String email = "new.google@gmail.com";
-        String fullName = "New Google User";
+        String fullName = "Google User";
         GoogleTokenPayload googleTokenPayload = GoogleTokenPayload.builder()
                 .email(email)
                 .fullName(fullName)
