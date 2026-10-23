@@ -45,7 +45,8 @@ public class TokenGenerationAdapter implements TokenGenerationPort {
                 TokenClaim.EMAIL.getClaim(), user.email(),
                 TokenClaim.VERIFIED.getClaim(), user.emailVerified(),
                 TokenClaim.ROLES.getClaim(), String.join(COMMA_DELIMITER, user.toRoleNames()),
-                TokenClaim.STATUS.getClaim(), user.status()
+                TokenClaim.STATUS.getClaim(), user.status(),
+                TokenClaim.COMPLETED.getClaim(), user.isCompleted()
         );
 
         JwtPayload jwtPayload = JwtPayload.builder()
