@@ -18,7 +18,7 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
     private final HttpServletResponse response;
     private final JwtProperties jwtProperties;
 
-    private static final String LAX_REDIRECT_STRATEGY_PREFIX = "Lax";
+    private static final String SAME_SITE_REDIRECT_STRATEGY_PREFIX = "None";
     private static final String ALL_PATHS = "/", REFRESH_PATH = "/auth/refresh";
 
     @Override
@@ -29,7 +29,7 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
                 .from(ACCESS_PREFIX, payload.accessToken())
                 .httpOnly(true)
                 .secure(true)
-                .sameSite(LAX_REDIRECT_STRATEGY_PREFIX)
+                .sameSite(SAME_SITE_REDIRECT_STRATEGY_PREFIX)
                 .path(ALL_PATHS)
                 .maxAge(secret.accessExpirationTime())
                 .build();
@@ -38,7 +38,7 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
                 .from(REFRESH_PREFIX, payload.refreshToken())
                 .httpOnly(true)
                 .secure(true)
-                .sameSite(LAX_REDIRECT_STRATEGY_PREFIX)
+                .sameSite(SAME_SITE_REDIRECT_STRATEGY_PREFIX)
                 .path(REFRESH_PATH)
                 .maxAge(secret.refreshExpirationTime())
                 .build();
