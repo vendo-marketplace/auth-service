@@ -4,7 +4,6 @@ import com.vendo.auth_service.adapter.auth.out.mapper.AuthMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
-import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.dto.UserResponse;
 import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
 import jakarta.validation.Valid;
@@ -40,8 +39,8 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    ResponseEntity<Void> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
-        authUseCase.refresh(authMapper.toRefreshCommand(refreshRequest));
+    ResponseEntity<Void> refresh() {
+        authUseCase.refresh();
         return ResponseEntity.ok().build();
     }
 

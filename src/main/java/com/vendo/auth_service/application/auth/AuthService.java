@@ -2,16 +2,12 @@ package com.vendo.auth_service.application.auth;
 
 import com.vendo.auth_service.application.auth.command.AuthCommand;
 import com.vendo.auth_service.application.auth.command.CompleteAuthCommand;
-import com.vendo.auth_service.application.auth.command.RefreshCommand;
 import com.vendo.auth_service.application.auth.dto.*;
 import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.AuthUserPort;
 import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
-import com.vendo.auth_service.port.security.AuthCookieApplierPort;
-import com.vendo.auth_service.port.security.PasswordHashingPort;
-import com.vendo.auth_service.port.security.TokenIdentityPort;
-import com.vendo.auth_service.port.security.TokenGenerationPort;
+import com.vendo.auth_service.port.security.*;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
 import com.vendo.user_lib.type.ProviderType;
@@ -35,6 +31,7 @@ class AuthService implements AuthUseCase {
 
     private final AuthUserPort authUserPort;
     private final AuthCookieApplierPort cookieApplierPort;
+    private final AuthCookieRetrieverPort cookieRetrieverPort;
 
     @Override
     public void signIn(AuthCommand command) {
@@ -71,8 +68,8 @@ class AuthService implements AuthUseCase {
     }
 
     @Override
-    public void refresh(RefreshCommand command) {
-        User user = userQueryPort.getById(tokenIdentityPort.extractId(command.refreshToken()));
+    public void refresh() {
+        User user = userQueryPort.getById(tokenIdentityPort.extractId(cookieRetrieverPort.retrieveRefresh()));
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
         cookieApplierPort.apply(tokenPayload);
     }

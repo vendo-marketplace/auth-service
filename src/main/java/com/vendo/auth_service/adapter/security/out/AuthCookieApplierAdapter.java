@@ -9,6 +9,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
+import static com.vendo.security_lib.http.HttpUtils.*;
+
 @Component
 @RequiredArgsConstructor
 public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
@@ -18,7 +20,6 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
 
     private static final String LAX_REDIRECT_STRATEGY_PREFIX = "Lax";
     private static final String ALL_PATHS = "/", REFRESH_PATH = "/auth/refresh";
-    private static final String ACCESS_PREFIX = "accessToken", REFRESH_PREFIX = "refreshToken";
 
     @Override
     public void apply(TokenPayload payload) {

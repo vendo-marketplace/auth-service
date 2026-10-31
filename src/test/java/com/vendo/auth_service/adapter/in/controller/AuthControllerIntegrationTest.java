@@ -3,7 +3,6 @@ package com.vendo.auth_service.adapter.in.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
-import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
@@ -12,6 +11,7 @@ import com.vendo.auth_service.domain.auth.dto.AuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.CompleteAuthRequestDataBuilder;
 import com.vendo.auth_service.domain.auth.dto.TokenPayloadDataBuilder;
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
+import com.vendo.auth_service.domain.user.exception.UnauthorizedException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenIdentityPort;
@@ -25,6 +25,7 @@ import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
 import com.vendo.user_lib.type.UserStatus;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -37,7 +38,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,7 +47,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static com.vendo.auth_service.test_utils.SecurityContextService.initializeSecurityContext;
-import static com.vendo.security_lib.http.HttpUtils.BEARER_PREFIX;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -228,23 +227,22 @@ class AuthControllerIntegrationTest {
         @Test
         void refresh_shouldSetAuthCookies() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
-            RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
+            String refreshToken = "test_refresh_token";
             TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
 
-            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenReturn(user.id());
+            when(tokenIdentityPort.extractId(refreshToken)).thenReturn(user.id());
             when(userQueryPort.getById(user.id())).thenReturn(user);
             when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             MockHttpServletResponse response = mockMvc.perform(post("/auth/refresh")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(refreshRequest)))
+                            .cookie(new Cookie("refreshToken", refreshToken)))
                     .andExpect(status().isOk())
                     .andReturn()
                     .getResponse();
 
             assertAuthCookies(response, tokenPayload);
 
-            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshToken);
             verify(userQueryPort).getById(user.id());
             verify(tokenGenerationPort).generate(user);
         }
@@ -252,14 +250,13 @@ class AuthControllerIntegrationTest {
         @Test
         void refresh_shouldReturnNotFound_whenUserNotFound() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
-            RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
+            String refreshToken = "test_refresh_token";
 
-            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenReturn(user.id());
+            when(tokenIdentityPort.extractId(refreshToken)).thenReturn(user.id());
             when(userQueryPort.getById(user.id())).thenThrow(new UserNotFoundException("User not found."));
 
             String content = mockMvc.perform(post("/auth/refresh")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(refreshRequest)))
+                            .cookie(new Cookie("refreshToken", refreshToken)))
                     .andExpect(status().isNotFound())
                     .andReturn()
                     .getResponse()
@@ -272,20 +269,19 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.NOT_FOUND.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshToken);
             verify(userQueryPort).getById(user.id());
             verify(tokenGenerationPort, never()).generate(user);
         }
 
         @Test
-        void refresh_shouldReturnUnauthorized_whenTokenWithoutBearerPrefix() throws Exception {
-            RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken("refresh_token").build();
+        void refresh_shouldReturnUnauthorized_whenTokenIsInvalid() throws Exception {
+            String refreshToken = "refresh_token";
 
-            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Unauthorized."));
+            when(tokenIdentityPort.extractId(refreshToken)).thenThrow(new UnauthorizedException("Invalid or expired token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(refreshRequest)))
+                            .cookie(new Cookie("refreshToken", refreshToken)))
                     .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
@@ -294,24 +290,23 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshToken);
             verify(userQueryPort, never()).getByEmail(anyString());
             verify(tokenGenerationPort, never()).generate(any(User.class));
         }
 
         @Test
         void refresh_shouldReturnUnauthorized_whenTokenIsExpired() throws Exception {
-            RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
+            String refreshToken = "expired_refresh_token";
 
-            when(tokenIdentityPort.extractId(refreshRequest.refreshToken())).thenThrow(new BadCredentialsException("Unauthorized."));
+            when(tokenIdentityPort.extractId(refreshToken)).thenThrow(new UnauthorizedException("Invalid or expired token."));
 
             String content = mockMvc.perform(post("/auth/refresh")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(refreshRequest)))
+                            .cookie(new Cookie("refreshToken", refreshToken)))
                     .andExpect(status().isUnauthorized())
                     .andReturn()
                     .getResponse()
@@ -320,11 +315,11 @@ class AuthControllerIntegrationTest {
             assertThat(content).isNotBlank();
             ExceptionResponse exceptionResponse = objectMapper.readValue(content, ExceptionResponse.class);
 
-            assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
+            assertThat(exceptionResponse.getMessage()).isEqualTo("Invalid or expired token.");
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getPath()).isEqualTo("/auth/refresh");
 
-            verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
+            verify(tokenIdentityPort).extractId(refreshToken);
             verify(userQueryPort, never()).getByEmail(anyString());
             verify(tokenGenerationPort, never()).generate(any(User.class));
         }
