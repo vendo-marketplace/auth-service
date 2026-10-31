@@ -5,7 +5,6 @@ import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.adapter.user.in.dto.UserProfileResponse;
-import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
 import com.vendo.auth_service.application.auth.dto.UpdateUserRequest;
@@ -35,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -98,17 +98,12 @@ class AuthControllerIntegrationTest {
             when(userCommandPort.save(any())).thenReturn(user);
             when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-            String content = mockMvc.perform(post("/auth/sign-up")
+            MockHttpServletResponse response = mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
-                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+                    .andExpect(status().isOk()).andReturn().getResponse();
 
-            assertThat(content).isNotBlank();
-            AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
-
-            assertThat(authResponse).isNotNull();
-            assertThat(authResponse.accessToken()).isNotBlank();
-            assertThat(authResponse.refreshToken()).isNotBlank();
+            assertAuthCookies(response, tokenPayload);
 
             ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
             verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
@@ -151,7 +146,7 @@ class AuthControllerIntegrationTest {
     class SignInTests {
 
         @Test
-        void signIn_shouldReturnPairOfTokens() throws Exception {
+        void signIn_shouldSetAuthCookies() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .password(passwordHashingPort.hash(authRequest.password()))
@@ -162,20 +157,14 @@ class AuthControllerIntegrationTest {
             when(userQueryPort.getByEmail(authRequest.email())).thenReturn(user);
             when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-            String content = mockMvc.perform(post("/auth/sign-in")
+            MockHttpServletResponse response = mockMvc.perform(post("/auth/sign-in")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk())
                     .andReturn()
-                    .getResponse()
-                    .getContentAsString();
+                    .getResponse();
 
-            assertThat(content).isNotBlank();
-            AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
-
-            assertThat(authResponse).isNotNull();
-            assertThat(authResponse.accessToken()).isNotBlank();
-            assertThat(authResponse.refreshToken()).isNotBlank();
+            assertAuthCookies(response, tokenPayload);
 
             verify(userQueryPort).getByEmail(authRequest.email());
             verify(tokenGenerationPort).generate(user);
@@ -237,7 +226,7 @@ class AuthControllerIntegrationTest {
     class RefreshTests {
 
         @Test
-        void refresh_shouldReturnPairOfTokens() throws Exception {
+        void refresh_shouldSetAuthCookies() throws Exception {
             User user = UserDataBuilder.withAllFields().build();
             RefreshRequest refreshRequest = RefreshRequest.builder().refreshToken(BEARER_PREFIX + "refresh_token").build();
             TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
@@ -246,20 +235,14 @@ class AuthControllerIntegrationTest {
             when(userQueryPort.getById(user.id())).thenReturn(user);
             when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-            String content = mockMvc.perform(post("/auth/refresh")
+            MockHttpServletResponse response = mockMvc.perform(post("/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(refreshRequest)))
                     .andExpect(status().isOk())
                     .andReturn()
-                    .getResponse()
-                    .getContentAsString();
+                    .getResponse();
 
-            assertThat(content).isNotBlank();
-            AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
-
-            assertThat(authResponse).isNotNull();
-            assertThat(authResponse.accessToken()).isNotBlank();
-            assertThat(authResponse.refreshToken()).isNotBlank();
+            assertAuthCookies(response, tokenPayload);
 
             verify(tokenIdentityPort).extractId(refreshRequest.refreshToken());
             verify(userQueryPort).getById(user.id());
@@ -573,5 +556,14 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("Unauthorized.");
         }
+    }
+
+    private void assertAuthCookies(MockHttpServletResponse response, TokenPayload tokenPayload) throws Exception {
+        assertThat(response.getContentAsString()).isEmpty();
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isEqualTo(2);
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(0))
+                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=Lax");
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(1))
+                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=Lax");
     }
 }

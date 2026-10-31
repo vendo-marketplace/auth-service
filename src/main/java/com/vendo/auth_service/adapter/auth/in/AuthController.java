@@ -3,7 +3,6 @@ package com.vendo.auth_service.adapter.auth.in;
 import com.vendo.auth_service.adapter.auth.out.mapper.AuthMapper;
 import com.vendo.auth_service.adapter.auth.in.dto.AuthRequest;
 import com.vendo.auth_service.adapter.user.out.mapper.UserMapper;
-import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.adapter.auth.in.dto.CompleteAuthRequest;
 import com.vendo.auth_service.adapter.auth.in.dto.RefreshRequest;
 import com.vendo.auth_service.application.auth.dto.UserResponse;
@@ -18,20 +17,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final AuthUseCase authUseCase;
-
     private final AuthMapper authMapper;
+    private final AuthUseCase authUseCase;
 
     private final UserMapper userMapper;
 
     @PostMapping("/sign-in")
-    ResponseEntity<AuthResponse> signIn(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authUseCase.signIn(authMapper.toCommand(request)));
+    ResponseEntity<Void> signIn(@Valid @RequestBody AuthRequest request) {
+        authUseCase.signIn(authMapper.toCommand(request));
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/sign-up")
-    ResponseEntity<AuthResponse> signUp(@Valid @RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authUseCase.signUp(authMapper.toCommand(request)));
+    ResponseEntity<Void> signUp(@Valid @RequestBody AuthRequest request) {
+        authUseCase.signUp(authMapper.toCommand(request));
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/complete")
@@ -40,8 +40,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
-        return ResponseEntity.ok(authUseCase.refresh(authMapper.toRefreshCommand(refreshRequest)));
+    ResponseEntity<Void> refresh(@Valid @RequestBody RefreshRequest refreshRequest) {
+        authUseCase.refresh(authMapper.toRefreshCommand(refreshRequest));
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")

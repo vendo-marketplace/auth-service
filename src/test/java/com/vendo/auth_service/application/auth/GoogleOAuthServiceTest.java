@@ -7,6 +7,7 @@ import com.vendo.auth_service.domain.user.exception.GoogleAuthException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.GoogleAuthCodePort;
 import com.vendo.auth_service.port.auth.GoogleTokenVerifierPort;
+import com.vendo.auth_service.port.security.AuthCookieApplierPort;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
@@ -39,6 +40,8 @@ class GoogleOAuthServiceTest {
     @Mock
     private TokenGenerationPort tokenGenerationPort;
     @Mock
+    private AuthCookieApplierPort authCookieApplierPort;
+    @Mock
     private GoogleTokenVerifierPort googleTokenVerifierPort;
     @Mock
     private GoogleAuthCodePort googleAuthCodePort;
@@ -56,16 +59,14 @@ class GoogleOAuthServiceTest {
         when(userQueryPort.getByEmail(email)).thenReturn(user);
         when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-        AuthResponse authResponse = googleOAuthService.auth(authCode);
-        assertThat(authResponse).isNotNull();
-        assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
-        assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
+        googleOAuthService.auth(authCode);
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userQueryPort).getByEmail(email);
         verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         verify(tokenGenerationPort).generate(user);
+        verify(authCookieApplierPort).apply(tokenPayload);
     }
 
     @Test
@@ -84,11 +85,7 @@ class GoogleOAuthServiceTest {
         when(userCommandPort.save(captor.capture())).thenReturn(user);
         when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-        AuthResponse authResponse = googleOAuthService.auth(authCode);
-
-        assertThat(authResponse).isNotNull();
-        assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
-        assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
+        googleOAuthService.auth(authCode);
 
         SaveUserRequest value = captor.getValue();
         verify(googleAuthCodePort).exchange(authCode);
@@ -96,6 +93,7 @@ class GoogleOAuthServiceTest {
         verify(userQueryPort).getByEmail(email);
         verify(userCommandPort).save(value);
         verify(tokenGenerationPort).generate(user);
+        verify(authCookieApplierPort).apply(tokenPayload);
 
         assertThat(value.email()).isEqualTo(email);
         assertThat(value.providerType()).isEqualTo(ProviderType.GOOGLE);
@@ -111,7 +109,7 @@ class GoogleOAuthServiceTest {
                 .isInstanceOf(GoogleAuthException.class);
 
         verify(googleAuthCodePort).exchange(authCode);
-        verifyNoInteractions(googleTokenVerifierPort, userQueryPort, userCommandPort, tokenGenerationPort);
+        verifyNoInteractions(googleTokenVerifierPort, userQueryPort, userCommandPort, tokenGenerationPort, authCookieApplierPort);
     }
 
     @Test
@@ -126,6 +124,6 @@ class GoogleOAuthServiceTest {
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
-        verifyNoInteractions(userQueryPort, userCommandPort, tokenGenerationPort);
+        verifyNoInteractions(userQueryPort, userCommandPort, tokenGenerationPort, authCookieApplierPort);
     }
 }

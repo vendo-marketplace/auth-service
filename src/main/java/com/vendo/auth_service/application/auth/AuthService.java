@@ -8,6 +8,7 @@ import com.vendo.auth_service.domain.user.exception.IncorrectPasswordException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.auth_service.port.auth.AuthUserPort;
 import com.vendo.auth_service.port.auth.usecase.AuthUseCase;
+import com.vendo.auth_service.port.security.AuthCookieApplierPort;
 import com.vendo.auth_service.port.security.PasswordHashingPort;
 import com.vendo.auth_service.port.security.TokenIdentityPort;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
@@ -33,19 +34,21 @@ class AuthService implements AuthUseCase {
     private final TokenIdentityPort tokenIdentityPort;
 
     private final AuthUserPort authUserPort;
+    private final AuthCookieApplierPort cookieApplierPort;
 
     @Override
-    public AuthResponse signIn(AuthCommand command) {
+    public void signIn(AuthCommand command) {
         User user = userQueryPort.getByEmail(command.email());
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
 
-        return buildAuthResponse(user);
+        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
+        cookieApplierPort.apply(tokenPayload);
     }
 
     @Override
-    public AuthResponse signUp(AuthCommand command) {
+    public void signUp(AuthCommand command) {
         String hashedPassword = passwordHashingPort.hash(command.password());
         User user = userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
@@ -55,7 +58,8 @@ class AuthService implements AuthUseCase {
                 .password(hashedPassword)
                 .build());
 
-        return buildAuthResponse(user);
+        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
+        cookieApplierPort.apply(tokenPayload);
     }
 
     @Override
@@ -63,31 +67,18 @@ class AuthService implements AuthUseCase {
         User user = userQueryPort.getById(authUserPort.getAuthUser().id());
         user.throwIfEmailNotVerified();
         user.throwIfCompleted();
-        userCommandPort.update(user.id(), UpdateUserRequest.builder()
-                .fullName(command.fullName()).build());
+        userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(command.fullName()).build());
     }
 
     @Override
-    public AuthResponse refresh(RefreshCommand command) {
+    public void refresh(RefreshCommand command) {
         User user = userQueryPort.getById(tokenIdentityPort.extractId(command.refreshToken()));
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-
-        return AuthResponse.builder()
-                .accessToken(tokenPayload.accessToken())
-                .refreshToken(tokenPayload.refreshToken())
-                .build();
+        cookieApplierPort.apply(tokenPayload);
     }
 
     @Override
     public User me() {
         return userQueryPort.getById(authUserPort.getAuthUser().id());
-    }
-
-    private AuthResponse buildAuthResponse(User user) {
-        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-        return AuthResponse.builder()
-                .accessToken(tokenPayload.accessToken())
-                .refreshToken(tokenPayload.refreshToken())
-                .build();
     }
 }

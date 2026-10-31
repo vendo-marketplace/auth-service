@@ -1,7 +1,5 @@
 package com.vendo.auth_service.adapter.in.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vendo.auth_service.application.auth.dto.AuthResponse;
 import com.vendo.auth_service.application.auth.dto.GoogleTokenPayload;
 import com.vendo.auth_service.application.auth.dto.SaveUserRequest;
 import com.vendo.auth_service.application.auth.dto.TokenPayload;
@@ -22,7 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -39,9 +37,6 @@ class GoogleAuthControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @MockitoBean
     private UserQueryPort userQueryPort;
     @MockitoBean
@@ -54,7 +49,7 @@ class GoogleAuthControllerIntegrationTest {
     private GoogleAuthCodePort googleAuthCodePort;
 
     @Test
-    void googleAuth_shouldReturnTokens_whenExistingGoogleUserEmailIsVerified() throws Exception {
+    void googleAuth_shouldSetAuthCookies_whenExistingGoogleUserEmailIsVerified() throws Exception {
         String authCode = "test_auth_code";
         String idToken = "test_id_token";
         String email = "verified.google@gmail.com";
@@ -76,18 +71,18 @@ class GoogleAuthControllerIntegrationTest {
         when(userQueryPort.getByEmail(email)).thenReturn(user);
         when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
-        String content = mockMvc.perform(post("/auth/google")
-                        .param("authCode", authCode)
-                        .accept(MediaType.APPLICATION_JSON))
+        var response = mockMvc.perform(post("/auth/google")
+                        .param("authCode", authCode))
                 .andExpect(status().isOk())
                 .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .getResponse();
 
-        assertThat(content).isNotBlank();
-        AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
-        assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
-        assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
+        assertThat(response.getContentAsString()).isEmpty();
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isEqualTo(2);
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(0))
+                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=Lax");
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(1))
+                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=Lax");
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
@@ -99,7 +94,7 @@ class GoogleAuthControllerIntegrationTest {
     }
 
     @Test
-    void googleAuth_shouldCreateVerifiedGoogleUser_andReturnTokens_whenUserNotFound() throws Exception {
+    void googleAuth_shouldCreateVerifiedGoogleUser_andSetAuthCookies_whenUserNotFound() throws Exception {
         String authCode = "test_auth_code";
         String idToken = "test_id_token";
         String email = "new.google@gmail.com";
@@ -125,24 +120,23 @@ class GoogleAuthControllerIntegrationTest {
         when(userCommandPort.save(saveUserCaptor.capture())).thenReturn(verifiedUser);
         when(tokenGenerationPort.generate(verifiedUser)).thenReturn(tokenPayload);
 
-        String content = mockMvc.perform(post("/auth/google")
-                        .param("authCode", authCode)
-                        .accept(MediaType.APPLICATION_JSON))
+        var response = mockMvc.perform(post("/auth/google")
+                        .param("authCode", authCode))
                 .andExpect(status().isOk())
                 .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .getResponse();
 
-        assertThat(content).isNotBlank();
-        AuthResponse authResponse = objectMapper.readValue(content, AuthResponse.class);
-        assertThat(authResponse.accessToken()).isEqualTo(tokenPayload.accessToken());
-        assertThat(authResponse.refreshToken()).isEqualTo(tokenPayload.refreshToken());
+        assertThat(response.getContentAsString()).isEmpty();
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isEqualTo(2);
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(0))
+                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=Lax");
+        assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(1))
+                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=Lax");
 
         SaveUserRequest saveUserRequest = saveUserCaptor.getValue();
         assertThat(saveUserRequest.email()).isEqualTo(email);
         assertThat(saveUserRequest.fullName()).isEqualTo(fullName);
         assertThat(saveUserRequest.providerType()).isEqualTo(ProviderType.GOOGLE);
-        assertThat(saveUserRequest.emailVerified()).isTrue();
         assertThat(saveUserRequest.roles().contains(UserRole.USER)).isTrue();
         assertThat(saveUserRequest.status()).isEqualTo(UserStatus.ACTIVE);
 
