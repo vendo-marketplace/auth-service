@@ -33,6 +33,12 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/log-out")
+    ResponseEntity<Void> logOut() {
+        authUseCase.logOut();
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/complete")
     void complete(@Valid @RequestBody CompleteAuthRequest request) {
         authUseCase.complete(authMapper.toCompleteCommand(request));

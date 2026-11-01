@@ -24,14 +24,22 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
     @Override
     public void apply(TokenPayload payload) {
         JwtProperties.Secret secret = jwtProperties.getSecret();
+        applyAuth(secret.accessExpirationTime(), secret.refreshExpirationTime(), payload);
+    }
 
+    @Override
+    public void expire() {
+        applyAuth(0, 0, TokenPayload.empty());
+    }
+
+    private void applyAuth(long accessExpiration, long refreshExpiration, TokenPayload payload) {
         ResponseCookie accessCookie = ResponseCookie
                 .from(ACCESS_PREFIX, payload.accessToken())
                 .httpOnly(true)
                 .secure(true)
                 .sameSite(SAME_SITE_REDIRECT_STRATEGY_PREFIX)
                 .path(ALL_PATHS)
-                .maxAge(secret.accessExpirationTime())
+                .maxAge(accessExpiration)
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie
@@ -40,11 +48,10 @@ public class AuthCookieApplierAdapter implements AuthCookieApplierPort {
                 .secure(true)
                 .sameSite(SAME_SITE_REDIRECT_STRATEGY_PREFIX)
                 .path(REFRESH_PATH)
-                .maxAge(secret.refreshExpirationTime())
+                .maxAge(refreshExpiration)
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     }
-
 }

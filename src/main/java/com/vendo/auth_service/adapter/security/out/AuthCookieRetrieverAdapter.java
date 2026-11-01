@@ -18,16 +18,6 @@ public class AuthCookieRetrieverAdapter implements AuthCookieRetrieverPort {
     private final HttpServletRequest request;
 
     @Override
-    public String retrieveAccess() {
-        String cookie = extractCookie(request, ACCESS_PREFIX);
-        if (StringUtils.isEmpty(cookie)) {
-            throw new IllegalArgumentException("Access cookie is not present.");
-        }
-
-        return cookie;
-    }
-
-    @Override
     public String retrieveRefresh() {
         String cookie = extractCookie(request, REFRESH_PREFIX);
         if (StringUtils.isEmpty(cookie)) {

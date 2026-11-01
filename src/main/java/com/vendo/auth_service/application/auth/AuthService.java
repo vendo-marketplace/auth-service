@@ -26,8 +26,8 @@ class AuthService implements AuthUseCase {
     private final UserCommandPort userCommandPort;
 
     private final TokenGenerationPort tokenGenerationPort;
-    private final PasswordHashingPort passwordHashingPort;
     private final TokenIdentityPort tokenIdentityPort;
+    private final PasswordHashingPort passwordHashingPort;
 
     private final AuthUserPort authUserPort;
     private final AuthCookieApplierPort cookieApplierPort;
@@ -57,6 +57,11 @@ class AuthService implements AuthUseCase {
 
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
         cookieApplierPort.apply(tokenPayload);
+    }
+
+    @Override
+    public void logOut() {
+        cookieApplierPort.expire();
     }
 
     @Override

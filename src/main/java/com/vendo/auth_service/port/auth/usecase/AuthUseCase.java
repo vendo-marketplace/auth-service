@@ -7,11 +7,10 @@ import com.vendo.auth_service.domain.user.model.User;
 public interface AuthUseCase {
 
     void signIn(AuthCommand command);
-
     void signUp(AuthCommand command);
+    void logOut();
 
     void complete(CompleteAuthCommand command);
-
     void refresh();
 
     User me();
