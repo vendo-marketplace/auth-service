@@ -373,6 +373,7 @@ class AuthControllerIntegrationTest {
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
+            verifyNoMoreInteractions(userCommandPort);
         }
 
         @Test
@@ -400,13 +401,14 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(1);
             assertThat(exceptionResponse.getErrors().get("fullName")).isNotNull();
+            verifyNoInteractions(userQueryPort, userCommandPort);
         }
 
         @Test
-        void complete_shouldReturnBadRequest_whenBothNotAdultAndInvalidFullName() throws Exception {
+        void complete_shouldReturnBadRequest_whenFullNameIsMissing() throws Exception {
             CompleteAuthRequest completeAuthRequest = CompleteAuthRequestDataBuilder
                     .withAllFields()
-                    .fullName("Invalid_fullName")
+                    .fullName(null)
                     .build();
             User user = UserDataBuilder.withUserRole().build();
             SecurityContext securityContext = initializeSecurityContext(user);
@@ -427,6 +429,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getErrors()).isNotNull();
             assertThat(exceptionResponse.getErrors().size()).isEqualTo(1);
             assertThat(exceptionResponse.getErrors().get("fullName")).isNotNull();
+            verifyNoInteractions(userQueryPort, userCommandPort);
         }
 
         @Test
@@ -465,8 +468,6 @@ class AuthControllerIntegrationTest {
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(userQueryPort.getById(authUser.id())).thenThrow(new UserNotFoundException("User not found."));
-            doThrow(new UserNotFoundException("User not found."))
-                    .when(userCommandPort).update(eq(authUser.id()), any(UpdateUserRequest.class));
 
             String content = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
@@ -513,6 +514,7 @@ class AuthControllerIntegrationTest {
             assertThat(exceptionResponse.getCode()).isEqualTo(HttpStatus.CONFLICT.value());
             assertThat(exceptionResponse.getMessage()).isEqualTo("User has already completed.");
 
+            verify(userQueryPort).getById(authUser.id());
             verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         }
     }

@@ -8,7 +8,6 @@ import com.vendo.auth_service.port.auth.usecase.GoogleAuthUseCase;
 import com.vendo.auth_service.port.security.TokenGenerationPort;
 import com.vendo.auth_service.port.user.UserCommandPort;
 import com.vendo.auth_service.port.user.UserQueryPort;
-import com.vendo.core_lib.utils.StringUtils;
 import com.vendo.user_lib.exception.UserNotFoundException;
 import com.vendo.user_lib.type.ProviderType;
 import com.vendo.user_lib.type.UserRole;
@@ -34,8 +33,9 @@ class GoogleOAuthService implements GoogleAuthUseCase {
     public AuthResponse auth(String authCode) {
         String idToken = googleAuthCodePort.exchange(authCode);
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(idToken);
+        String fullName = getValidFullName(payload.fullName());
 
-        User user = requireUser(payload);
+        User user = requireUser(payload.email(), fullName);
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
 
         return AuthResponse.builder()
@@ -44,12 +44,12 @@ class GoogleOAuthService implements GoogleAuthUseCase {
                 .build();
     }
 
-    private User requireUser(GoogleTokenPayload payload) {
-        String fullName = User.isValidFullName(payload.fullName()) ? payload.fullName() : null;
+    private User requireUser(String email, String fullName) {
+        return findByEmail(email).orElseGet(() -> save(email, fullName));
+    }
 
-        return findByEmail(payload.email())
-                .map(user -> completeFullName(user, fullName))
-                .orElseGet(() -> save(payload.email(), fullName));
+    private String getValidFullName(String fullName) {
+        return User.isValidFullName(fullName) ? fullName : null;
     }
 
     private Optional<User> findByEmail(String email) {
@@ -58,15 +58,6 @@ class GoogleOAuthService implements GoogleAuthUseCase {
         } catch (UserNotFoundException e) {
             return Optional.empty();
         }
-    }
-
-    private User completeFullName(User user, String fullName) {
-        if (user.isCompleted() || StringUtils.isEmpty(fullName)) {
-            return user;
-        }
-
-        userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(fullName).build());
-        return user.withFullName(fullName);
     }
 
     private User save(String email, String fullName) {

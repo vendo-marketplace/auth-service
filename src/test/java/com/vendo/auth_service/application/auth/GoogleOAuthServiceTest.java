@@ -150,26 +150,24 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
-    void googleAuth_shouldUpdateFullName_whenExistingUserHasNoFullName() {
+    void googleAuth_shouldNotUpdateFullName_whenExistingUserHasNoFullName() {
         String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "John Doe";
         User user = UserDataBuilder.withAllFields().fullName(null).build();
-        User completedUser = user.withFullName(fullName);
         GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName(fullName).build();
-        UpdateUserRequest updateRequest = UpdateUserRequest.builder().fullName(fullName).build();
 
         when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
         when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
         when(userQueryPort.getByEmail(email)).thenReturn(user);
-        when(tokenGenerationPort.generate(completedUser)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
+        when(tokenGenerationPort.generate(user)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
 
         googleOAuthService.auth(authCode);
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
         verify(userQueryPort).getByEmail(email);
-        verify(userCommandPort).update(user.id(), updateRequest);
+        verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
         verify(userCommandPort, never()).save(any());
-        verify(tokenGenerationPort).generate(completedUser);
+        verify(tokenGenerationPort).generate(user);
     }
 
     @Test

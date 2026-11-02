@@ -41,10 +41,6 @@ public record User(
         return !StringUtils.isEmpty(fullName);
     }
 
-    public User withFullName(String fullName) {
-        return new User(id, email, emailVerified, status, roles, providerType, password, fullName, createdAt, updatedAt);
-    }
-
     public void throwIfEmailNotVerified() {
         if (!emailVerified) {
             throw new UserEmailNotVerifiedException("User email is not verified.");
