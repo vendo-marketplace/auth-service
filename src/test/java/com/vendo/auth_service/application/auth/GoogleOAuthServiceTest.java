@@ -100,6 +100,96 @@ class GoogleOAuthServiceTest {
     }
 
     @Test
+    void googleAuth_shouldSaveGoogleFullName_whenUserNotFound() {
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "John Doe";
+        User user = UserDataBuilder.withAllFields().fullName(fullName).build();
+        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName(fullName).build();
+        ArgumentCaptor<SaveUserRequest> captor = ArgumentCaptor.forClass(SaveUserRequest.class);
+
+        when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
+        when(userQueryPort.getByEmail(email)).thenThrow(UserNotFoundException.class);
+        when(userCommandPort.save(captor.capture())).thenReturn(user);
+        when(tokenGenerationPort.generate(user)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
+
+        googleOAuthService.auth(authCode);
+
+        assertThat(captor.getValue().fullName()).isEqualTo(fullName);
+
+        verify(googleAuthCodePort).exchange(authCode);
+        verify(googleTokenVerifierPort).verify(idToken);
+        verify(userQueryPort).getByEmail(email);
+        verify(userCommandPort).save(captor.getValue());
+        verify(tokenGenerationPort).generate(user);
+    }
+
+    @Test
+    void googleAuth_shouldNotSaveGoogleFullName_whenNameDoesNotMatchPattern() {
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email";
+        User user = UserDataBuilder.withAllFields().build();
+        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName("John").build();
+        ArgumentCaptor<SaveUserRequest> captor = ArgumentCaptor.forClass(SaveUserRequest.class);
+
+        when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
+        when(userQueryPort.getByEmail(email)).thenThrow(UserNotFoundException.class);
+        when(userCommandPort.save(captor.capture())).thenReturn(user);
+        when(tokenGenerationPort.generate(user)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
+
+        googleOAuthService.auth(authCode);
+
+        assertThat(captor.getValue().fullName()).isNull();
+
+        verify(googleAuthCodePort).exchange(authCode);
+        verify(googleTokenVerifierPort).verify(idToken);
+        verify(userQueryPort).getByEmail(email);
+        verify(userCommandPort).save(captor.getValue());
+        verify(tokenGenerationPort).generate(user);
+    }
+
+    @Test
+    void googleAuth_shouldNotUpdateFullName_whenExistingUserHasNoFullName() {
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "John Doe";
+        User user = UserDataBuilder.withAllFields().fullName(null).build();
+        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName(fullName).build();
+
+        when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
+        when(userQueryPort.getByEmail(email)).thenReturn(user);
+        when(tokenGenerationPort.generate(user)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
+
+        googleOAuthService.auth(authCode);
+
+        verify(googleAuthCodePort).exchange(authCode);
+        verify(googleTokenVerifierPort).verify(idToken);
+        verify(userQueryPort).getByEmail(email);
+        verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        verify(userCommandPort, never()).save(any());
+        verify(tokenGenerationPort).generate(user);
+    }
+
+    @Test
+    void googleAuth_shouldNotUpdateFullName_whenExistingUserAlreadyHasFullName() {
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email";
+        User user = UserDataBuilder.withAllFields().fullName("Jane Doe").build();
+        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName("John Doe").build();
+
+        when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
+        when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
+        when(userQueryPort.getByEmail(email)).thenReturn(user);
+        when(tokenGenerationPort.generate(user)).thenReturn(TokenPayloadDataBuilder.withAllFields().build());
+
+        googleOAuthService.auth(authCode);
+
+        verify(googleAuthCodePort).exchange(authCode);
+        verify(googleTokenVerifierPort).verify(idToken);
+        verify(userQueryPort).getByEmail(email);
+        verify(userCommandPort, never()).update(anyString(), any(UpdateUserRequest.class));
+        verify(userCommandPort, never()).save(any());
+        verify(tokenGenerationPort).generate(user);
+    }
+
+    @Test
     void googleAuth_shouldThrowException_whenCouldNotExchangeAuthCode() {
         String authCode = "test_auth_code";
 

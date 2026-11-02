@@ -5,6 +5,9 @@ import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedExceptio
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,5 +41,18 @@ public class UserTest {
         User user = UserDataBuilder.withAllFields().emailVerified(true).build();
 
         assertThatNoException().isThrownBy(user::throwIfEmailNotVerified);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"John Doe", "Іван Петренко"})
+    void isValidFullName_shouldReturnTrue_whenTwoCapitalizedWords(String fullName) {
+        assertThat(User.isValidFullName(fullName)).isTrue();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"John", "john doe", "John Ronald Doe", "José Doe"})
+    void isValidFullName_shouldReturnFalse_whenNameDoesNotMatchPattern(String fullName) {
+        assertThat(User.isValidFullName(fullName)).isFalse();
     }
 }

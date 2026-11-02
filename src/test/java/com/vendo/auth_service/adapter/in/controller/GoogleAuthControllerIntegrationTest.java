@@ -80,9 +80,9 @@ class GoogleAuthControllerIntegrationTest {
         assertThat(response.getContentAsString()).isEmpty();
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isEqualTo(2);
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(0))
-                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=Lax");
+                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=None");
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(1))
-                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=Lax");
+                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=None");
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
@@ -98,7 +98,7 @@ class GoogleAuthControllerIntegrationTest {
         String authCode = "test_auth_code";
         String idToken = "test_id_token";
         String email = "new.google@gmail.com";
-        String fullName = "New Google User";
+        String fullName = "Google User";
         GoogleTokenPayload googleTokenPayload = GoogleTokenPayload.builder()
                 .email(email)
                 .fullName(fullName)
@@ -129,9 +129,9 @@ class GoogleAuthControllerIntegrationTest {
         assertThat(response.getContentAsString()).isEmpty();
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isEqualTo(2);
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(0))
-                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=Lax");
+                .contains("accessToken=" + tokenPayload.accessToken(), "Path=/", "HttpOnly", "Secure", "SameSite=None");
         assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).get(1))
-                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=Lax");
+                .contains("refreshToken=" + tokenPayload.refreshToken(), "Path=/auth/refresh", "HttpOnly", "Secure", "SameSite=None");
 
         SaveUserRequest saveUserRequest = saveUserCaptor.getValue();
         assertThat(saveUserRequest.email()).isEqualTo(email);

@@ -16,6 +16,7 @@ import com.vendo.user_lib.type.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -35,26 +36,39 @@ class GoogleOAuthService implements GoogleAuthUseCase {
     public void auth(String authCode) {
         String idToken = googleAuthCodePort.exchange(authCode);
         GoogleTokenPayload payload = googleTokenVerifierPort.verify(idToken);
+        String fullName = getValidFullName(payload.fullName());
 
-        User user = requireUser(payload.email(), payload.fullName());
+        User user = requireUser(payload.email(), fullName);
         TokenPayload tokenPayload = tokenGenerationPort.generate(user);
 
         cookieApplierPort.apply(tokenPayload);
     }
 
     private User requireUser(String email, String fullName) {
+        return findByEmail(email).orElseGet(() -> save(email, fullName));
+    }
+
+    private String getValidFullName(String fullName) {
+        return User.isValidFullName(fullName) ? fullName : null;
+    }
+
+    private Optional<User> findByEmail(String email) {
         try {
-            return userQueryPort.getByEmail(email);
+            return Optional.of(userQueryPort.getByEmail(email));
         } catch (UserNotFoundException e) {
-            SaveUserRequest request = SaveUserRequest.builder()
-                    .email(email)
-                    .fullName(fullName)
-                    .roles(Set.of(UserRole.USER))
-                    .emailVerified(true)
-                    .status(UserStatus.ACTIVE)
-                    .providerType(ProviderType.GOOGLE)
-                    .build();
-            return userCommandPort.save(request);
+            return Optional.empty();
         }
+    }
+
+    private User save(String email, String fullName) {
+        SaveUserRequest request = SaveUserRequest.builder()
+                .email(email)
+                .fullName(fullName)
+                .roles(Set.of(UserRole.USER))
+                .emailVerified(true)
+                .status(UserStatus.ACTIVE)
+                .providerType(ProviderType.GOOGLE)
+                .build();
+        return userCommandPort.save(request);
     }
 }
