@@ -9,4 +9,9 @@ public record TokenPayload(
         String refreshToken
 
 ) {
+
+    public static TokenPayload empty() {
+        return new TokenPayload("", "");
+    }
+
 }
