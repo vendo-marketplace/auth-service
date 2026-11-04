@@ -40,23 +40,19 @@ class AuthService implements AuthUseCase {
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
 
-        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-        cookieApplierPort.apply(tokenPayload);
+        applyAuth(user);
     }
 
     @Override
     public void signUp(AuthCommand command) {
         String hashedPassword = passwordHashingPort.hash(command.password());
-        User user = userCommandPort.save(SaveUserRequest.builder()
+        userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(UserRole.USER))
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
                 .build());
-
-        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-        cookieApplierPort.apply(tokenPayload);
     }
 
     @Override
@@ -73,17 +69,23 @@ class AuthService implements AuthUseCase {
 
         userCommandPort.update(user.id(), UpdateUserRequest.builder()
                 .fullName(command.fullName()).build());
+
+        applyAuth(user);
     }
 
     @Override
     public void refresh() {
         User user = userQueryPort.getById(tokenIdentityPort.extractId(cookieRetrieverPort.retrieveRefresh()));
-        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
-        cookieApplierPort.apply(tokenPayload);
+        applyAuth(user);
     }
 
     @Override
     public User me() {
         return userQueryPort.getById(authUserPort.getAuthUser().id());
+    }
+
+    private void applyAuth(User user) {
+        TokenPayload tokenPayload = tokenGenerationPort.generate(user);
+        cookieApplierPort.apply(tokenPayload);
     }
 }
