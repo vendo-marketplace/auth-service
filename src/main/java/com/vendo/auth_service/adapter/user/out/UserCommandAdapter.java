@@ -19,8 +19,8 @@ public class UserCommandAdapter implements UserCommandPort {
     }
 
     @Override
-    public void update(String id, UpdateUserRequest request) {
-        userClient.update(id, request);
+    public User update(String id, UpdateUserRequest request) {
+        return userClient.update(id, request);
     }
 
 }

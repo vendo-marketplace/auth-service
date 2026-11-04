@@ -26,7 +26,7 @@ public interface UserClient {
     UserExistsResponse existsByEmail(@RequestParam("email") String email);
 
     @PutMapping
-    void update(@RequestParam("id") String id, @RequestBody UpdateUserRequest body);
+    User update(@RequestParam("id") String id, @RequestBody UpdateUserRequest body);
 
     @PostMapping
     User save(@RequestBody SaveUserRequest body);

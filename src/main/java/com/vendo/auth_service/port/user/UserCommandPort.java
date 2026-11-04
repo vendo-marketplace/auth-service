@@ -8,6 +8,6 @@ public interface UserCommandPort {
 
     User save(SaveUserRequest request);
 
-    void update(String id, UpdateUserRequest request);
+    User update(String id, UpdateUserRequest request);
 
 }
