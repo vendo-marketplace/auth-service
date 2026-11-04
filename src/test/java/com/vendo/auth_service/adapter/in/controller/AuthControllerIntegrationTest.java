@@ -87,26 +87,24 @@ class AuthControllerIntegrationTest {
     class SignUpTests {
 
         @Test
-        void signUp_shouldSuccessfullyRegisterUser() throws Exception {
+        void signUp_shouldSuccessfullyRegisterUserWithoutAuthCookies() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
-            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
-
             when(userCommandPort.save(any())).thenReturn(user);
-            when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             MockHttpServletResponse response = mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk()).andReturn().getResponse();
 
-            assertAuthCookies(response, tokenPayload);
+            assertThat(response.getContentAsString()).isEmpty();
+            assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isZero();
 
             ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
             verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
-            verify(tokenGenerationPort).generate(user);
+            verifyNoInteractions(tokenGenerationPort);
 
             SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
@@ -334,20 +332,31 @@ class AuthControllerIntegrationTest {
             ArgumentCaptor<UpdateUserRequest> updateUserArgumentCaptor = ArgumentCaptor.forClass(UpdateUserRequest.class);
 
             User authUser = UserDataBuilder.withAllFields().emailVerified(true).build();
+            User updatedUser = UserDataBuilder.withAllFields()
+                    .id(authUser.id())
+                    .fullName(completeAuthRequest.fullName())
+                    .emailVerified(true)
+                    .build();
+            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 
             when(userQueryPort.getById(authUser.id())).thenReturn(authUser);
-            doNothing().when(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
+            when(userCommandPort.update(eq(authUser.id()), any(UpdateUserRequest.class))).thenReturn(updatedUser);
+            when(tokenGenerationPort.generate(updatedUser)).thenReturn(tokenPayload);
 
-            mockMvc.perform(patch("/auth/complete")
+            MockHttpServletResponse response = mockMvc.perform(patch("/auth/complete")
                             .with(SecurityMockMvcRequestPostProcessors.securityContext(securityContext))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(completeAuthRequest)))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse();
 
+            assertAuthCookies(response, tokenPayload);
+            verify(userCommandPort).update(eq(authUser.id()), updateUserArgumentCaptor.capture());
             UpdateUserRequest updateUserArgumentCaptorValue = updateUserArgumentCaptor.getValue();
             verify(userQueryPort).getById(authUser.id());
-            verify(userCommandPort).update(authUser.id(), updateUserArgumentCaptorValue);
+            verify(tokenGenerationPort).generate(updatedUser);
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
             assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());

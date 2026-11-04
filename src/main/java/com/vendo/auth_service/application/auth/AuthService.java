@@ -67,10 +67,9 @@ class AuthService implements AuthUseCase {
         user.throwIfEmailNotVerified();
         user.throwIfCompleted();
 
-        userCommandPort.update(user.id(), UpdateUserRequest.builder()
-                .fullName(command.fullName()).build());
+        User updated =  userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(command.fullName()).build());
 
-        applyAuth(user);
+        applyAuth(updated);
     }
 
     @Override
