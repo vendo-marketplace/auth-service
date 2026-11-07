@@ -35,7 +35,7 @@ class AuthService implements AuthUseCase {
 
     @Override
     public void signIn(AuthCommand command) {
-        User user = userQueryPort.getByEmail(command.email());
+        var user = userQueryPort.getByEmail(command.email());
 
         boolean matches = passwordHashingPort.matches(command.password(), user.password());
         if (!matches) throw new IncorrectPasswordException("Wrong credentials.");
@@ -46,13 +46,15 @@ class AuthService implements AuthUseCase {
     @Override
     public void signUp(AuthCommand command) {
         String hashedPassword = passwordHashingPort.hash(command.password());
-        userCommandPort.save(SaveUserRequest.builder()
+        var saved = userCommandPort.save(SaveUserRequest.builder()
                 .email(command.email())
                 .status(UserStatus.ACTIVE)
                 .roles(Set.of(UserRole.USER))
                 .providerType(ProviderType.LOCAL)
                 .password(hashedPassword)
                 .build());
+
+        applyAuth(saved);
     }
 
     @Override
@@ -62,19 +64,19 @@ class AuthService implements AuthUseCase {
 
     @Override
     public void complete(CompleteAuthCommand command) {
-        User user = userQueryPort.getById(authUserPort.getAuthUser().id());
+        var user = userQueryPort.getById(authUserPort.getAuthUser().id());
 
         user.throwIfEmailNotVerified();
         user.throwIfCompleted();
 
-        User updated =  userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(command.fullName()).build());
+        var updated =  userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(command.fullName()).build());
 
         applyAuth(updated);
     }
 
     @Override
     public void refresh() {
-        User user = userQueryPort.getById(tokenIdentityPort.extractId(cookieRetrieverPort.retrieveRefresh()));
+        var user = userQueryPort.getById(tokenIdentityPort.extractId(cookieRetrieverPort.retrieveRefresh()));
         applyAuth(user);
     }
 

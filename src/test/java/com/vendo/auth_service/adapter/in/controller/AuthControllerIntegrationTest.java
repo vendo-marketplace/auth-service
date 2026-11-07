@@ -87,24 +87,25 @@ class AuthControllerIntegrationTest {
     class SignUpTests {
 
         @Test
-        void signUp_shouldSuccessfullyRegisterUserWithoutAuthCookies() throws Exception {
+        void signUp_shouldSuccessfullyRegisterUserAndSetAuthCookies() throws Exception {
             AuthRequest authRequest = AuthRequestDataBuilder.withAllFields().build();
             User user = UserDataBuilder.withAllFields()
                     .email(authRequest.email())
                     .build();
+            TokenPayload tokenPayload = TokenPayloadDataBuilder.withAllFields().build();
             when(userCommandPort.save(any())).thenReturn(user);
+            when(tokenGenerationPort.generate(user)).thenReturn(tokenPayload);
 
             MockHttpServletResponse response = mockMvc.perform(post("/auth/sign-up")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(authRequest)))
                     .andExpect(status().isOk()).andReturn().getResponse();
 
-            assertThat(response.getContentAsString()).isEmpty();
-            assertThat(response.getHeaders(HttpHeaders.SET_COOKIE).size()).isZero();
+            assertAuthCookies(response, tokenPayload);
 
             ArgumentCaptor<SaveUserRequest> saveUserRequestArgumentCaptor = ArgumentCaptor.forClass(SaveUserRequest.class);
             verify(userCommandPort).save(saveUserRequestArgumentCaptor.capture());
-            verifyNoInteractions(tokenGenerationPort);
+            verify(tokenGenerationPort).generate(user);
 
             SaveUserRequest saveUserRequestCaptor = saveUserRequestArgumentCaptor.getValue();
             assertThat(saveUserRequestCaptor.email()).isEqualTo(authRequest.email());
