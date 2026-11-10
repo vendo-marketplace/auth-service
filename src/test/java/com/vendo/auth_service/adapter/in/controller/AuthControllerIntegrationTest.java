@@ -360,7 +360,7 @@ class AuthControllerIntegrationTest {
             verify(tokenGenerationPort).generate(updatedUser);
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
-            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo("Test N.");
+            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo("Тест К.");
             verifyNoMoreInteractions(userCommandPort);
         }
 
@@ -482,7 +482,7 @@ class AuthControllerIntegrationTest {
                     .withAllFields().build();
             User authUser = UserDataBuilder.withAllFields()
                     .status(UserStatus.ACTIVE)
-                    .fullName("John Doe")
+                    .fullName("Іван Петренко")
                     .build();
             SecurityContext securityContext = initializeSecurityContext(authUser);
 

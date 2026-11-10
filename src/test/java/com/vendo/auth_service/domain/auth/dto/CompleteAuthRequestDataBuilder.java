@@ -6,7 +6,7 @@ public class CompleteAuthRequestDataBuilder {
 
     public static CompleteAuthRequest.CompleteAuthRequestBuilder withAllFields() {
         return CompleteAuthRequest.builder()
-                .fullName("Test Name");
+                .fullName("Тест Користувач");
     }
 
 }

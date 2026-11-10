@@ -22,7 +22,7 @@ class UserTest {
 
     @Test
     void isCompleted_shouldReturnTrue_whenFullNamePresent() {
-        User user = UserDataBuilder.withAllFields().fullName("John Doe").build();
+        User user = UserDataBuilder.withAllFields().fullName("Іван Петренко").build();
 
         assertThat(user.isCompleted()).isTrue();
     }
@@ -38,7 +38,7 @@ class UserTest {
     @Test
     void throwIfCompleted_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
         User user = UserDataBuilder.withAllFields()
-                .fullName("John Doe")
+                .fullName("Іван Петренко")
                 .build();
 
         assertThatThrownBy(user::throwIfCompleted)
@@ -87,16 +87,18 @@ class UserTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"John Doe", "Іван Петренко", "Їжак Ґудзь"})
-    void isValidFullName_shouldReturnTrue_whenTwoCapitalizedWords(String fullName) {
+    @ValueSource(strings = {"Іван Петренко", "Їжак Ґудзь", "Єва Щербань", "Мар'яна Солов'як", "Юрій Ільюк"})
+    void isValidFullName_shouldReturnTrue_whenTwoCapitalizedUkrainianWords(String fullName) {
         assertThat(User.isValidFullName(fullName)).isTrue();
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {
-            "John", "john doe", "John doe", "JOHN DOE", "John Ronald Doe", "José Doe",
-            "John  Doe", " John Doe", "John Doe ", "John-Paul Doe", "John D", "John1 Doe"
+            "John Doe", "Іван Doe", "John Петренко", "Iван Петренко",
+            "Эдуард Петренко", "Ёжик Петренко", "Іван Бызов", "Іван Подъячев", "Ьван Петренко",
+            "Іван", "іван петренко", "Іван петренко", "ІВАН ПЕТРЕНКО", "Іван Петрович Петренко",
+            "Іван  Петренко", " Іван Петренко", "Іван Петренко ", "Анна-Марія Петренко", "Іван П", "Іван1 Петренко"
     })
     void isValidFullName_shouldReturnFalse_whenNameDoesNotMatchPattern(String fullName) {
         assertThat(User.isValidFullName(fullName)).isFalse();
@@ -104,15 +106,14 @@ class UserTest {
 
     @ParameterizedTest
     @CsvSource({
-            "John Doe, John D.",
-            "Іван Петренко, Іван П."
+                        "Іван Петренко, Іван П."
     })
     void normalizeFullName_shouldReturnFirstNameAndLastNameInitial(String fullName, String expected) {
         assertThat(User.normalizeFullName(fullName)).isEqualTo(expected);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"John", "John Ronald Doe", "John  Doe"})
+    @ValueSource(strings = {"Іван", "Іван Петрович Петренко", "Іван  Петренко"})
     void normalizeFullName_shouldThrowIllegalArgumentException_whenNotTwoWords(String fullName) {
         assertThatThrownBy(() -> User.normalizeFullName(fullName))
                 .isInstanceOf(IllegalArgumentException.class)

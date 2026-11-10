@@ -98,7 +98,7 @@ class GoogleAuthControllerIntegrationTest {
         String authCode = "test_auth_code";
         String idToken = "test_id_token";
         String email = "new.google@gmail.com";
-        String fullName = "Google User";
+        String fullName = "Гугл Користувач";
         GoogleTokenPayload googleTokenPayload = GoogleTokenPayload.builder()
                 .email(email)
                 .fullName(fullName)
@@ -135,7 +135,7 @@ class GoogleAuthControllerIntegrationTest {
 
         SaveUserRequest saveUserRequest = saveUserCaptor.getValue();
         assertThat(saveUserRequest.email()).isEqualTo(email);
-        assertThat(saveUserRequest.fullName()).isEqualTo("Google U.");
+        assertThat(saveUserRequest.fullName()).isEqualTo("Гугл К.");
         assertThat(saveUserRequest.providerType()).isEqualTo(ProviderType.GOOGLE);
         assertThat(saveUserRequest.roles().contains(UserRole.USER)).isTrue();
         assertThat(saveUserRequest.status()).isEqualTo(UserStatus.ACTIVE);

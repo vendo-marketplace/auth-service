@@ -101,7 +101,7 @@ class GoogleOAuthServiceTest {
 
     @Test
     void googleAuth_shouldSaveGoogleFullName_whenUserNotFound() {
-        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "John Doe";
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "Іван Петренко";
         User user = UserDataBuilder.withAllFields().fullName(fullName).build();
         GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName(fullName).build();
         ArgumentCaptor<SaveUserRequest> captor = ArgumentCaptor.forClass(SaveUserRequest.class);
@@ -114,7 +114,7 @@ class GoogleOAuthServiceTest {
 
         googleOAuthService.auth(authCode);
 
-        assertThat(captor.getValue().fullName()).isEqualTo("John D.");
+        assertThat(captor.getValue().fullName()).isEqualTo("Іван П.");
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);
@@ -149,7 +149,7 @@ class GoogleOAuthServiceTest {
 
     @Test
     void googleAuth_shouldNotUpdateFullName_whenExistingUserHasNoFullName() {
-        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "John Doe";
+        String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email", fullName = "Іван Петренко";
         User user = UserDataBuilder.withAllFields().fullName(null).build();
         GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName(fullName).build();
 
@@ -171,8 +171,8 @@ class GoogleOAuthServiceTest {
     @Test
     void googleAuth_shouldNotUpdateFullName_whenExistingUserAlreadyHasFullName() {
         String authCode = "test_auth_code", idToken = "test_id_token", email = "test_email";
-        User user = UserDataBuilder.withAllFields().fullName("Jane Doe").build();
-        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName("John Doe").build();
+        User user = UserDataBuilder.withAllFields().fullName("Олена Коваль").build();
+        GoogleTokenPayload payload = GoogleTokenPayload.builder().email(email).fullName("Іван Петренко").build();
 
         when(googleAuthCodePort.exchange(authCode)).thenReturn(idToken);
         when(googleTokenVerifierPort.verify(idToken)).thenReturn(payload);
