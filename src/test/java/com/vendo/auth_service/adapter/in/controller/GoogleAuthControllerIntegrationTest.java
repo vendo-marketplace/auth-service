@@ -135,7 +135,7 @@ class GoogleAuthControllerIntegrationTest {
 
         SaveUserRequest saveUserRequest = saveUserCaptor.getValue();
         assertThat(saveUserRequest.email()).isEqualTo(email);
-        assertThat(saveUserRequest.fullName()).isEqualTo(fullName);
+        assertThat(saveUserRequest.fullName()).isEqualTo("Google U.");
         assertThat(saveUserRequest.providerType()).isEqualTo(ProviderType.GOOGLE);
         assertThat(saveUserRequest.roles().contains(UserRole.USER)).isTrue();
         assertThat(saveUserRequest.status()).isEqualTo(UserStatus.ACTIVE);

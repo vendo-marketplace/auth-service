@@ -49,7 +49,7 @@ class GoogleOAuthService implements GoogleAuthUseCase {
     }
 
     private String getValidFullName(String fullName) {
-        return User.isValidFullName(fullName) ? fullName : null;
+        return User.isValidFullName(fullName) ? User.normalizeFullName(fullName) : null;
     }
 
     private Optional<User> findByEmail(String email) {

@@ -2,22 +2,41 @@ package com.vendo.auth_service.domain.user;
 
 import com.vendo.auth_service.domain.user.dto.UserDataBuilder;
 import com.vendo.auth_service.domain.user.exception.UserAlreadyCompletedException;
+import com.vendo.auth_service.domain.user.exception.UserAlreadyVerifiedException;
 import com.vendo.auth_service.domain.user.model.User;
 import com.vendo.user_lib.exception.UserEmailNotVerifiedException;
+import com.vendo.user_lib.type.UserRole;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.AssertionsForClassTypes.*;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@ExtendWith(MockitoExtension.class)
-public class UserTest {
+import static org.assertj.core.api.Assertions.*;
+
+class UserTest {
 
     @Test
-    void validateComplete_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
+    void isCompleted_shouldReturnTrue_whenFullNamePresent() {
+        User user = UserDataBuilder.withAllFields().fullName("John Doe").build();
+
+        assertThat(user.isCompleted()).isTrue();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void isCompleted_shouldReturnFalse_whenFullNameNullOrEmpty(String fullName) {
+        User user = UserDataBuilder.withAllFields().fullName(fullName).build();
+
+        assertThat(user.isCompleted()).isFalse();
+    }
+
+    @Test
+    void throwIfCompleted_shouldThrowUserAlreadyCompletedException_whenUserAlreadyCompleted() {
         User user = UserDataBuilder.withAllFields()
                 .fullName("John Doe")
                 .build();
@@ -25,6 +44,14 @@ public class UserTest {
         assertThatThrownBy(user::throwIfCompleted)
                 .isInstanceOf(UserAlreadyCompletedException.class)
                 .hasMessage("User has already completed.");
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void throwIfCompleted_shouldNotThrow_whenUserNotCompleted(String fullName) {
+        User user = UserDataBuilder.withAllFields().fullName(fullName).build();
+
+        assertThatNoException().isThrownBy(user::throwIfCompleted);
     }
 
     @Test
@@ -43,16 +70,69 @@ public class UserTest {
         assertThatNoException().isThrownBy(user::throwIfEmailNotVerified);
     }
 
+    @Test
+    void throwIfVerified_shouldThrowUserAlreadyVerifiedException_whenEmailVerified() {
+        User user = UserDataBuilder.withAllFields().emailVerified(true).build();
+
+        assertThatThrownBy(user::throwIfVerified)
+                .isInstanceOf(UserAlreadyVerifiedException.class)
+                .hasMessage("User email is already verified.");
+    }
+
+    @Test
+    void throwIfVerified_shouldNotThrow_whenEmailNotVerified() {
+        User user = UserDataBuilder.withAllFields().emailVerified(false).build();
+
+        assertThatNoException().isThrownBy(user::throwIfVerified);
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"John Doe", "Іван Петренко"})
+    @ValueSource(strings = {"John Doe", "Іван Петренко", "Їжак Ґудзь"})
     void isValidFullName_shouldReturnTrue_whenTwoCapitalizedWords(String fullName) {
         assertThat(User.isValidFullName(fullName)).isTrue();
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"John", "john doe", "John Ronald Doe", "José Doe"})
+    @ValueSource(strings = {
+            "John", "john doe", "John doe", "JOHN DOE", "John Ronald Doe", "José Doe",
+            "John  Doe", " John Doe", "John Doe ", "John-Paul Doe", "John D", "John1 Doe"
+    })
     void isValidFullName_shouldReturnFalse_whenNameDoesNotMatchPattern(String fullName) {
         assertThat(User.isValidFullName(fullName)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "John Doe, John D.",
+            "Іван Петренко, Іван П."
+    })
+    void normalizeFullName_shouldReturnFirstNameAndLastNameInitial(String fullName, String expected) {
+        assertThat(User.normalizeFullName(fullName)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"John", "John Ronald Doe", "John  Doe"})
+    void normalizeFullName_shouldThrowIllegalArgumentException_whenNotTwoWords(String fullName) {
+        assertThatThrownBy(() -> User.normalizeFullName(fullName))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Full name doesn't contain first name and last name.");
+    }
+
+    @Test
+    void toRoleNames_shouldReturnRoleNames() {
+        Set<UserRole> roles = EnumSet.allOf(UserRole.class);
+        User user = UserDataBuilder.withAllFields().roles(roles).build();
+
+        Set<String> expected = roles.stream().map(Enum::name).collect(Collectors.toSet());
+
+        assertThat(user.toRoleNames()).isEqualTo(expected);
+    }
+
+    @Test
+    void toRoleNames_shouldReturnEmptySet_whenNoRoles() {
+        User user = UserDataBuilder.withAllFields().roles(Set.of()).build();
+
+        assertThat(user.toRoleNames()).isEmpty();
     }
 }

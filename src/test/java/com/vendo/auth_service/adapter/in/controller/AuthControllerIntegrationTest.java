@@ -360,7 +360,7 @@ class AuthControllerIntegrationTest {
             verify(tokenGenerationPort).generate(updatedUser);
 
             assertThat(updateUserArgumentCaptorValue).isNotNull();
-            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo(completeAuthRequest.fullName());
+            assertThat(updateUserArgumentCaptorValue.fullName()).isEqualTo("Test N.");
             verifyNoMoreInteractions(userCommandPort);
         }
 

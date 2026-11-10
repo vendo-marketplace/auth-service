@@ -69,7 +69,7 @@ class AuthService implements AuthUseCase {
         user.throwIfEmailNotVerified();
         user.throwIfCompleted();
 
-        var updated =  userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(command.fullName()).build());
+        var updated =  userCommandPort.update(user.id(), UpdateUserRequest.builder().fullName(User.normalizeFullName(command.fullName())).build());
 
         applyAuth(updated);
     }

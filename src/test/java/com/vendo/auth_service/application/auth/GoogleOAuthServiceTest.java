@@ -114,7 +114,7 @@ class GoogleOAuthServiceTest {
 
         googleOAuthService.auth(authCode);
 
-        assertThat(captor.getValue().fullName()).isEqualTo(fullName);
+        assertThat(captor.getValue().fullName()).isEqualTo("John D.");
 
         verify(googleAuthCodePort).exchange(authCode);
         verify(googleTokenVerifierPort).verify(idToken);

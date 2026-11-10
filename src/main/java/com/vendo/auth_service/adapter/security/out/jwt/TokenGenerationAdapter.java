@@ -8,14 +8,12 @@ import com.vendo.security_lib.type.TokenClaim;
 import com.vendo.security_starter.jwt.JwtPayload;
 import com.vendo.security_starter.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 import static com.vendo.core_lib.constants.Delimiters.COMMA_DELIMITER;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TokenGenerationAdapter implements TokenGenerationPort {
